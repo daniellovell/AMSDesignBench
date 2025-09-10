@@ -1,0 +1,7 @@
+regex
+pydantic>=2
+networkx
+rich
+jsonschema
+pyyaml
+openai>=1.47.0

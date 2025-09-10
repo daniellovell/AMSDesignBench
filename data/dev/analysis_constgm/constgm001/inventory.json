@@ -1,0 +1,11 @@
+{
+  "elements": {
+    "Mbias": {"type": "mos", "role": "bias_device"},
+    "Rdeg": {"type": "res", "role": "degeneration"},
+    "Mmir1": {"type": "mos", "role": "current_mirror"},
+    "Mmir2": {"type": "mos", "role": "current_mirror"}
+  },
+  "nets": ["vbias", "iout", "0"],
+  "blocks": {}
+}
+

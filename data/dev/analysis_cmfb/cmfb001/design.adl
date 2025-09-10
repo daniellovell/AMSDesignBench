@@ -1,0 +1,7 @@
+block ota_cmfb {
+  block CMFB (sense:vout_cm, control:tail)
+  mos Mtail (g:vcm_ctrl, d:tail, s:0)
+  mos Mcasc (g:vcas, d:vint, s:tail)
+  cap CL (p:vout, n:0)
+}
+

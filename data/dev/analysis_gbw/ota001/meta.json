@@ -1,0 +1,7 @@
+{
+  "topology": "one_stage_ota",
+  "gen_seed": 101,
+  "modalities": ["netlist", "veriloga", "adl"],
+  "bench_version": "0.1.0"
+}
+

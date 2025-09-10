@@ -1,0 +1,5 @@
+You are an expert analog IC designer.
+From the {modality} artifact, propose grounded ways to improve PSRR.
+Required sections: Assumptions, Proposals (cite element IDs), Tradeoffs, Answer (≤3 sentences).
+Identify bias ripple paths; propose feasible tactics (cascoding mirrors, filtering bias, regulated cascode, routing/returns, local decoupling). Return markdown only.
+

@@ -1,0 +1,2 @@
+{"id":"ota001_gbw_netlist","track":"analysis","modality":"netlist","artifact_path":"netlist.sp","rubric_id":"gbw_one_stage","prompt_template":"analysis/gbw_one_stage.txt","require_sections":["Assumptions","Key relation","Grounded evidence","Answer"],"answer_format":"markdown","meta":{"topology":"one_stage_ota","bench_version":"0.1.0"}}
+

@@ -1,0 +1,6 @@
+// structural hint only
+module ota1(vinp, vinn, vout);
+  input vinp, vinn; output vout;
+  // input pair M1/M2, tail source Mtail, load CL
+endmodule
+

@@ -1,0 +1,7 @@
+block ota_psrr {
+  mos MmirL (g:bias, d:vout, s:vdd)
+  mos MmirR (g:bias, d:vout, s:vdd)
+  mos Mbias (g:vbref, d:bias, s:vdd)
+  res Rbias (p:bias, n:vdd)
+}
+

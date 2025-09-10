@@ -1,0 +1,1 @@
+Constant-gm bias networks use degeneration or translinear loops to set gm independent (or weakly dependent) of process/temperature. Key is where gm is set (e.g., Rs or Vbe/I). Symmetry balances branch currents; pitfalls include mismatch and temperature drift.

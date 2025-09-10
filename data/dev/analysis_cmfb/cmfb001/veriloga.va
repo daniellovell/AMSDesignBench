@@ -1,0 +1,3 @@
+// CMFB present: senses vout_cm, controls tail via CMFB amp
+module ota_cmfb(); endmodule
+

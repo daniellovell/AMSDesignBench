@@ -1,0 +1,5 @@
+You are an expert analog IC designer.
+From the {modality} artifact, discuss common-mode feedback (CMFB) stability.
+Required sections: Assumptions, Key relation, Grounded evidence (cite element IDs), Answer (≤3 sentences).
+Treat CMFB as a separate loop; state expected CMFB BW relative to signal loop and where to compensate. Return markdown only.
+

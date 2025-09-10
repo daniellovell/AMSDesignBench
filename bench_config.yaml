@@ -1,0 +1,14 @@
+bench_version: 0.1.0
+rubric_version: 0.1.0
+random_seed: 1234
+eval:
+  max_tokens: 800
+  temperature: 0.2
+  top_p: 0.95
+limits:
+  max_items: null
+  timeout_s: 60
+paths:
+  data_root: data
+  prompts_root: prompts
+  outputs_root: outputs
