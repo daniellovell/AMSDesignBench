@@ -1,2 +1,0 @@
-{"id":"cmfb001_stability_adl","track":"analysis","modality":"adl","artifact_path":"design.adl","rubric_id":"cmfb_stability","prompt_template":"analysis/cmfb_stability.txt","require_sections":["Assumptions","Key relation","Grounded evidence","Answer"],"answer_format":"markdown","meta":{"topology":"ota_with_cmfb","bench_version":"0.1.0"}}
-

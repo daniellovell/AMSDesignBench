@@ -1,6 +1,7 @@
 {
-  "topology": "five_transistor_ota",
-  "gen_seed": 101,
+  "topology": "one_stage_ota",
+  "gen_seed": 102,
   "modalities": ["spice_netlist", "veriloga", "adl"],
   "bench_version": "0.1.0"
 }
+

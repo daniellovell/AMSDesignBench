@@ -1,0 +1,7 @@
+// structural hint for telescopic cascode OTA
+module ota2(vinp, vinn, vout, vbias_n, vb_ncasc, vb_pcasc, VDD);
+  input vinp, vinn, vbias_n, vb_ncasc, vb_pcasc, VDD; output vout;
+  // NMOS diff pair with NMOS cascodes (M3/M4) and NMOS tail (M9)
+  // PMOS mirror (M7/M8) with PMOS cascodes (M5/M6); output at right branch (vout)
+endmodule
+

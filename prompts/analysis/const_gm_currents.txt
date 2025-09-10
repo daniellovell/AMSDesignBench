@@ -1,5 +1,0 @@
-You are an expert analog IC designer.
-From the {modality} artifact, explain how branch currents are set in a constant-gm bias/source network.
-Required sections: Assumptions, Key relation, Grounded evidence (cite element IDs), Answer (≤3 sentences).
-Discuss degeneration/translinear principles, symmetry, and pitfalls (mismatch, temperature). Return markdown only.
-

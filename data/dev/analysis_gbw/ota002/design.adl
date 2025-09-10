@@ -1,0 +1,13 @@
+block ota2 {
+  mos M1 (g:vinp, d:n1, s:ntail, b:0)
+  mos M2 (g:vinn, d:n2, s:ntail, b:0)
+  mos M3 (g:vb_ncasc, d:n3, s:n1, b:0)
+  mos M4 (g:vb_ncasc, d:n4, s:n2, b:0)
+  mos M9 (g:vbias_n, d:ntail, s:0, b:0)
+  mos M5 (g:vb_pcasc, d:n5, s:n3, b:VDD)
+  mos M6 (g:vb_pcasc, d:vout, s:n4, b:VDD)
+  mos M7 (g:n5, d:n5, s:VDD, b:VDD)
+  mos M8 (g:n5, d:vout, s:VDD, b:VDD)
+  cap CL (p:vout, n:0)
+}
+

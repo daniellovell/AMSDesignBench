@@ -1,2 +1,0 @@
-{"id":"psrr001_improve","track":"design","modality":"adl","artifact_path":"design.adl","rubric_id":"psrr_improve","prompt_template":"design/psrr_improve.txt","require_sections":["Assumptions","Proposals","Tradeoffs","Answer"],"answer_format":"markdown","meta":{"topology":"ota_with_mirrors","bench_version":"0.1.0"}}
-

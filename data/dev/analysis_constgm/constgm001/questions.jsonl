@@ -1,2 +1,0 @@
-{"id":"constgm001_currents","track":"analysis","modality":"netlist","artifact_path":"netlist.sp","rubric_id":"const_gm_currents","prompt_template":"analysis/const_gm_currents.txt","require_sections":["Assumptions","Key relation","Grounded evidence","Answer"],"answer_format":"markdown","meta":{"topology":"const_gm_bias","bench_version":"0.1.0"}}
-

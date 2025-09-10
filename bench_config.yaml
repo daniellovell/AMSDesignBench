@@ -5,6 +5,7 @@ eval:
   max_tokens: 800
   temperature: 0.2
   top_p: 0.95
+  models: ["openai:gpt-4o-mini", "openai:gpt-4o"]
 limits:
   max_items: null
   timeout_s: 60

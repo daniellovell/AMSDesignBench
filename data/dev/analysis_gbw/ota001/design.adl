@@ -1,7 +1,9 @@
 block ota1 {
-  mos M1 (g:vinp, d:vint, s:tail)
-  mos M2 (g:vinn, d:vint, s:tail)
-  mos Mtail (g:vbias, d:tail, s:0)
+  mos M1 (g:vinp, d:n1, s:ntail, b:0)
+  mos M2 (g:vinn, d:n2, s:ntail, b:0)
+  mos Mtail (g:vbias_n, d:ntail, s:0, b:0)
+  mos Mp2 (g:n1, d:n1, s:VDD, b:VDD)
+  mos Mp1 (g:n1, d:vout, s:VDD, b:VDD)
   cap CL (p:vout, n:0)
 }
 

@@ -1,6 +1,7 @@
-// structural hint only
-module ota1(vinp, vinn, vout);
-  input vinp, vinn; output vout;
-  // input pair M1/M2, tail source Mtail, load CL
+// structural hint for 5T OTA
+module ota1(vinp, vinn, vout, vbias_n, VDD);
+  input vinp, vinn, vbias_n, VDD; output vout;
+  // NMOS diff pair M1/M2 with NMOS tail Mtail (vbias_n)
+  // PMOS mirror load Mp2/Mp1, output at right branch (vout)
 endmodule
 

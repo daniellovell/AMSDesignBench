@@ -60,5 +60,12 @@ class OpenAIAdapter(BaseAdapter):
         return outs
 
 
-def build() -> OpenAIAdapter:
-    return OpenAIAdapter()
+def build(model: str | None = None, temperature: float | None = None, max_tokens: int | None = None) -> OpenAIAdapter:
+    kwargs = {}
+    if model is not None:
+        kwargs["model"] = model
+    if temperature is not None:
+        kwargs["temperature"] = temperature
+    if max_tokens is not None:
+        kwargs["max_tokens"] = max_tokens
+    return OpenAIAdapter(**kwargs)

@@ -61,3 +61,5 @@ reports/
 data/**/.cache/
 scripts/**/.cache/
 
+# Agents
+AGENTS.md

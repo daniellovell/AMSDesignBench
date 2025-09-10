@@ -11,9 +11,12 @@ from rich import print
 
 def main():
     print("[yellow]build_items.py[/yellow]: v0 stub — add topology generators here.")
-    print("Suggestion: use SchemDraw/SVG for images, write inventory.json as source of truth, then derive SPICE/VA/ADL from it.")
+    print("Guidance:")
+    print("- Author inventory.json as the source of truth (elements, nets, blocks).")
+    print("- Derive artifacts in-place: netlist.sp, veriloga.va, design.adl.")
+    print("- Set meta.json.modalities to [\"spice_netlist\", \"veriloga\", \"adl\"] as available.")
+    print("- Keep questions.jsonl minimal (use modality=\"auto\"; the harness expands per modality).")
 
 
 if __name__ == "__main__":
     main()
-

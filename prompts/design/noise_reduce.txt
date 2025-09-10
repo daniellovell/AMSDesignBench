@@ -1,5 +1,0 @@
-You are an expert analog IC designer.
-From the {modality} artifact, propose grounded ways to reduce noise.
-Required sections: Assumptions, Dominant contributors, Proposals (cite element IDs), Tradeoffs, Answer (≤3 sentences).
-Discuss input pair, bias resistors, bandwidth tradeoffs, and area/power impacts. Return markdown only.
-
