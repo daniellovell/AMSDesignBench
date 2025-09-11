@@ -1,6 +1,0 @@
-You are an expert analog IC designer.
-From the {modality} artifact, answer the question about unity-gain bandwidth (GBW) for a one-stage OTA.
-Required sections: Assumptions, Key relation, Grounded evidence (cite element IDs), Answer (≤3 sentences).
-Avoid math you cannot justify from the artifact. If the topology violates the canonical case, state the exception and why.
-Return markdown only.
-

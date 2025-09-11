@@ -1,0 +1,34 @@
+You are an expert analog IC designer.
+From the {modality} artifact, answer the question about unity-gain bandwidth (GBW) for the given circuit.
+
+Required sections (use these exact headers):
+- Topology
+- Assumptions
+- Key relation
+- Grounded evidence
+- Answer
+
+Guidance:
+- In Topology: explicitly name the topology (e.g., single-stage, telescopic cascode, folded cascode, two-stage, high-swing mirror) and justify in 1 sentence using observed elements.
+- In Key relation: give the simplest symbolic relation that applies to this topology. Include modifiers when topology demands it (e.g., current-mirror ratio k → GBW ≈ (gm/CL)·k). State conditions (unity-gain, dominant pole, etc.).
+- In Grounded evidence: cite element IDs and nets from the artifact (e.g., `M1`, `M2`, `Cload`, `vout`).
+- Avoid generic statements without conditions. Do not assume Miller/two-stage unless visible in the artifact.
+
+Example (for format only — adapt to THIS circuit, do not copy):
+
+## Topology
+Single-stage differential pair with current-mirror load; high-swing path present at vout.
+
+## Assumptions
+Unity-gain use (β≈1), dominant pole at vout, devices in saturation.
+
+## Key relation
+GBW ≈ (gm/CL)·k, where k is the mirror ratio from the inner load to the output path. If no mirror scaling, GBW ≈ gm/CL.
+
+## Grounded evidence
+`M1`, `M2` form the input transconductor (gm); `Cload` at `vout`; mirror devices `M4/M6` connect load current to `vout`.
+
+## Answer
+Under unity-gain conditions with a dominant output pole, GBW is set by gm/CL (scaled by k if the output path mirrors the inner load).
+
+Return markdown only.

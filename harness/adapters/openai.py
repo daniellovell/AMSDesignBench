@@ -39,10 +39,13 @@ class OpenAIAdapter(BaseAdapter):
             modality = question.get("modality", "")
             artifact_path = item.get("artifact_path", "")
 
+            artifact = item.get("artifact", "")
+            art_block = f"\nArtifact ({modality}):\n```spice\n{artifact}\n```\n" if artifact else "\n"
             user = (
                 f"Artifact modality: {modality}. Artifact path: {artifact_path}.\n"
                 f"Inventory IDs you may cite: {', '.join(inv_ids)}\n"
-                f"Required sections: {', '.join(req_sections)}\n\n"
+                f"Required sections: {', '.join(req_sections)}\n"
+                f"{art_block}\n"
                 f"{prompt}\n"
             )
 

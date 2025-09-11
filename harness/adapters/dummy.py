@@ -3,7 +3,10 @@ from typing import Any, Dict, List
 from .base import BaseAdapter
 
 
-TEMPLATE = """### Assumptions
+TEMPLATE = """### Topology
+single-stage (uncertain); treating as differential pair with mirror load.
+
+### Assumptions
 - single dominant pole; unity-gain context; external CL
 
 ### Key relation
@@ -32,4 +35,3 @@ class DummyAdapter(BaseAdapter):
 
 def build() -> DummyAdapter:
     return DummyAdapter()
-

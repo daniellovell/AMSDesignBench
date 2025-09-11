@@ -37,7 +37,11 @@ class RubricCriterion(BaseModel):
     id: str
     desc: str
     required: bool = False
+    # Optional: restrict pattern matching to a named markdown section (case-insensitive)
+    section: Optional[str] = None
     patterns_any: Optional[List[str]] = None
+    patterns_all: Optional[List[str]] = None
+    min_any: Optional[int] = None
     anti_patterns: Optional[List[str]] = None
     requires_grounding: bool = False
     min_refs: Optional[int] = None
@@ -59,6 +63,7 @@ class Question(BaseModel):
     modality: str
     artifact_path: str
     rubric_id: str
+    rubric_path: str
     prompt_template: str
     require_sections: List[str]
     answer_format: str
@@ -69,4 +74,3 @@ class EvalItem(BaseModel):
     item_dir: str
     inventory: Inventory
     questions: List[Question]
-

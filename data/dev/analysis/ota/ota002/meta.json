@@ -1,7 +1,7 @@
 {
   "topology": "one_stage_ota",
   "gen_seed": 102,
-  "modalities": ["spice_netlist", "veriloga", "adl"],
+  "modalities": ["spice_netlist"],
   "bench_version": "0.1.0"
 }
 

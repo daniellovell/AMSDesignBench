@@ -49,14 +49,19 @@ def audit_item(item_dir: Path) -> bool:
             print(f"[red]Malformed question JSON[/red] in {qfile}")
             ok = False
             continue
-        pt = Path("prompts") / q.get("prompt_template", "")
-        if not pt.exists():
-            print(f"[red]Missing prompt template[/red] {pt}")
+        pt_name = q.get("prompt_template")
+        if not pt_name:
+            print(f"[red]Missing prompt_template[/red] in question for {item_dir}")
             ok = False
+        else:
+            pt = (item_dir.parent / "prompts" / pt_name)
+            if not pt.exists():
+                print(f"[red]Missing prompt template[/red] {pt}")
+                ok = False
         # Rubric check
-        rid = q.get("rubric_id")
-        if not rid or not (Path("rubrics") / f"{rid}.json").exists():
-            print(f"[red]Missing rubric[/red] {rid} for {item_dir}")
+        rrel = q.get("rubric_path")
+        if not rrel or not (item_dir / rrel).exists():
+            print(f"[red]Missing rubric file[/red] for {item_dir}: {rrel}")
             ok = False
         # Artifact check (skip if auto modality)
         mod = q.get("modality")

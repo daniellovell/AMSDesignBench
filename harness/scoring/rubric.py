@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, Any
 
 from ..types import Rubric, Inventory
-from ..utils.text import contains_any
+from ..utils.text import contains_any, sectionize_markdown
 from .groundedness import groundedness
 from .hallucination import hallucination_score
 
@@ -17,10 +17,16 @@ def load_rubric(path: str | Path) -> Rubric:
 
 
 def score_answer(answer: str, rubric: Rubric, inventory: Inventory) -> Dict[str, Any]:
-    t = answer.strip()
+    full_text = answer.strip()
+    # Pre-parse sections once for potential section-scoped criteria
+    sections = {title: body for title, body in sectionize_markdown(full_text)}
     total_weight = sum(c.weight for c in rubric.criteria)
     points = 0.0
     per_crit: Dict[str, Any] = {}
+
+    # Precompute hallucination info so we can surface it for 'safety' criterion
+    penalty_cfg = rubric.scoring.get("hallucination_penalty", 0.0)
+    hallu = hallucination_score(full_text, inventory, penalty=penalty_cfg)
 
     # First pass: pattern criteria
     for c in rubric.criteria:
@@ -36,21 +42,54 @@ def score_answer(answer: str, rubric: Rubric, inventory: Inventory) -> Dict[str,
             pattern_weight = 0.0
             grounding_weight = c.weight
 
-        if c.patterns_any:
-            ok = contains_any(t, c.patterns_any)
-            if c.required and not ok:
+        # Select text scope: section body if specified and present; otherwise full answer
+        scoped_text = full_text
+        if c.section:
+            # find section by case-insensitive match
+            key = c.section.strip().lower()
+            scoped_text = ""
+            for title, body in sections.items():
+                if title.strip().lower() == key:
+                    scoped_text = body
+                    break
+            if not scoped_text:
+                # Section requested but not found
                 ok_required = False
-            if ok:
-                score += pattern_weight
+
+        # Special-case: map 'safety' criterion to hallucination detector if not otherwise specified
+        if c.id.strip().lower() == "safety" and not c.patterns_any and not c.requires_grounding:
+            score = c.weight if not bool(hallu.get("has_hallucination")) else 0.0
+            per_crit[c.id] = {"score": score / max(c.weight, 1e-9), "via": "hallucination"}
+            points += score
+            continue
+
+        ok = True
+        # patterns_any with optional min_any threshold
+        if c.patterns_any:
+            from ..utils.text import count_any
+            cnt = count_any(scoped_text, c.patterns_any)
+            min_req = c.min_any if isinstance(c.min_any, int) and c.min_any > 0 else 1
+            ok = ok and (cnt >= min_req)
+        # patterns_all must all appear
+        if c.patterns_all:
+            for p in c.patterns_all:
+                if not contains_any(scoped_text, [p]):
+                    ok = False
+                    break
+        if c.required and not ok:
+            ok_required = False
+        if ok and (c.patterns_any or c.patterns_all or not c.requires_grounding):
+            # award pattern-based portion if condition satisfied
+            score += pattern_weight
         if c.anti_patterns:
             for ap in c.anti_patterns:
-                if contains_any(t, [ap]):
+                if contains_any(scoped_text, [ap]):
                     # negate this criterion
                     score = 0.0
                     ok_required = False
                     break
         if c.requires_grounding:
-            g = groundedness(t, inventory)
+            g = groundedness(full_text, inventory)
             min_refs = c.min_refs or 0
             if len(g["true_positive"]) >= min_refs:
                 score += grounding_weight or c.weight
@@ -64,8 +103,6 @@ def score_answer(answer: str, rubric: Rubric, inventory: Inventory) -> Dict[str,
         points += score
 
     # Hallucination safety penalty
-    penalty_cfg = rubric.scoring.get("hallucination_penalty", 0.0)
-    hallu = hallucination_score(t, inventory, penalty=penalty_cfg)
     penalty = hallu["penalty"]
     points = max(points - penalty, 0.0)
 

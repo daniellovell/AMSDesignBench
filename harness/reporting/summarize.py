@@ -51,7 +51,7 @@ def main():
     print("Summary:")
     print(f"  Total: {total}, Pass: {passed} ({(passed/total*100 if total else 0):.1f}%)")
     if total:
-        print("  Family Averages (raw):")
+        print("  Topic Averages (raw):")
         for k, v in fam.items():
             avg = v["avg"] / max(v["n"], 1)
             print(f"    {k}: {avg:.2f} over {v['n']}")

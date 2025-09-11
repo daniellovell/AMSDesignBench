@@ -51,7 +51,7 @@ def aggregates(recs: List[Dict[str, Any]]):
 
     for r in recs:
         m = r.get("model", "unknown")
-        fam = r.get("family", "?")
+        fam = r.get("topic") or r.get("family", "?")
         mod = r.get("modality", "?")
         raw = float(r.get("scores", {}).get("raw", 0.0))
         per_model[m]["n"] += 1
@@ -76,7 +76,7 @@ def aggregates(recs: List[Dict[str, Any]]):
 
 def write_csv(path: Path, recs: List[Dict[str, Any]]):
     fields = [
-        "model", "family", "item_id", "question_id", "rubric_id", "modality", "split",
+        "model", "family", "item_id", "question_id", "rubric_id", "rubric_path", "modality", "split",
         "raw", "pass", "judge_overall", "raw_blended", "hallucination_penalty", "grounded_ratio",
     ]
     with path.open("w", newline="") as f:
@@ -99,6 +99,7 @@ def write_csv(path: Path, recs: List[Dict[str, Any]]):
                 "item_id": r.get("item_id"),
                 "question_id": r.get("question_id"),
                 "rubric_id": r.get("rubric_id"),
+                "rubric_path": r.get("rubric_path"),
                 "modality": r.get("modality"),
                 "split": r.get("split"),
                 "raw": r.get("scores", {}).get("raw"),
@@ -123,7 +124,7 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
     # Build a map of unique (family, item_id, question_id) -> list of records per model
     groups: Dict[Tuple[str, str, str], Dict[str, Dict[str, Any]]] = defaultdict(dict)
     for r in recs:
-        key = (r.get("family", "?"), r.get("item_id", "?"), r.get("question_id", "?"))
+        key = ((r.get("topic") or r.get("family", "?")), r.get("item_id", "?"), r.get("question_id", "?"))
         groups[key][r.get("model", "unknown")] = r
 
     def model_header_cells():
@@ -135,9 +136,20 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
         for m in models:
             r = recs_by_model.get(m)
             raw = float(r.get("scores", {}).get("raw", 0.0)) if r else None
+            judge_overall = None
+            blended = None
+            if r:
+                j = r.get("judge") or {}
+                if isinstance(j.get("overall"), (int, float)):
+                    judge_overall = float(j["overall"])
+                if isinstance(r.get("raw_blended"), (int, float)):
+                    blended = float(r.get("raw_blended"))
             color = color_for_score(raw)
-            disp = f"{raw:.2f}" if raw is not None else "-"
-            cells.append(f"<td style=\"background:{color}\">{esc(disp)}</td>")
+            raw_str = f"{raw:.2f}" if raw is not None else "-"
+            judge_str = f"{judge_overall:.2f}" if judge_overall is not None else "-"
+            blend_str = f"{blended:.2f}" if blended is not None else "-"
+            disp = f"{raw_str}/{judge_str}/{blend_str}"
+            cells.append(f"<td style=\"background:{color}\"><span title=\"raw/judged/blended\">{esc(disp)}</span></td>")
         return "".join(cells)
 
     # HTML
@@ -178,9 +190,11 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
         fam, item_id, qid = key
         rec_any = next(iter(groups[key].values()))
         mod = rec_any.get("modality", "?")
+        track = rec_any.get("track", "?")
+        aspect = rec_any.get("aspect", "-")
         rub = rec_any.get("rubric_id", "?")
         item_rel = f"items/{esc(fam)}/{esc(item_id)}_{esc(qid)}.html"
-        row = f"<tr><td><a href='{item_rel}'>{esc(fam)}/{esc(item_id)}</a></td><td>{esc(qid)}</td><td>{esc(mod)}</td><td>{esc(rub)}</td>"
+        row = f"<tr><td><a href='{item_rel}'>{esc(fam)}/{esc(item_id)}</a></td><td>{esc(qid)}</td><td>{esc(track)}</td><td>{esc(mod)}</td><td>{esc(aspect)}</td><td>{esc(rub)}</td>"
         row += model_score_cells(key)
         qrows.append(row + "</tr>")
 
@@ -215,7 +229,7 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
 
   <h3>Per-Question Scores</h3>
   <table class="small">
-    <tr><th>Item</th><th>QID</th><th>Modality</th><th>Rubric</th>{model_header_cells()}</tr>
+    <tr><th>Item</th><th>QID</th><th>Track</th><th>Modality</th><th>Aspect</th><th>Rubric</th>{model_header_cells()}</tr>
     {''.join(qrows)}
   </table>
 </div>
@@ -254,7 +268,14 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
         any_rec = next(iter(by_model.values()))
         prompt_text = any_rec.get("prompt") or "(prompt not recorded in results)"
         modality = any_rec.get("modality", "?")
+        track = any_rec.get("track", "?")
+        aspect = any_rec.get("aspect", "-")
         rubric_id = any_rec.get("rubric_id", "?")
+        rubric_path = any_rec.get("rubric_path", "")
+        artifact_text = any_rec.get("artifact") or ""
+        artifact_path = any_rec.get("artifact_path") or ""
+        rand_info = any_rec.get("artifact_randomization") or {}
+        rand_seed = rand_info.get("seed") if isinstance(rand_info, dict) else None
 
         # Build per-model blocks
         blocks = []
@@ -296,10 +317,12 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
             answer = r.get("answer", "")
             answer_html = f"<details><summary>View answer</summary><div class=mono>{esc(answer)}</div></details>"
             raw_str = f"{float(raw):.3f}" if isinstance(raw, (int, float)) else "-"
+            blended_val = r.get("raw_blended")
+            blended_str = f"{float(blended_val):.3f}" if isinstance(blended_val, (int, float)) else "-"
             pass_str = " ✅" if passed else ""
             hallu_str = f"{float(hallu):.2f}" if isinstance(hallu, (int, float)) else "-"
             blocks.append(
-                f"<tr><td>{esc(m)}</td><td>{raw_str}{pass_str}</td>"
+                f"<tr><td>{esc(m)}</td><td>{raw_str}{pass_str}</td><td>{blended_str}</td>"
                 f"<td>{hallu_str}</td><td>{percrit_html}</td><td>{judge_html}</td><td>{answer_html}</td></tr>"
             )
 
@@ -319,13 +342,16 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
   <div><a href="../index.html">← Back to index</a></div>
   <h3>{esc(fam)}/{esc(item_id)} — {esc(qid)}</h3>
   <table class="small hdr">
-    <tr><td><b>Modality</b></td><td>{esc(modality)}</td><td><b>Rubric</b></td><td>{esc(rubric_id)}</td></tr>
+    <tr><td><b>Track</b></td><td>{esc(track)}</td><td><b>Modality</b></td><td>{esc(modality)}</td><td><b>Aspect</b></td><td>{esc(aspect)}</td><td><b>Rubric</b></td><td>{esc(rubric_id)}</td><td><b>Rubric File</b></td><td>{esc(rubric_path) if rubric_path else '-'}</td></tr>
   </table>
+  <h4>Artifact</h4>
+  <div class="mono">{esc(artifact_text) if artifact_text else '(artifact not recorded)'}</div>
+  <div class="small muted">Path: {esc(artifact_path) if artifact_path else '-'}{(' · Seed: ' + esc(rand_seed)) if rand_seed is not None else ''}</div>
   <h4>Prompt</h4>
   <div class="mono">{esc(prompt_text)}</div>
   <h4>Results</h4>
   <table class="small">
-    <tr><th>Model</th><th>Raw</th><th>Halluc. Pen.</th><th>Per-criterion</th><th>Judge</th><th>Answer</th></tr>
+    <tr><th>Model</th><th>Raw</th><th>Blended</th><th>Halluc. Pen.</th><th>Per-criterion</th><th>Judge</th><th>Answer</th></tr>
     {''.join(blocks)}
   </table>
 </body>
