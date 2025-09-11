@@ -4,11 +4,26 @@ AMS Oral Knowledge LLM Bench
 Qualitative, symbolic, and grounded benchmark for analog/mixed-signal IC design. Models read artifacts (SPICE netlists; other modalities are currently shelved), reason symbolically, and propose improvements. Scoring is rubric-based with groundedness checks; an optional LLM judge can be enabled.
 
 Quick start
-- Create a Python 3.10+ venv and install `requirements.txt`.
-- Single model: `python harness/run_eval.py --model dummy --split dev`.
-- Multiple models: `python harness/run_eval.py --models dummy openai:gpt-4o-mini --split dev`.
-  - Also supported: comma-separated via `--model openai:gpt-4o-mini,dummy`.
-  - Or set in `bench_config.yaml` under `eval.models: ["dummy", "openai:gpt-4o-mini"]` and run without `--model*` flags.
+- Create a Python 3.10+ venv and install `requirements.txt`:
+  ```bash
+  python3 -m venv venv
+  source venv/bin/activate  # On Windows: venv\Scripts\activate
+  pip install -r requirements.txt
+  ```
+- Set API keys (choose one or more adapters):
+  - OpenAI (required for OpenAI adapter and for the judge if enabled):
+    - `export OPENAI_API_KEY=...`
+  - Anthropic (for Anthropic adapter):
+    - `export ANTHROPIC_API_KEY=...`
+  - OpenRouter (multi-vendor via one endpoint):
+    - `export OPENROUTER_API_KEY=...`
+    - Optional: `export OPENROUTER_REFERER=...` and `export OPENROUTER_TITLE=...`
+
+- Run a model:
+  - Single model: `python harness/run_eval.py --model dummy --split dev`.
+  - Multiple models: `python harness/run_eval.py --models dummy openai:gpt-4o-mini --split dev`.
+    - Also supported: comma-separated via `--model openai:gpt-4o-mini,dummy`.
+    - Or set in `bench_config.yaml` under `eval.models: ["dummy", "openai:gpt-4o-mini"]` and run without `--model*` flags.
 - Parallelism:
   - Across models: runs in parallel by default. Control with `--model-workers N` (0 = all models concurrently).
   - Within a model: items/questions run concurrently. Control with `--item-workers N` (default 8).
@@ -38,12 +53,38 @@ Notes
 - ADL and Verilog-A modalities are temporarily shelved; SPICE netlists are used for analysis.
 - Deterministic rubric scoring + groundedness/hallucination checks by default; optional LLM judge available.
 
+Adapters and models
+- Model spec format: `adapter:model_name`. Examples:
+  - OpenAI: `openai:gpt-4o-mini`, `openai:gpt-5-mini`, `openai:gpt-5`
+  - Anthropic: `anthropic:claude-3-5-sonnet-latest`
+  - OpenRouter: `openrouter:anthropic/claude-3-5-sonnet-latest`, `openrouter:openai/gpt-5-mini`
+- Environment variables (required and optional):
+  - OpenAI:
+    - Required: `OPENAI_API_KEY`
+    - Optional: `OPENAI_MODEL` (default `gpt-4o-mini`), `OPENAI_TEMPERATURE`, `OPENAI_MAX_TOKENS`
+    - Judge (when `--use-judge`): `OPENAI_JUDGE_MODEL`, `OPENAI_JUDGE_TEMPERATURE`, `OPENAI_JUDGE_MAX_TOKENS`
+  - Anthropic:
+    - Required: `ANTHROPIC_API_KEY`
+    - Optional: `ANTHROPIC_MODEL` (default `claude-3-5-sonnet-latest`), `ANTHROPIC_TEMPERATURE`, `ANTHROPIC_MAX_TOKENS` (adapter supplies a default if unset)
+  - OpenRouter:
+    - Required: `OPENROUTER_API_KEY`
+    - Optional: `OPENROUTER_MODEL`, `OPENROUTER_TEMPERATURE`, `OPENROUTER_MAX_TOKENS`, `OPENROUTER_REFERER`, `OPENROUTER_TITLE`
+- Notes on model quirks handled by the harness:
+  - OpenAI gpt‑5 family: rejects non-default `temperature` and prefers `max_completion_tokens`. The adapter auto-retries and, for gpt‑5, avoids hard caps to prevent empty outputs dominated by reasoning tokens.
+  - Anthropic Messages API: requires `max_tokens`. We pass a sensible default or your `ANTHROPIC_MAX_TOKENS`.
+
 OpenAI adapter and Judge
-- Env vars: set `OPENAI_API_KEY` and optionally `OPENAI_MODEL` (default `gpt-4o-mini`).
 - Run with OpenAI (default model): `python harness/run_eval.py --model openai --split dev`.
 - Specify a concrete OpenAI model: `--model openai:gpt-4o-mini` or include in `--models`.
-- Enable LLM judge: add `--use-judge` (optionally `--judge-model gpt-4o-mini`).
-- Results include `judge.overall` and `raw_blended` (80% deterministic + 20% judge).
+- Enable LLM judge: add `--use-judge` (optionally `--judge-model gpt-4o-mini`). Results include `judge.overall` and `raw_blended` (80% deterministic + 20% judge).
+
+Anthropic adapter
+- Run Anthropic directly: `python harness/run_eval.py --model anthropic:claude-3-5-sonnet-latest --split dev`.
+- Uses the Messages API (`system`, `messages`, `max_tokens`); text is assembled from returned content blocks.
+
+OpenRouter adapter
+- Run via OpenRouter (multi-vendor): `python harness/run_eval.py --model openrouter:anthropic/claude-3-5-sonnet-latest --split dev`.
+- Uses an OpenAI-compatible Chat Completions client pointed at `https://openrouter.ai/api/v1`.
 
 Human-readable report
 - Compact HTML tables summarize models and per-question scores; side-by-side per-item pages include:
