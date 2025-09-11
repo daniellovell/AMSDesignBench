@@ -8,7 +8,8 @@
       "desc": "Explicitly identifies single-stage current-mirror OTA with high-swing output path.",
       "required": true,
       "section": "Topology",
-      "patterns_any": ["current mirror OTA", "high-swing"],
+      "patterns_any": ["current mirror", "high-swing", "single-stage"],
+      "min_any": 2,
       "anti_patterns": ["cascode", "two-stage"],
       "weight": 0.10
     },

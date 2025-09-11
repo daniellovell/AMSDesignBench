@@ -16,7 +16,17 @@
       "id": "key_relation",
       "desc": "States GBW ≈ gm/CL for one-stage OTA and conditions for validity.",
       "required": true,
-      "patterns_any": ["gm/C_L", "g_m/C_L", "GBW ~ gm/CL", "UGF ≈ gm/C_L", "GBW ≈ gm/CL", "GBW ~= gm/CL"],
+      "patterns_any": [
+        "gm/C_L",
+        "g_m/C_L",
+        "GBW ~ gm/CL",
+        "UGF ≈ gm/C_L",
+        "GBW ≈ gm/CL",
+        "GBW ~= gm/CL",
+        "\\frac{g_m}{C_L}",
+        "\\frac{g_m}{C_{load}}",
+        "$\\frac{g_m}{C_L}$"
+      ],
       "anti_patterns": ["ro*C_L sets GBW", "CL/gm"],
       "weight": 0.25
     },

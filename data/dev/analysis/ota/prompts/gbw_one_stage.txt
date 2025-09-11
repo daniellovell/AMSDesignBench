@@ -14,21 +14,4 @@ Guidance:
 - In Grounded evidence: cite element IDs and nets from the artifact (e.g., `M1`, `M2`, `Cload`, `vout`).
 - Avoid generic statements without conditions. Do not assume Miller/two-stage unless visible in the artifact.
 
-Example (for format only — adapt to THIS circuit, do not copy):
-
-## Topology
-Single-stage differential pair with current-mirror load; high-swing path present at vout.
-
-## Assumptions
-Unity-gain use (β≈1), dominant pole at vout, devices in saturation.
-
-## Key relation
-GBW ≈ (gm/CL)·k, where k is the mirror ratio from the inner load to the output path. If no mirror scaling, GBW ≈ gm/CL.
-
-## Grounded evidence
-`M1`, `M2` form the input transconductor (gm); `Cload` at `vout`; mirror devices `M4/M6` connect load current to `vout`.
-
-## Answer
-Under unity-gain conditions with a dominant output pole, GBW is set by gm/CL (scaled by k if the output path mirrors the inner load).
-
 Return markdown only.

@@ -15,13 +15,13 @@ Guidance:
 
 Examples (for format only — pick the one that matches this circuit and adapt):
 
-Example A — One-stage differential OTA with current-mirror load:
+Example A
   r_out ≈ r_o/2 (half-circuit approximation with mirrored load). Conditions: symmetry, large ro.
 
-Example B — Telescopic/folded cascode:
+Example B 
   r_out ≈ (gm·r_o^2)/2 per side, leading to higher output resistance; requires high ro and proper biasing.
 
-Example C — High-swing mirror at vout:
+Example C
   r_out ≈ r_op ∥ r_on (parallel of PMOS and NMOS output resistances tied to vout).
 
 Return markdown only.
