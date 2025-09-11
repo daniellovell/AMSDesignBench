@@ -53,6 +53,26 @@ def get_adapter(name: str, **kwargs):
                 ADAPTERS["openai"] = build_openai
             except Exception:
                 pass
+        # Optional Anthropic adapter
+        try:
+            mod3 = importlib.import_module("harness.adapters.anthropic")
+            ADAPTERS["anthropic"] = getattr(mod3, "build")
+        except Exception:
+            try:
+                from .adapters.anthropic import build as build_anthropic
+                ADAPTERS["anthropic"] = build_anthropic
+            except Exception:
+                pass
+        # Optional OpenRouter adapter
+        try:
+            mod4 = importlib.import_module("harness.adapters.openrouter")
+            ADAPTERS["openrouter"] = getattr(mod4, "build")
+        except Exception:
+            try:
+                from .adapters.openrouter import build as build_openrouter
+                ADAPTERS["openrouter"] = build_openrouter
+            except Exception:
+                pass
     if name not in ADAPTERS:
         raise ValueError(f"Unknown adapter: {name}")
     build_fn = ADAPTERS[name]
@@ -74,6 +94,12 @@ def parse_model_spec(spec: str) -> tuple[str, Dict[str, Any]]:
         rest = rest.strip()
         # For OpenAI, map to underlying model name
         if name == "openai" and rest:
+            return name, {"model": rest}
+        # For Anthropic, map to underlying model name
+        if name == "anthropic" and rest:
+            return name, {"model": rest}
+        # For OpenRouter, pass model name through
+        if name == "openrouter" and rest:
             return name, {"model": rest}
         # Future adapters can parse additional kv-pairs here
         return name, {}
