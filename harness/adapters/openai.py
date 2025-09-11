@@ -49,16 +49,74 @@ class OpenAIAdapter(BaseAdapter):
                 f"{prompt}\n"
             )
 
-            resp = self.client.chat.completions.create(
-                model=self.model,
-                temperature=self.temperature,
-                max_tokens=self.max_tokens,
-                messages=[
+            # Build a flexible params dict and adapt on common OpenAI param errors.
+            params: Dict[str, Any] = {
+                "model": self.model,
+                "messages": [
                     {"role": "system", "content": SYS_PROMPT},
                     {"role": "user", "content": user},
                 ],
-            )
-            text = resp.choices[0].message.content or ""
+                "temperature": self.temperature,
+                "max_tokens": self.max_tokens,
+            }
+            # gpt-5 family can consume the entire completion budget as reasoning
+            # and return empty text when a hard cap is set. Prefer no cap.
+            if "gpt-5" in str(self.model).lower():
+                params.pop("max_tokens", None)
+                # Temperature typically unsupported for gpt-5; let default apply
+                params.pop("temperature", None)
+            # Some models (gpt-5 family) only support default temperature; retry without it.
+            # Some models require max_completion_tokens instead of max_tokens.
+            for _ in range(3):
+                try:
+                    resp = self.client.chat.completions.create(**params)
+                    break
+                except Exception as e:
+                    emsg = str(getattr(e, "message", e))
+                    txt = (emsg or str(e)).lower()
+                    adapted = False
+                    if "max_tokens" in txt and "max_completion_tokens" in txt:
+                        params.pop("max_tokens", None)
+                        params["max_completion_tokens"] = self.max_tokens
+                        adapted = True
+                    if "temperature" in txt and ("unsupported" in txt or "does not support" in txt or "only the default" in txt):
+                        params.pop("temperature", None)
+                        adapted = True
+                    if not adapted:
+                        raise
+            # Extract text; if empty, fall back to Responses API for newer models
+            text = (getattr(resp.choices[0].message, "content", None) or "").strip()
+            if not text:
+                try:
+                    r2 = self.client.responses.create(
+                        model=self.model,
+                        instructions=SYS_PROMPT,
+                        input=user,
+                        max_output_tokens=self.max_tokens,
+                    )
+                    text = (getattr(r2, "output_text", None) or "").strip()
+                    if not text:
+                        # Attempt structured extraction
+                        try:
+                            d = r2.model_dump()  # type: ignore[attr-defined]
+                        except Exception:
+                            d = {}
+                        # Look for output.content[...].text
+                        out_list = d.get("output") or d.get("outputs") or []
+                        if isinstance(out_list, list):
+                            for out in out_list:
+                                cont = (out or {}).get("content") or []
+                                if isinstance(cont, list):
+                                    for part in cont:
+                                        t = part.get("text") or part.get("content")
+                                        if isinstance(t, str) and t.strip():
+                                            text = t.strip()
+                                            break
+                                    if text:
+                                        break
+                except Exception:
+                    # Keep text as empty if Responses API is unavailable/unsupported
+                    pass
             outs.append(text)
         return outs
 
