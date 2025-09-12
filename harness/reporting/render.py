@@ -135,21 +135,14 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
         recs_by_model = groups.get(key, {})
         for m in models:
             r = recs_by_model.get(m)
-            raw = float(r.get("scores", {}).get("raw", 0.0)) if r else None
             judge_overall = None
-            blended = None
             if r:
                 j = r.get("judge") or {}
                 if isinstance(j.get("overall"), (int, float)):
                     judge_overall = float(j["overall"])
-                if isinstance(r.get("raw_blended"), (int, float)):
-                    blended = float(r.get("raw_blended"))
-            color = color_for_score(raw)
-            raw_str = f"{raw:.2f}" if raw is not None else "-"
+            color = color_for_score(judge_overall)
             judge_str = f"{judge_overall:.2f}" if judge_overall is not None else "-"
-            blend_str = f"{blended:.2f}" if blended is not None else "-"
-            disp = f"{raw_str}/{judge_str}/{blend_str}"
-            cells.append(f"<td style=\"background:{color}\"><span title=\"raw/judged/blended\">{esc(disp)}</span></td>")
+            cells.append(f"<td style=\"background:{color}\"><span title=\"judged\">{esc(judge_str)}</span></td>")
         return "".join(cells)
 
     # HTML
@@ -170,18 +163,13 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
     a:hover { text-decoration: underline; }
     """
 
-    # Leaderboard
+    # Leaderboard (judge-only rendering)
     leader_rows = []
     for m in models:
         a = per_model[m]
-        n = max(a["n"], 1)
-        pass_rate = a["pass"] / n * 100.0
-        raw_avg = a["raw_sum"] / n
         judge_avg = a["judge_sum"] / a["judge_n"] if a["judge_n"] else None
-        blended_avg = a["blended_sum"] / a["blended_n"] if a["blended_n"] else None
-        row = f"<tr><td>{esc(m)}</td><td>{a['n']}</td><td>{pass_rate:.1f}%</td><td>{raw_avg:.3f}</td>"
+        row = f"<tr><td>{esc(m)}</td><td>{a['n']}</td>"
         row += f"<td>{judge_avg:.3f}</td>" if judge_avg is not None else "<td>-</td>"
-        row += f"<td>{blended_avg:.3f}</td>" if blended_avg is not None else "<td>-</td>"
         leader_rows.append(row + "</tr>")
 
     # Per-question table
@@ -213,7 +201,7 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
     <div class="box">
       <b>Models</b>
       <table class="small">
-        <tr><th>Model</th><th>n</th><th>Pass</th><th>Raw</th><th>Judge</th><th>Blended</th></tr>
+        <tr><th>Model</th><th>n</th><th>Judge</th></tr>
         {''.join(leader_rows)}
       </table>
     </div>
@@ -284,25 +272,9 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
             if not r:
                 continue
             scores = r.get("scores", {})
-            raw = scores.get("raw")
-            passed = scores.get("pass")
-            hallu = (scores.get("hallucination") or {}).get("penalty")
             judge = r.get("judge") or {}
             judge_overall = judge.get("overall")
-            per = scores.get("per_criterion") or {}
-            # per-criterion rows
-            prows = []
-            for cid, v in per.items():
-                if isinstance(v, dict):
-                    sc = v.get("score")
-                    g = v.get("groundedness") or {}
-                    gratio = g.get("ratio") if isinstance(g.get("ratio"), (int, float)) else None
-                    bg = color_for_score(sc if isinstance(sc, (int, float)) else None)
-                    sc_str = f"{sc:.2f}" if isinstance(sc, (int, float)) else "-"
-                    gr_str = f"{gratio:.2f}" if isinstance(gratio, (int, float)) else "-"
-                    prows.append(f"<tr><td>{esc(cid)}</td><td style=\"background:{bg}\" class=score>{esc(sc_str)}</td><td>{esc(gr_str)}</td></tr>")
-            percrit_html = "<table class=small><tr><th>Criterion</th><th>Score</th><th>Gnd.</th></tr>" + "".join(prows) + "</table>"
-
+            # Judge breakdown
             judge_rows = []
             if isinstance(judge, dict) and isinstance(judge.get("scores"), dict):
                 for jc, jv in judge["scores"].items():
@@ -316,14 +288,8 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
 
             answer = r.get("answer", "")
             answer_html = f"<details><summary>View answer</summary><div class=mono>{esc(answer)}</div></details>"
-            raw_str = f"{float(raw):.3f}" if isinstance(raw, (int, float)) else "-"
-            blended_val = r.get("raw_blended")
-            blended_str = f"{float(blended_val):.3f}" if isinstance(blended_val, (int, float)) else "-"
-            pass_str = " ✅" if passed else ""
-            hallu_str = f"{float(hallu):.2f}" if isinstance(hallu, (int, float)) else "-"
             blocks.append(
-                f"<tr><td>{esc(m)}</td><td>{raw_str}{pass_str}</td><td>{blended_str}</td>"
-                f"<td>{hallu_str}</td><td>{percrit_html}</td><td>{judge_html}</td><td>{answer_html}</td></tr>"
+                f"<tr><td>{esc(m)}</td><td>{judge_html}</td><td>{answer_html}</td></tr>"
             )
 
         html_out = f"""
@@ -351,7 +317,7 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
   <div class="mono">{esc(prompt_text)}</div>
   <h4>Results</h4>
   <table class="small">
-    <tr><th>Model</th><th>Raw</th><th>Blended</th><th>Halluc. Pen.</th><th>Per-criterion</th><th>Judge</th><th>Answer</th></tr>
+    <tr><th>Model</th><th>Judge</th><th>Answer</th></tr>
     {''.join(blocks)}
   </table>
 </body>
@@ -364,16 +330,13 @@ def write_markdown(path: Path, recs: List[Dict[str, Any]]):
     per_model, _, _ = aggregates(recs)
     models = sorted(per_model.keys())
     lines = ["# AMS Oral Bench Report", "", "## Models"]
-    lines.append("Model | n | Pass% | Raw | Judge | Blended")
-    lines.append(":--|--:|--:|--:|--:|--:")
+    # Judge-only rendering
+    lines.append("Model | n | Judge")
+    lines.append(":--|--:|--:")
     for m in models:
         a = per_model[m]
-        n = max(a["n"], 1)
-        pass_rate = a["pass"] / n * 100.0
-        raw_avg = a["raw_sum"] / n
         judge_avg = a["judge_sum"] / a["judge_n"] if a["judge_n"] else None
-        blended_avg = a["blended_sum"] / a["blended_n"] if a["blended_n"] else None
-        lines.append(f"{m} | {a['n']} | {pass_rate:.1f}% | {raw_avg:.3f} | {('-' if judge_avg is None else f'{judge_avg:.3f}')} | {('-' if blended_avg is None else f'{blended_avg:.3f}')}")
+        lines.append(f"{m} | {a['n']} | {('-' if judge_avg is None else f'{judge_avg:.3f}')}")
     path.write_text("\n".join(lines), encoding="utf-8")
 
 

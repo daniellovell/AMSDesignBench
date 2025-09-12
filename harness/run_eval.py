@@ -588,7 +588,30 @@ def main():
                     from .scoring.judge_anchored import judge_answer as judge_call  # type: ignore
                 except Exception:
                     from harness.scoring.judge_anchored import judge_answer as judge_call  # type: ignore
-                judge = judge_call(pred, rubric.model_dump(), ktext, refs, model=args.judge_model)
+                # Build a compact inventory summary for the judge (token-efficient)
+                def _inventory_summary() -> Dict[str, Any]:
+                    alias_map = it.inventory.alias_map()
+                    allowed = sorted(set(alias_map.keys()))
+                    canonical_map = {k: v for k, v in alias_map.items() if k != v}
+                    # Heuristic synonyms to reduce false negatives
+                    if "CL" in alias_map.values():
+                        canonical_map.setdefault("Cload", "CL")
+                        if "Cload" not in allowed:
+                            allowed.append("Cload")
+                    # Ground reference synonyms
+                    if any(n.strip().upper() == "0" or n.strip() == "0" for n in it.inventory.nets):
+                        for syn in ("GND", "VSS"):
+                            canonical_map.setdefault(syn, "0")
+                            if syn not in allowed:
+                                allowed.append(syn)
+                    # Case-insensitive matching hint (judge treats as case-insensitive)
+                    return {
+                        "allowed_ids": sorted(allowed),
+                        "canonical_map": canonical_map,
+                    }
+
+                inv_summary = _inventory_summary()
+                judge = judge_call(pred, rubric.model_dump(), ktext, refs, inv_summary, model=args.judge_model)
                 if judge and isinstance(judge.get("scores"), dict):
                     j_scores = judge["scores"]
                     if "overall" not in judge:

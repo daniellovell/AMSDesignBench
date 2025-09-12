@@ -12,7 +12,7 @@
     "M7": {"type": "mos", "role": "nmos_diode_ref",  "nets": ["nmir", "nmir", "0"],   "aliases": ["nref"]},
     "M8": {"type": "mos", "role": "nmos_mirror_out",  "nets": ["nmir", "vout", "0"],   "aliases": ["nout"]},
 
-    "CL": {"type": "cap", "role": "load", "nets": ["vout", "0"]}
+    "Cload": {"type": "cap", "role": "load", "nets": ["vout", "0"]}
   },
   "nets": ["vinp", "vinn", "n1", "n2", "nmir", "ntail", "vout", "VDD", "vbias_n", "0"],
   "blocks": {}

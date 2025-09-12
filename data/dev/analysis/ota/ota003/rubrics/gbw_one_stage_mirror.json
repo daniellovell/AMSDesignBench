@@ -17,9 +17,8 @@
       "id": "key_relation",
       "desc": "States GBW ≈ (gm/CL) multiplied by the mirror ratio k from the inner 5T core to the output devices: GBW ≈ (gm/CL)·k.",
       "required": true,
-      "patterns_any": ["gm/CL", "g_m/C_L", "UGF ≈ gm/C_L", "GBW ≈ gm/CL", "(gm/CL)*k", "gm/CL * k", "mirror ratio", "k", "k_mirror"],
-      "min_any": 2,
-      "anti_patterns": ["ro*C_L sets GBW", "CL/gm", "gm*CL"],
+      "patterns_any": ["k*gm/CL", "(gm/CL)*k", "gm/CL * k"],
+      "anti_patterns": ["ro*C_L sets GBW", "CL/gm", "gm*CL", "gm/C_L"],
       "weight": 0.25
     },
     {
@@ -30,8 +29,8 @@
     },
     {
       "id": "mirror_definition",
-      "desc": "Defines k as the current gain from the diode-connected PMOS in the inner 5T load to the output PMOS/NMOS devices (left branch mirrored through NMOS, right branch directly to vout).",
-      "patterns_any": ["diode-connected PMOS", "output PMOS", "NMOS mirror", "current gain", "left branch", "right branch"],
+      "desc": "Defines a current gain from the diode-connected PMOS in the inner 5T load to the output PMOS/NMOS devices (left branch mirrored through NMOS, right branch directly to vout).",
+      "patterns_any": ["mirror ratio", "current gain", "current mirror"],
       "weight": 0.10
     },
     {

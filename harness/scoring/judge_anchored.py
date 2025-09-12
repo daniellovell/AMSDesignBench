@@ -29,6 +29,7 @@ def judge_answer(
     rubric_json: Dict[str, Any],
     knowledge_snippets: str,
     refs: Dict[str, Any],
+    inventory: Optional[Dict[str, Any]] = None,
     model: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
     client = _client()
@@ -40,12 +41,17 @@ def judge_answer(
         "knowledge": knowledge_snippets,
         "refs": refs,
         "answer": answer,
+        "inventory": inventory or {},
     }
     instr = (
         "Score the answer per-criterion with values in [0,1]."
         " Required output format (JSON only):\n"
         "{\n  \"scores\": { \"<criterion_id>\": <float 0..1>, ... },\n  \"overall\": <float 0..1>\n}\n"
         "Do not include any other keys or text."
+        "\nConstraints for grounding/topology:"
+        " Use only identifiers/nets present in inventory.allowed_ids (case-insensitive)"
+        " or mapped via inventory.canonical_map (e.g., 'Cload'→'CL', 'GND'→'0')."
+        " Treat any cited identifiers not in this set as ungrounded/hallucinated and reflect in those criteria."
     )
     messages = [
         {"role": "system", "content": JUDGE_SYS},

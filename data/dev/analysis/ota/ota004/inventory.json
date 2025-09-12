@@ -7,7 +7,7 @@
     "M5": { "type": "mos", "role": "tail_source",      "nets": ["ntail", "0"], "aliases": ["tail"] },
     "M6": { "type": "mos", "role": "second_stage_nmos", "nets": ["vout", "vint", "0"], "aliases": ["gm6", "ro6"] },
     "M7": { "type": "mos", "role": "pmos_load",         "nets": ["vout", "vbp", "vdd"], "aliases": ["ro7"] },
-    "CL": { "type": "cap", "role": "load",               "nets": ["vout", "0"], "aliases": ["CL"] }
+    "Cload": { "type": "cap", "role": "load",               "nets": ["vout", "0"], "aliases": ["CL", "Cload", "C_load"] }
   },
   "nets": [
     "vinp", "vinn", "n1", "vint", "ntail", "vout", "vdd", "vbp", "vbn", "0"
