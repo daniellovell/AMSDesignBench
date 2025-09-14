@@ -101,7 +101,6 @@ The repository is organized as follows:
 | Path                        | Description                                                                  |
 | :-------------------------- | :--------------------------------------------------------------------------- |
 | `harness/`                  | The core evaluation harness, including the runner, model adapters, and scoring logic. |
-| `data/`                     | Contains the dataset, split into `dev`, `test`, and `train` sets.            |
 | `data/`                     | Dataset root, split into `dev`, `test`, `train`. Each split contains families (e.g., `analysis/`, `debugging/`, `design/`) and a shared `templates/` tree.            |
 | `prompts/`                  | Prompt templates used for generating model inputs.                           |
 | `rubrics/`                  | Scoring rubrics associated with evaluation questions.                        |
