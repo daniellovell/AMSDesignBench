@@ -46,8 +46,11 @@ def aggregates(recs: List[Dict[str, Any]]):
         "blended_sum": 0.0,
         "blended_n": 0,
     })
-    per_family = defaultdict(lambda: defaultdict(lambda: {"n": 0, "raw_sum": 0.0}))
-    per_modality = defaultdict(lambda: defaultdict(lambda: {"n": 0, "raw_sum": 0.0}))
+    # Nested dicts keyed by [group][model]
+    def _mk():
+        return {"n": 0, "raw_sum": 0.0, "judge_sum": 0.0, "judge_n": 0}
+    per_family = defaultdict(lambda: defaultdict(_mk))
+    per_modality = defaultdict(lambda: defaultdict(_mk))
 
     for r in recs:
         m = r.get("model", "unknown")
@@ -68,8 +71,14 @@ def aggregates(recs: List[Dict[str, Any]]):
 
         per_family[fam][m]["n"] += 1
         per_family[fam][m]["raw_sum"] += raw
+        if isinstance(j, dict) and isinstance(j.get("overall"), (int, float)):
+            per_family[fam][m]["judge_sum"] += float(j["overall"])
+            per_family[fam][m]["judge_n"] += 1
         per_modality[mod][m]["n"] += 1
         per_modality[mod][m]["raw_sum"] += raw
+        if isinstance(j, dict) and isinstance(j.get("overall"), (int, float)):
+            per_modality[mod][m]["judge_sum"] += float(j["overall"])
+            per_modality[mod][m]["judge_n"] += 1
 
     return per_model, per_family, per_modality
 
@@ -172,6 +181,48 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
         row += f"<td>{judge_avg:.3f}</td>" if judge_avg is not None else "<td>-</td>"
         leader_rows.append(row + "</tr>")
 
+    # Families table (judge-only)
+    fam_tables = []
+    if per_family:
+        fam_rows = []
+        fams = sorted(per_family.keys())
+        for fam in fams:
+            by_model = per_family[fam]
+            for m in models:
+                a = by_model.get(m, {})
+                n = a.get("n", 0)
+                jn = a.get("judge_n", 0)
+                javg = (a.get("judge_sum", 0.0) / jn) if jn else None
+                fam_rows.append(
+                    f"<tr><td>{esc(fam)}</td><td>{esc(m)}</td><td>{n}</td>" + (f"<td>{javg:.3f}</td>" if javg is not None else "<td>-</td>") + "</tr>"
+                )
+        fam_table = (
+            "<div class=box><b>Families</b><table class=small>"
+            "<tr><th>Family</th><th>Model</th><th>n</th><th>Judge</th></tr>" + "".join(fam_rows) + "</table></div>"
+        )
+        fam_tables.append(fam_table)
+
+    # Modalities table (judge-only)
+    mod_tables = []
+    if per_modality:
+        mod_rows = []
+        mods = sorted(per_modality.keys())
+        for mod in mods:
+            by_model = per_modality[mod]
+            for m in models:
+                a = by_model.get(m, {})
+                n = a.get("n", 0)
+                jn = a.get("judge_n", 0)
+                javg = (a.get("judge_sum", 0.0) / jn) if jn else None
+                mod_rows.append(
+                    f"<tr><td>{esc(mod)}</td><td>{esc(m)}</td><td>{n}</td>" + (f"<td>{javg:.3f}</td>" if javg is not None else "<td>-</td>") + "</tr>"
+                )
+        mod_table = (
+            "<div class=box><b>Modalities</b><table class=small>"
+            "<tr><th>Modality</th><th>Model</th><th>n</th><th>Judge</th></tr>" + "".join(mod_rows) + "</table></div>"
+        )
+        mod_tables.append(mod_table)
+
     # Per-question table
     qrows = []
     for key in sorted(groups.keys()):
@@ -205,6 +256,8 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
         {''.join(leader_rows)}
       </table>
     </div>
+    {''.join(fam_tables)}
+    {''.join(mod_tables)}
     <div class="box">
       <b>Downloads</b>
       <ul>
