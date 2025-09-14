@@ -102,6 +102,7 @@ The repository is organized as follows:
 | :-------------------------- | :--------------------------------------------------------------------------- |
 | `harness/`                  | The core evaluation harness, including the runner, model adapters, and scoring logic. |
 | `data/`                     | Contains the dataset, split into `dev`, `test`, and `train` sets.            |
+| `data/`                     | Dataset root, split into `dev`, `test`, `train`. Each split contains families (e.g., `analysis/`, `debugging/`, `design/`) and a shared `templates/` tree.            |
 | `prompts/`                  | Prompt templates used for generating model inputs.                           |
 | `rubrics/`                  | Scoring rubrics associated with evaluation questions.                        |
 | `knowledge/`                | Knowledge anchor documents used by the LLM judge for consistent scoring.     |
@@ -111,3 +112,24 @@ The repository is organized as follows:
 ## Reproducibility
 
 Runs are designed to be deterministic. The randomization of SPICE netlists is controlled by per-item seeds, which are derived from `meta.json` and logged with each result. This ensures that evaluations can be reproduced consistently given the same dataset and configuration.
+
+## Families and Templates
+
+- Families: The harness supports multiple evaluation families under each split (e.g., `data/dev/analysis`, `data/dev/debugging`, `data/dev/design`). Family directories contain items (e.g., `ota/ota001/`) with family-specific `questions.jsonl`, `rubrics/`, and `refs.json`.
+- Shared templates: Common circuit sources live under `data/<split>/templates/` (e.g., `data/dev/templates/ota/ota001/`). Place canonical artifacts there (`netlist.sp`, `inventory.json`, optionally `design.adl`, `veriloga.va`).
+- Referencing templates:
+  - In each item’s `meta.json`, set `"template_path": "../../templates/<family>/<item_id>"` (relative to the item directory).
+  - In `questions.jsonl`, set `"artifact_path"` to the desired artifact in the template (e.g., `../../templates/ota/ota001/netlist.sp`). If omitted, the harness falls back to the local artifact filename.
+  - The harness resolves inventory from the template if `template_path` is defined; otherwise it uses a local `inventory.json` if present.
+
+This structure avoids duplication across families while keeping family-specific prompts, rubrics, and refs close to their items.
+
+### Debugging family
+
+- For items under `data/<split>/debugging/...`, the harness can programmatically inject faults into the template netlist.
+- The initial fault type is a device polarity swap (NMOS↔PMOS). For each debugging question with `modality: "spice_netlist"`, the runner loads the template `netlist.sp` and deterministically flips the model of one randomly chosen MOS device (`nch`↔`pch` or `NMOS`↔`PMOS`).
+- The injected `swapped_id`, `from_type`, and `to_type` are passed to the judge via `refs`, enabling rubric/LLM-as-judge to verify that the answer names the correct device and fix.
+
+### Design family
+
+- For items under `data/<split>/design/...`, prompts ask the model to synthesize a structure/netlist. No artifact is required; rubric checks focus on topology description and presence of a plausible SPICE-like netlist.

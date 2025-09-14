@@ -1,0 +1,16 @@
+You are an expert analog IC designer.
+From the {modality} artifact, diagnose why the OTA shows poor DC bias/low gain.
+
+Required sections (use these exact headers):
+- Symptoms
+- Fault
+- Grounded evidence
+- Fix
+- Answer
+
+Guidance:
+- In Fault: identify the specific device that is the wrong transistor type (e.g., an NMOS input device instantiated as PMOS) and explain the impact on biasing/gain.
+- In Grounded evidence: cite the exact element ID and show the problematic line or node context from the artifact.
+- In Fix: propose a concrete change (e.g., change `pch` to `nch` for M1 and correct body tie), and mention any node re-ties needed.
+
+Return markdown only.

@@ -128,14 +128,17 @@ def load_questions(item_dir: Path) -> List[Question]:
         try:
             meta = json.loads(meta_path.read_text())
             mlist = meta.get("modalities") or []
+            tpl_rel = meta.get("template_path") or meta.get("template")
+            tpl_dir = (item_dir / tpl_rel).resolve() if isinstance(tpl_rel, str) and tpl_rel.strip() else None
             if isinstance(mlist, list):
                 for m in mlist:
                     m_str = str(m)
                     m_canon = canonical_modality.get(m_str, m_str)
                     if m_canon in artifact_by_modality:
-                        # include only if artifact exists
-                        ap = item_dir / artifact_by_modality[m_canon]
-                        if ap.exists():
+                        ap_name = artifact_by_modality[m_canon]
+                        exists_local = (item_dir / ap_name).exists()
+                        exists_tpl = bool(tpl_dir and (tpl_dir / ap_name).exists())
+                        if exists_local or exists_tpl:
                             available_modalities.append(m_canon)
         except Exception:
             pass
@@ -171,7 +174,8 @@ def load_questions(item_dir: Path) -> List[Question]:
                 qdict = dict(raw)
                 qdict["id"] = f"{base_id}_{m}"
                 qdict["modality"] = m
-                qdict["artifact_path"] = ap
+                # Respect explicit artifact_path if provided (e.g., template-relative path)
+                qdict["artifact_path"] = qdict.get("artifact_path") or ap
                 out.append(Question.model_validate(qdict))
         else:
             # Normalize modality and artifact path if missing
@@ -184,19 +188,45 @@ def load_questions(item_dir: Path) -> List[Question]:
 
 
 def load_inventory(item_dir: Path) -> Inventory:
-    inv = json.loads((item_dir / "inventory.json").read_text())
-    return Inventory.model_validate(inv)
+    """Load inventory for an item.
+    Prefers local inventory.json; if missing, supports template indirection via meta.json:
+      { "template_path": "../../templates/ota/ota001" }
+    The template path is resolved relative to the item_dir.
+    """
+    # Prefer template if meta.json declares template_path
+    meta_path = item_dir / "meta.json"
+    if meta_path.exists():
+        try:
+            meta = json.loads(meta_path.read_text())
+            tpath = meta.get("template_path") or meta.get("template") or None
+            if isinstance(tpath, str) and tpath.strip():
+                tpl_dir = (item_dir / tpath).resolve()
+                inv_file = tpl_dir / "inventory.json"
+                if inv_file.exists():
+                    inv = json.loads(inv_file.read_text())
+                    return Inventory.model_validate(inv)
+        except Exception:
+            pass
+    # Fallback to local inventory.json
+    local = item_dir / "inventory.json"
+    if local.exists():
+        inv = json.loads(local.read_text())
+        return Inventory.model_validate(inv)
+    raise FileNotFoundError(f"inventory.json not found for item {item_dir}")
 
 
 def iter_items(split_dir: Path) -> List[EvalItem]:
     items: List[EvalItem] = []
-    # Recursively discover item directories that contain required files
+    # Recursively discover item directories that contain questions, with inventory either local or via template
     for item_dir in sorted([p for p in split_dir.rglob("*") if p.is_dir()]):
-        inv_path = item_dir / "inventory.json"
         q_path = item_dir / "questions.jsonl"
-        if not inv_path.exists() or not q_path.exists():
+        if not q_path.exists():
             continue
-        inv = load_inventory(item_dir)
+        try:
+            inv = load_inventory(item_dir)
+        except Exception:
+            # Skip directories without a resolvable inventory
+            continue
         qs = load_questions(item_dir)
         items.append(EvalItem(item_dir=str(item_dir), inventory=inv, questions=qs))
     return items
@@ -492,6 +522,63 @@ def main():
         out_lines.extend(tails)
         return '\n'.join(out_lines) + ('\n' if text.endswith('\n') else '')
 
+    def inject_device_swap_spice(text: str, seed: int):
+        """Randomly swap one MOSFET device type: NMOS<->PMOS or nch<->pch.
+        Returns (mutated_text, swapped_id, from_type, to_type). If no eligible
+        devices found, returns (text, None, None, None).
+        """
+        rnd = random.Random(seed)
+        lines = text.splitlines()
+        # Find eligible MOS lines and parse tokens
+        candidates = []  # (index, id, model_token_index, model_token_value)
+        for idx, raw in enumerate(lines):
+            s = raw.strip()
+            if not s or s.startswith(('*', ';', '//')):
+                continue
+            # Simple SPICE: MOS line starts with 'M'
+            if not s or s[0].upper() != 'M':
+                continue
+            # Tokenize by whitespace
+            parts = s.split()
+            if not parts:
+                continue
+            dev_id = parts[0]
+            # Model token is typically the 6th token for 4-terminal + model name
+            # But be flexible: search for first token equal to nmos/pmos/nch/pch
+            model_idx = None
+            model_val = None
+            for j, tok in enumerate(parts[1:], start=1):
+                t = tok.strip()
+                tl = t.lower()
+                if tl in ("nch", "pch", "nmos", "pmos"):
+                    model_idx = j
+                    model_val = t
+                    break
+            if model_idx is None or not model_val:
+                continue
+            candidates.append((idx, dev_id, model_idx, model_val))
+
+        if not candidates:
+            return text, None, None, None
+        # Pick a device deterministically
+        pick = rnd.choice(candidates)
+        idx, dev_id, model_idx, model_val = pick
+        parts = lines[idx].strip().split()
+        old = parts[model_idx]
+        tl = old.lower()
+        if tl in ("nch", "nmos"):
+            new = "pch" if tl == "nch" else ("PMOS" if old.isupper() else "pmos")
+            from_type, to_type = "NMOS", "PMOS"
+        elif tl in ("pch", "pmos"):
+            new = "nch" if tl == "pch" else ("NMOS" if old.isupper() else "nmos")
+            from_type, to_type = "PMOS", "NMOS"
+        else:
+            return text, None, None, None
+        parts[model_idx] = new
+        # Replace line (preserve original spacing roughly by joining with single spaces)
+        lines[idx] = " ".join(parts)
+        return "\n".join(lines) + ("\n" if text.endswith("\n") else ""), dev_id, from_type, to_type
+
     def run_for_model(slug: str):
         nonlocal total
         adapter = adapters[slug]
@@ -520,7 +607,51 @@ def main():
                     artifact_text = ""
             artifact_used = artifact_text
             rand_info: Dict[str, Any] = {}
-            if q.modality == "spice_netlist" and artifact_text:
+            # Debugging support: generate bugged artifact from template if requested
+            bug_info: Dict[str, Any] = {}
+            if str(q.track).lower() == "debugging" and q.modality == "spice_netlist":
+                # Try to load template netlist regardless of local artifact
+                meta_path = item_dir / "meta.json"
+                tpl_net = None
+                if meta_path.exists():
+                    try:
+                        m = json.loads(meta_path.read_text())
+                        tpath = m.get("template_path") or m.get("template")
+                        if isinstance(tpath, str) and tpath.strip():
+                            tdir = (item_dir / tpath).resolve()
+                            tnet = tdir / "netlist.sp"
+                            if tnet.exists():
+                                tpl_net = tnet.read_text()
+                    except Exception:
+                        tpl_net = None
+                base_text = tpl_net or artifact_text
+                # Inject single-device polarity swap if possible
+                meta_seed = None
+                mpath = item_dir / "meta.json"
+                if mpath.exists():
+                    try:
+                        mm = json.loads(mpath.read_text())
+                        ms = mm.get("gen_seed")
+                        if isinstance(ms, int):
+                            meta_seed = ms
+                    except Exception:
+                        meta_seed = None
+                if meta_seed is None:
+                    meta_seed = int.from_bytes(hashlib.sha256(str(item_dir).encode()).digest()[:8], 'big')
+                bug_seed = int.from_bytes(hashlib.sha256(f"{meta_seed}:{Path(it.item_dir).name}:{q.id}:bug".encode()).digest()[:8], 'big')
+                mutated, dev_id, from_t, to_t = inject_device_swap_spice(base_text or "", bug_seed)
+                if dev_id:
+                    artifact_used = mutated
+                    bug_info = {
+                        "bug_type": "device_polarity_swap",
+                        "swapped_id": dev_id,
+                        "from_type": from_t,
+                        "to_type": to_t,
+                    }
+                else:
+                    artifact_used = base_text
+
+            if q.modality == "spice_netlist" and artifact_used:
                 meta_seed = None
                 mpath = item_dir / "meta.json"
                 if mpath.exists():
@@ -537,7 +668,7 @@ def main():
                     hashlib.sha256(f"{meta_seed}:{Path(it.item_dir).name}:{q.id}".encode()).digest()[:8],
                     'big',
                 )
-                artifact_used = randomize_spice(artifact_text, per_item_seed)
+                artifact_used = randomize_spice(artifact_used, per_item_seed)
                 rand_info = {"seed": per_item_seed}
 
             # Predict
@@ -578,12 +709,14 @@ def main():
                         ktext = kpath.read_text()
                         knowledge_cache[q.rubric_id] = ktext
             refs_path = item_dir / "refs.json"
-            refs = {}
+            refs: Dict[str, Any] = {}
             if refs_path.exists():
                 try:
                     refs = json.loads(refs_path.read_text())
                 except Exception:
                     refs = {}
+            if bug_info:
+                refs = {**(refs or {}), **bug_info}
             try:
                 from .scoring.judge_anchored import judge_answer as judge_call  # type: ignore
             except Exception:

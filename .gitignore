@@ -63,3 +63,7 @@ scripts/**/.cache/
 
 # Agents
 AGENTS.md
+
+observable/src/data/**
+observable/public/data/**
+observable/src/public/data/**

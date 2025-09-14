@@ -2,7 +2,8 @@
   "topology": "two_stage",
   "gen_seed": 404,
   "modalities": ["spice_netlist"],
-  "bench_version": "0.1.0"
+  "bench_version": "0.1.0",
+  "template_path": "../../../templates/ota/ota004"
 }
 
 

@@ -1,0 +1,2 @@
+{"id":"ota003_design_high_swing","track":"design","modality":"design","artifact_path":"__none__","rubric_id":"design_high_swing_single_stage","rubric_path":"rubrics/design_high_swing_single_stage.json","prompt_template":"../prompts/design_ota.txt","require_sections":["Topology","Structure","Netlist","Answer"],"answer_format":"markdown","meta":{"topology":"one_stage_ota","bench_version":"0.1.0","aspect":"structure"}}
+

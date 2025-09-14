@@ -1,0 +1,16 @@
+You are an expert analog IC designer.
+Synthesize the structure of a {modality} OTA based on the requested topology.
+
+Required sections (use these exact headers):
+- Topology
+- Structure
+- Netlist
+- Answer
+
+Guidance:
+- In Topology: restate the requested OTA style (e.g., five-transistor current-mirror OTA) in one sentence.
+- In Structure: describe the device roles and connections (diff pair, tail current source, PMOS mirror to VDD, output node) concisely.
+- In Netlist: emit a minimal SPICE-like netlist with placeholder widths/lengths (e.g., W=?, L=?). Focus on devices and connectivity; naming is flexible.
+  Include supply and load nodes (e.g., VDD, 0, vout). Use a fenced code block with ```spice.
+
+Return markdown only.
