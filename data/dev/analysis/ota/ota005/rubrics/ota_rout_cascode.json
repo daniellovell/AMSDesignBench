@@ -5,20 +5,20 @@
   "criteria": [
     {
       "id": "topology",
-      "desc": "Identifies fully differential cascoded (telescopic/folded) one-stage OTA in the Topology section.",
+      "desc": "Identifies single-ended cascoded (telescopic/folded) one-stage OTA in the Topology section.",
       "required": true,
       "section": "Topology",
-      "patterns_any": ["cascode", "cascoded", "telescopic", "folded cascode", "differential", "fully differential"],
+      "patterns_any": ["cascode", "cascoded", "telescopic", "folded cascode", "single-ended", "single ended"],
       "min_any": 2,
-      "anti_patterns": ["single-ended"],
+      "anti_patterns": ["fully differential"],
       "weight": 0.10
     },
     {
       "id": "key_relation",
-      "desc": "States r_out ≈ (gm*ro^2)/2 for cascoded effective output resistance (per side) leading to differential output.",
+      "desc": "States r_out ≈ (gm*ro^2)/2 per side (effective) for cascoded output path; clarify small-signal conditions.",
       "required": true,
       "patterns_any": ["gm*ro^2/2", "g_m*r_o^2/2", "g_m ro^2 / 2", "gm ro^2 / 2"],
-      "anti_patterns": ["ro/2", "r_o/2"],
+      "anti_patterns": ["ro/2"],
       "weight": 0.25
     },
     {
@@ -29,7 +29,7 @@
     },
     {
       "id": "grounding",
-      "desc": "References real elements from inventory (e.g., M1/M2, cascode devices if present, vout).",
+      "desc": "References real elements from inventory (e.g., NMOS/PMOS devices tied to vop).",
       "requires_grounding": true,
       "min_refs": 2,
       "weight": 0.20
@@ -42,3 +42,4 @@
   ],
   "scoring": { "hallucination_penalty": 0.25, "min_pass": 0.70 }
 }
+

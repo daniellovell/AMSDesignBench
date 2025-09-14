@@ -1,4 +1,5 @@
 {"id":"ota003_gbw","track":"analysis","modality":"auto","rubric_id":"gbw_one_stage_mirror","rubric_path":"rubrics/gbw_one_stage_mirror.json","prompt_template":"gbw_one_stage.txt","require_sections":["Topology","Assumptions","Key relation","Grounded evidence","Answer"],"answer_format":"markdown","meta":{"topology":"one_stage_ota","bench_version":"0.1.0","aspect":"gbw"}}
 {"id":"ota003_rout","track":"analysis","modality":"auto","rubric_id":"ota_rout_high_swing","rubric_path":"rubrics/ota_rout_high_swing.json","prompt_template":"ota_rout.txt","require_sections":["Topology","Assumptions","Key relation","Grounded evidence","Answer"],"answer_format":"markdown","meta":{"topology":"one_stage_ota","bench_version":"0.1.0","aspect":"rout"}}
+{"id":"ota003_swing","track":"analysis","modality":"auto","rubric_id":"ota_swing_high_swing","rubric_path":"rubrics/ota_swing_high_swing.json","prompt_template":"ota_swing.txt","require_sections":["Topology","Assumptions","Key relation","Grounded evidence","Answer"],"answer_format":"markdown","meta":{"topology":"one_stage_ota","bench_version":"0.1.0","aspect":"swing"}}
 
 

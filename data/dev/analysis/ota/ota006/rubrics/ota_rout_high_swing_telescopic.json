@@ -1,35 +1,35 @@
 {
-  "rubric_id": "ota_rout_cascode",
+  "rubric_id": "ota_rout_high_swing_telescopic",
   "version": "0.1.0",
   "weights": { "correctness": 0.45, "completeness": 0.25, "groundedness": 0.20, "safety": 0.10 },
   "criteria": [
     {
       "id": "topology",
-      "desc": "Identifies fully differential cascoded (telescopic/folded) one-stage OTA in the Topology section.",
+      "desc": "Identifies single-stage telescopic high-swing OTA (single-ended) with cascoded output path at vop.",
       "required": true,
       "section": "Topology",
-      "patterns_any": ["cascode", "cascoded", "telescopic", "folded cascode", "differential", "fully differential"],
+      "patterns_any": ["single-stage", "telescopic", "cascod", "high-swing", "single-ended"],
       "min_any": 2,
-      "anti_patterns": ["single-ended"],
+      "anti_patterns": ["fully differential", "two-stage"],
       "weight": 0.10
     },
     {
       "id": "key_relation",
-      "desc": "States r_out ≈ (gm*ro^2)/2 for cascoded effective output resistance (per side) leading to differential output.",
+      "desc": "States telescopic cascoded r_out: (gm·ro^2)_p ∥ (gm·ro^2)_n ≈ (gm·ro^2)/2 at vop.",
       "required": true,
-      "patterns_any": ["gm*ro^2/2", "g_m*r_o^2/2", "g_m ro^2 / 2", "gm ro^2 / 2"],
-      "anti_patterns": ["ro/2", "r_o/2"],
+      "patterns_any": ["gm*ro^2/2", "g_m*r_o^2/2", "gm ro^2 / 2", "g_m ro^2 / 2"],
+      "anti_patterns": ["ro/2"],
       "weight": 0.25
     },
     {
       "id": "assumptions",
       "desc": "Mentions small-signal, cascoding, stacked devices, and conditions (matching, high ro).",
-      "patterns_any": ["cascod", "stack", "small-signal", "matching", "high ro"],
+      "patterns_any": ["small-signal", "cascod", "stack", "matching", "high ro"],
       "weight": 0.10
     },
     {
       "id": "grounding",
-      "desc": "References real elements from inventory (e.g., M1/M2, cascode devices if present, vout).",
+      "desc": "References real elements from inventory (e.g., M6 at vop and M1 NMOS cascode to vop).",
       "requires_grounding": true,
       "min_refs": 2,
       "weight": 0.20

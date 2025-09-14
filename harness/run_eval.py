@@ -218,11 +218,11 @@ def main():
     )
     ap.add_argument("--split", default="dev", help="data split: train|dev|test")
     ap.add_argument("--max-items", type=int, default=0, help="limit items")
-    ap.add_argument("--use-judge", action="store_true", help="enable OpenAI LLM judge for anchored scoring")
     ap.add_argument("--judge-model", default=None, help="override judge model name")
     ap.add_argument("--model-workers", type=int, default=0, help="parallel model workers (0 = run all models in parallel)")
     ap.add_argument("--item-workers", type=int, default=8, help="per-model concurrent workers for items/questions")
     args = ap.parse_args()
+    # Judge is always enabled; no flag required
 
     # Load bench config (YAML)
     import yaml
@@ -566,56 +566,59 @@ def main():
 
             # Judge
             judge = None
-            if args.use_judge:
-                kpath = Path("knowledge") / f"{q.rubric_id}.md"
-                if not kpath.exists():
-                    alt = Path("knowledge") / "const_gm_currents.md"
-                    ktext = alt.read_text() if alt.exists() else ""
-                else:
-                    with knowledge_lock:
-                        ktext = knowledge_cache.get(q.rubric_id)
-                        if ktext is None:
-                            ktext = kpath.read_text()
-                            knowledge_cache[q.rubric_id] = ktext
-                refs_path = item_dir / "refs.json"
-                refs = {}
-                if refs_path.exists():
-                    try:
-                        refs = json.loads(refs_path.read_text())
-                    except Exception:
-                        refs = {}
+            # Always run judge (anchored scoring)
+            kpath = Path("knowledge") / f"{q.rubric_id}.md"
+            if not kpath.exists():
+                alt = Path("knowledge") / "const_gm_currents.md"
+                ktext = alt.read_text() if alt.exists() else ""
+            else:
+                with knowledge_lock:
+                    ktext = knowledge_cache.get(q.rubric_id)
+                    if ktext is None:
+                        ktext = kpath.read_text()
+                        knowledge_cache[q.rubric_id] = ktext
+            refs_path = item_dir / "refs.json"
+            refs = {}
+            if refs_path.exists():
                 try:
-                    from .scoring.judge_anchored import judge_answer as judge_call  # type: ignore
+                    refs = json.loads(refs_path.read_text())
                 except Exception:
-                    from harness.scoring.judge_anchored import judge_answer as judge_call  # type: ignore
-                # Build a compact inventory summary for the judge (token-efficient)
-                def _inventory_summary() -> Dict[str, Any]:
-                    alias_map = it.inventory.alias_map()
-                    allowed = sorted(set(alias_map.keys()))
-                    canonical_map = {k: v for k, v in alias_map.items() if k != v}
-                    # Heuristic synonyms to reduce false negatives
-                    if "CL" in alias_map.values():
-                        canonical_map.setdefault("Cload", "CL")
-                        if "Cload" not in allowed:
-                            allowed.append("Cload")
-                    # Ground reference synonyms
-                    if any(n.strip().upper() == "0" or n.strip() == "0" for n in it.inventory.nets):
-                        for syn in ("GND", "VSS"):
-                            canonical_map.setdefault(syn, "0")
-                            if syn not in allowed:
-                                allowed.append(syn)
-                    # Case-insensitive matching hint (judge treats as case-insensitive)
-                    return {
-                        "allowed_ids": sorted(allowed),
-                        "canonical_map": canonical_map,
-                    }
+                    refs = {}
+            try:
+                from .scoring.judge_anchored import judge_answer as judge_call  # type: ignore
+            except Exception:
+                from harness.scoring.judge_anchored import judge_answer as judge_call  # type: ignore
+            # Build a compact inventory summary for the judge (token-efficient)
+            def _inventory_summary() -> Dict[str, Any]:
+                alias_map = it.inventory.alias_map()
+                allowed = sorted(set(alias_map.keys()))
+                canonical_map = {k: v for k, v in alias_map.items() if k != v}
+                # Heuristic synonyms to reduce false negatives
+                if "CL" in alias_map.values():
+                    canonical_map.setdefault("Cload", "CL")
+                    if "Cload" not in allowed:
+                        allowed.append("Cload")
+                # Ground reference synonyms
+                if any(n.strip().upper() == "0" or n.strip() == "0" for n in it.inventory.nets):
+                    for syn in ("GND", "VSS"):
+                        canonical_map.setdefault(syn, "0")
+                        if syn not in allowed:
+                            allowed.append(syn)
+                # Case-insensitive matching hint (judge treats as case-insensitive)
+                return {
+                    "allowed_ids": sorted(allowed),
+                    "canonical_map": canonical_map,
+                }
 
-                inv_summary = _inventory_summary()
+            inv_summary = _inventory_summary()
+            try:
                 judge = judge_call(pred, rubric.model_dump(), ktext, refs, inv_summary, model=args.judge_model)
-                if judge and isinstance(judge.get("scores"), dict):
-                    j_scores = judge["scores"]
-                    if "overall" not in judge:
-                        judge["overall"] = sum(j_scores.values())/len(j_scores) if j_scores else 0.0
+            except Exception:
+                judge = None
+            if judge and isinstance(judge.get("scores"), dict):
+                j_scores = judge["scores"]
+                if "overall" not in judge:
+                    judge["overall"] = sum(j_scores.values())/len(j_scores) if j_scores else 0.0
 
             # Topic/family
             try:

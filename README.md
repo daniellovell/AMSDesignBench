@@ -1,7 +1,7 @@
 AMS Oral Knowledge LLM Bench
 =================================
 
-Qualitative, symbolic, and grounded benchmark for analog/mixed-signal IC design. Models read artifacts (SPICE netlists; other modalities are currently shelved), reason symbolically, and propose improvements. Scoring is rubric-based with groundedness checks; an optional LLM judge can be enabled.
+Qualitative, symbolic, and grounded benchmark for analog/mixed-signal IC design. Models read artifacts (SPICE netlists; other modalities are currently shelved), reason symbolically, and propose improvements. Scoring is rubric-based with groundedness checks; an LLM judge is always enabled for anchored scoring.
 
 Quick start
 - Create a Python 3.10+ venv and install `requirements.txt`:
@@ -49,9 +49,9 @@ Design goals
 - Symbolic, not numeric; grounded by inventory; rubric-based scoring (no simulator required).
 
 Notes
-- Current dataset: OTA analysis tasks (GBW and Rout) under `data/dev/analysis/ota/*`.
+- Current dataset: OTA analysis tasks (GBW, Rout, and Output Swing) under `data/dev/analysis/ota/*`.
 - ADL and Verilog-A modalities are temporarily shelved; SPICE netlists are used for analysis.
-- Deterministic rubric scoring + groundedness/hallucination checks by default; optional LLM judge available.
+- Deterministic rubric scoring + groundedness/hallucination checks, with an always-on LLM judge.
 
 Adapters and models
 - Model spec format: `adapter:model_name`. Examples:
@@ -62,7 +62,7 @@ Adapters and models
   - OpenAI:
     - Required: `OPENAI_API_KEY`
     - Optional: `OPENAI_MODEL` (default `gpt-4o-mini`), `OPENAI_TEMPERATURE`, `OPENAI_MAX_TOKENS`
-    - Judge (when `--use-judge`): `OPENAI_JUDGE_MODEL`, `OPENAI_JUDGE_TEMPERATURE`, `OPENAI_JUDGE_MAX_TOKENS`
+    - Judge: `OPENAI_JUDGE_MODEL`, `OPENAI_JUDGE_TEMPERATURE`, `OPENAI_JUDGE_MAX_TOKENS`
   - Anthropic:
     - Required: `ANTHROPIC_API_KEY`
     - Optional: `ANTHROPIC_MODEL` (default `claude-3-5-sonnet-latest`), `ANTHROPIC_TEMPERATURE`, `ANTHROPIC_MAX_TOKENS` (adapter supplies a default if unset)
@@ -76,7 +76,13 @@ Adapters and models
 OpenAI adapter and Judge
 - Run with OpenAI (default model): `python harness/run_eval.py --model openai --split dev`.
 - Specify a concrete OpenAI model: `--model openai:gpt-4o-mini` or include in `--models`.
-- Enable LLM judge: add `--use-judge` (optionally `--judge-model gpt-4o-mini`). Results include `judge.overall` and `raw_blended` (80% deterministic + 20% judge).
+- Judge is always on; optionally set `--judge-model gpt-4o-mini`. Results include `judge.overall` and `raw_blended` (80% deterministic + 20% judge).
+
+Knowledge Anchors
+- The bench loads an optional knowledge anchor for each question by rubric id: `knowledge/<rubric_id>.md`.
+- The runner sends the rubric JSON, the knowledge snippet, refs (if any), the answer, and a compact inventory summary to the judge.
+- The judge returns per‑criterion scores in [0,1] and an overall; the harness records them and computes `raw_blended = 0.8 * deterministic_raw + 0.2 * judge_overall`.
+- If no rubric‑specific file exists, the judge falls back to a generic anchor when available.
 
 Anthropic adapter
 - Run Anthropic directly: `python harness/run_eval.py --model anthropic:claude-3-5-sonnet-latest --split dev`.
@@ -96,13 +102,13 @@ Human-readable report
 - Questions: each item defines one or more analysis questions with a rubric and required sections.
 - Rubrics: each question references an item-local rubric JSON via `rubric_path` (relative to the item directory). Global rubrics are not used.
 - Prompts: the runner embeds the artifact and prompt template; required sections must be present in responses.
-- Scoring: a deterministic rubric matches required statements and checks groundedness (referencing real IDs). Optional judge adds anchored, knowledge-aware scoring.
+- Scoring: a deterministic rubric matches required statements and checks groundedness (referencing real IDs). A judge is always invoked for anchored, knowledge-aware scoring; reports display judge scores.
 - Reports: results are written to `outputs/<run_id>/` and auto-rendered to `outputs/latest/report/index.html`.
 
 **Pretraining/Overfitting Mitigations**
 - Mandatory SPICE randomization: before prompting, the SPICE netlist is randomized per item/question and embedded in the prompt.
   - Shuffles device/source statement order while preserving `.model/.param/.control` headers and `.SUBCKT … .ENDS` blocks; continuation lines are kept with their device.
-  - Jitters sizes within safe bounds: MOS `W` ×[0.85, 1.15], `L` ×[0.95, 1.05]; capacitors ×[0.7, 1.3]. Units are preserved.
+  - Jitters sizes within safe bounds: MOS `W` *[0.85, 1.15], `L` *[0.95, 1.05]; capacitors *[0.7, 1.3]. Units are preserved.
   - Connectivity and topology are unchanged; instance/net names remain stable for groundedness.
   - Deterministic per-item seeds: derived from `meta.gen_seed` or a stable hash; the seed used is recorded in results as `artifact_randomization.seed`.
 - Topology identification required: prompts include a mandatory `Topology` section; rubrics require correct topology identification scoped to that section (prevents accidental credit elsewhere in the answer).

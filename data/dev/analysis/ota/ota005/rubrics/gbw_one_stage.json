@@ -5,12 +5,12 @@
   "criteria": [
     {
       "id": "topology",
-      "desc": "Identifies a fully differential telescopic/folded cascode one-stage OTA in the Topology section.",
+      "desc": "Identifies a single-ended telescopic/folded cascode one-stage OTA in the Topology section.",
       "required": true,
       "section": "Topology",
-      "patterns_any": ["telescopic", "folded cascode", "differential", "fully differential"],
+      "patterns_any": ["telescopic", "folded cascode", "single-ended", "single ended"],
       "min_any": 2,
-      "anti_patterns": ["two-stage", "miller compensation", "second stage", "single-ended"],
+      "anti_patterns": ["two-stage", "miller compensation", "second stage", "fully differential"],
       "weight": 0.10
     },
     {
@@ -24,18 +24,12 @@
     {
       "id": "assumptions",
       "desc": "Mentions dominant single pole, loop β≈1, sufficient phase margin.",
-      "patterns_any": ["dominant pole", "β≈1", "beta≈1", "unity-gain buffer", "single-pole", "unity gain"],
-      "weight": 0.10
-    },
-    {
-      "id": "exceptions",
-      "desc": "Notes exceptions (e.g., current-steering OTA, feedforward zeros).",
-      "patterns_any": ["current steering", "feedforward zero", "left-half-plane zero", "LHP zero", "RHP zero"],
+      "patterns_any": ["dominant pole", "β≈1", "beta≈1", "unity-gain", "single-pole", "unity gain"],
       "weight": 0.10
     },
     {
       "id": "grounding",
-      "desc": "References real elements (e.g., M1, CL, compensation cap) from inventory.",
+      "desc": "References real elements (e.g., M3/M4 for gm, C1 for CL, vop) from inventory.",
       "requires_grounding": true,
       "min_refs": 2,
       "weight": 0.20
@@ -48,3 +42,4 @@
   ],
   "scoring": { "hallucination_penalty": 0.25, "min_pass": 0.70 }
 }
+

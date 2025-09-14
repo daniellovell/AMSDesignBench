@@ -1,0 +1,14 @@
+{
+  "gbw_one_stage": [
+    "GBW ≈ gm/CL under single-pole unity-gain assumptions",
+    "Cite CL (C1) and input gm devices (M3/M4)"
+  ],
+  "ota_rout_high_swing_telescopic": [
+    "r_out at vop ≈ (gm·ro^2)_p ∥ (gm·ro^2)_n ≈ (gm·ro^2)/2",
+    "Telescopic cascode; small-signal; cite M6 at vop and M1 NMOS cascode"
+  ],
+  "ota_swing_high_swing_telescopic": [
+    "High-side: VDD - 2·V*; Low-side: 3·V* (tail + input + NMOS cascode)",
+    "Wide-swing mirror lets M6/M7 V* be small (can be ≪ VGS); single-ended vop"
+  ]
+}

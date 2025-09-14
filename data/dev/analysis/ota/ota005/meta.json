@@ -1,6 +1,6 @@
 {
-  "topology": "telescopic_cascode_ota",
-  "gen_seed": 102,
+  "topology": "telescopic_cascode_single_end",
+  "gen_seed": 105,
   "modalities": ["spice_netlist"],
   "bench_version": "0.1.0"
 }

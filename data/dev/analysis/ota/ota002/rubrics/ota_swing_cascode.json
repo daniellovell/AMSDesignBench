@@ -1,0 +1,61 @@
+{
+  "rubric_id": "ota_swing_cascode",
+  "version": "0.1.0",
+  "weights": { "correctness": 0.45, "completeness": 0.25, "groundedness": 0.20, "safety": 0.10 },
+  "criteria": [
+    {
+      "id": "topology",
+      "desc": "Identifies fully differential cascoded/telescopic one-stage OTA and the stacked devices tied to the outputs.",
+      "required": true,
+      "section": "Topology",
+      "patterns_any": ["cascode", "cascoded", "telescopic", "folded cascode", "differential", "fully differential"],
+      "min_any": 2,
+      "anti_patterns": ["single-ended"],
+      "weight": 0.10
+    },
+    {
+      "id": "high_limit",
+      "desc": "High-side swing: vout_max ≈ VDD - (sum or max of PMOS headrooms at vout), e.g., Vov_pcas + Vov_pmirror.",
+      "required": true,
+      "section": "Key relation",
+      "patterns_any": [
+        "VDD -", "VDD -", "PMOS headroom", "stacked PMOS", "Vov_p", "Vov of PMOS", "pcas", "mirror"
+      ],
+      "min_any": 2,
+      "anti_patterns": ["rail-to-rail", "no headroom"],
+      "weight": 0.20
+    },
+    {
+      "id": "low_limit",
+      "desc": "Low-side swing: vout_min set by stacked NMOS headrooms (tail + input + NMOS cascode) plus the PMOS cascode headroom above that internal node.",
+      "required": true,
+      "section": "Key relation",
+      "patterns_any": [
+        "tail", "input", "NMOS cascode", "ncas", "sum of headroom", "Vov_n", "stacked NMOS", "Vov_tail", "Vov_input"
+      ],
+      "min_any": 2,
+      "weight": 0.20
+    },
+    {
+      "id": "assumptions",
+      "desc": "Mentions keeping all stacked devices in saturation (headroom), defines Vov/V* and notes symmetry/matching if used.",
+      "section": "Assumptions",
+      "patterns_any": ["saturation", "headroom", "Vov", "V*", "ΔV", "stack"],
+      "min_any": 2,
+      "weight": 0.10
+    },
+    {
+      "id": "grounding",
+      "desc": "References real elements (e.g., M1/M2, M3/M4 cascodes, M6/M8 PMOS at vout, CL, vout).",
+      "requires_grounding": true,
+      "min_refs": 2,
+      "weight": 0.20
+    },
+    {
+      "id": "safety",
+      "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
+      "weight": 0.10
+    }
+  ],
+  "scoring": { "hallucination_penalty": 0.25, "min_pass": 0.70 }
+}
