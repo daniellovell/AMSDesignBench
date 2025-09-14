@@ -51,7 +51,7 @@ Design goals
 Notes
 - Current dataset: OTA analysis tasks (GBW, Rout, and Output Swing) under `data/dev/analysis/ota/*`.
 - ADL and Verilog-A modalities are temporarily shelved; SPICE netlists are used for analysis.
-- Deterministic rubric scoring + groundedness/hallucination checks, with an always-on LLM judge.
+- Deterministic rubric scoring + groundedness/hallucination checks, with an LLM judge.
 
 Adapters and models
 - Model spec format: `adapter:model_name`. Examples:
@@ -76,12 +76,12 @@ Adapters and models
 OpenAI adapter and Judge
 - Run with OpenAI (default model): `python harness/run_eval.py --model openai --split dev`.
 - Specify a concrete OpenAI model: `--model openai:gpt-4o-mini` or include in `--models`.
-- Judge is always on; optionally set `--judge-model gpt-4o-mini`. Results include `judge.overall` and `raw_blended` (80% deterministic + 20% judge).
+- Judge is always on; optionally set `--judge-model gpt-4o-mini`. Results include `judge.overall`.
 
 Knowledge Anchors
 - The bench loads an optional knowledge anchor for each question by rubric id: `knowledge/<rubric_id>.md`.
 - The runner sends the rubric JSON, the knowledge snippet, refs (if any), the answer, and a compact inventory summary to the judge.
-- The judge returns per‑criterion scores in [0,1] and an overall; the harness records them and computes `raw_blended = 0.8 * deterministic_raw + 0.2 * judge_overall`.
+- The judge returns per‑criterion scores in [0,1] and an overall; the harness records them.
 - If no rubric‑specific file exists, the judge falls back to a generic anchor when available.
 
 Anthropic adapter
