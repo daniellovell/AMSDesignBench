@@ -3,7 +3,6 @@ From the {modality} artifact, answer the question about unity-gain bandwidth (GB
 
 Required sections (use these exact headers):
 - Topology
-- Assumptions
 - Key relation
 - Grounded evidence
 - Answer

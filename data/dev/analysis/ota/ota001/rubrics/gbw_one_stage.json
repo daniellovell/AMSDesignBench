@@ -31,12 +31,6 @@
       "weight": 0.25
     },
     {
-      "id": "assumptions",
-      "desc": "Mentions dominant single pole, loop β≈1, sufficient phase margin.",
-      "patterns_any": ["dominant pole", "β≈1", "beta≈1", "unity-gain buffer", "single-pole", "unity gain"],
-      "weight": 0.10
-    },
-    {
       "id": "exceptions",
       "desc": "Notes exceptions (e.g., current-steering OTA, feedforward zeros).",
       "patterns_any": ["current steering", "feedforward zero", "left-half-plane zero", "LHP zero", "RHP zero"],
@@ -57,4 +51,3 @@
   ],
   "scoring": { "hallucination_penalty": 0.25, "min_pass": 0.70 }
 }
-

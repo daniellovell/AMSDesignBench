@@ -22,12 +22,6 @@
       "weight": 0.25
     },
     {
-      "id": "assumptions",
-      "desc": "Mentions unity-gain use (β≈1), pre-compensation (no Miller), dominant dynamics assumptions.",
-      "patterns_any": ["β≈1", "beta≈1", "unity gain", "no Miller", "pre-compensation"],
-      "weight": 0.10
-    },
-    {
       "id": "grounding",
       "desc": "References real elements (e.g., M1, M2, M4, M6, M7, CL) from inventory.",
       "requires_grounding": true,

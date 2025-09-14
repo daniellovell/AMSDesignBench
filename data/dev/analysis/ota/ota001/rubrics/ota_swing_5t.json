@@ -40,14 +40,6 @@
       "weight": 0.20
     },
     {
-      "id": "assumptions",
-      "desc": "Mentions saturation/headroom conditions and defines Vov/V*/ΔV.",
-      "section": "Assumptions",
-      "patterns_any": ["saturation", "headroom", "Vov", "V*", "ΔV"],
-      "min_any": 2,
-      "weight": 0.10
-    },
-    {
       "id": "grounding",
       "desc": "References real elements (e.g., M1/M2, Mtail, Mp1/Mp2, vout, VDD) from inventory.",
       "requires_grounding": true,
@@ -62,4 +54,3 @@
   ],
   "scoring": { "hallucination_penalty": 0.25, "min_pass": 0.70 }
 }
-

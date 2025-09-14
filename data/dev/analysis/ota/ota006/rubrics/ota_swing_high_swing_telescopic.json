@@ -33,17 +33,8 @@
     {
       "id": "wide_swing_note",
       "desc": "Notes wide-swing mirror biasing decouples M6/M7 V* from VGS; V* can be smaller (e.g., ~0.1V).",
-      "section": "Assumptions",
       "patterns_any": ["wide-swing", "wide swing", "diode", "separate bias", "V* smaller", "small overdrive", "0.1"],
       "min_any": 1,
-      "weight": 0.10
-    },
-    {
-      "id": "assumptions",
-      "desc": "States saturation/headroom conditions and uses Vov/V*/ΔV notation; single-ended output at vop.",
-      "section": "Assumptions",
-      "patterns_any": ["saturation", "headroom", "Vov", "V*", "ΔV", "single-ended"],
-      "min_any": 2,
       "weight": 0.10
     },
     {

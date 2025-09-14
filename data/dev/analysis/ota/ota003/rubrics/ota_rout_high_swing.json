@@ -22,12 +22,6 @@
       "weight": 0.25
     },
     {
-      "id": "assumptions",
-      "desc": "Mentions small-signal, identifies which devices connect to vout (PMOS mirror device and NMOS mirror device), and notes parallel combination; may mention channel-length modulation through mirrors.",
-      "patterns_any": ["small-signal", "parallel", "PMOS to VDD", "NMOS mirror", "channel-length modulation"],
-      "weight": 0.10
-    },
-    {
       "id": "grounding",
       "desc": "References real elements from inventory (e.g., PMOS at output M6 and NMOS mirror M8, vout).",
       "requires_grounding": true,

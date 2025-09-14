@@ -32,14 +32,6 @@
       "weight": 0.20
     },
     {
-      "id": "assumptions",
-      "desc": "Mentions saturation/headroom conditions and defines Vov/V*; may note first-stage nodes should remain saturated but output limit is set by second-stage devices.",
-      "section": "Assumptions",
-      "patterns_any": ["saturation", "headroom", "Vov", "V*", "ΔV"],
-      "min_any": 2,
-      "weight": 0.10
-    },
-    {
       "id": "grounding",
       "desc": "References real elements from inventory (e.g., M6, M7, vout, VDD).",
       "requires_grounding": true,
@@ -54,4 +46,3 @@
   ],
   "scoring": { "hallucination_penalty": 0.25, "min_pass": 0.70 }
 }
-

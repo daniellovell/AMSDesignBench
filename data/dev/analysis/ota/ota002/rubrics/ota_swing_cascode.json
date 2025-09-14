@@ -37,14 +37,6 @@
       "weight": 0.20
     },
     {
-      "id": "assumptions",
-      "desc": "Mentions keeping all stacked devices in saturation (headroom), defines Vov/V* and notes symmetry/matching if used.",
-      "section": "Assumptions",
-      "patterns_any": ["saturation", "headroom", "Vov", "V*", "ΔV", "stack"],
-      "min_any": 2,
-      "weight": 0.10
-    },
-    {
       "id": "grounding",
       "desc": "References real elements (e.g., M1/M2, M3/M4 cascodes, M6/M8 PMOS at vout, CL, vout).",
       "requires_grounding": true,

@@ -22,12 +22,6 @@
       "weight": 0.25
     },
     {
-      "id": "assumptions",
-      "desc": "Mentions small-signal, cascoding, stacked devices, and conditions (matching, high ro).",
-      "patterns_any": ["small-signal", "cascod", "stack", "matching", "high ro"],
-      "weight": 0.10
-    },
-    {
       "id": "grounding",
       "desc": "References real elements from inventory (e.g., M6 at vop and M1 NMOS cascode to vop).",
       "requires_grounding": true,

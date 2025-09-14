@@ -22,12 +22,6 @@
       "weight": 0.25
     },
     {
-      "id": "assumptions",
-      "desc": "Mentions dominant single pole, β≈1, matching in mirrors, neglects higher-order poles from mirrors for first-order GBW.",
-      "patterns_any": ["dominant pole", "β≈1", "matching", "single-pole", "unity gain"],
-      "weight": 0.10
-    },
-    {
       "id": "mirror_definition",
       "desc": "Defines a current gain from the diode-connected PMOS in the inner 5T load to the output PMOS/NMOS devices (left branch mirrored through NMOS, right branch directly to vout).",
       "patterns_any": ["mirror ratio", "current gain", "current mirror"],

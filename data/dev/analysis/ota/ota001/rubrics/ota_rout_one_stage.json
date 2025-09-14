@@ -21,12 +21,6 @@
       "weight": 0.25
     },
     {
-      "id": "assumptions",
-      "desc": "Mentions small-signal, symmetric half-circuits, current mirror load, neglecting channel-length modulation beyond ro, etc.",
-      "patterns_any": ["small-signal", "half-circuit", "current mirror", "symmetry", "linear region"],
-      "weight": 0.10
-    },
-    {
       "id": "grounding",
       "desc": "References real elements (e.g., M1/M2, Mp1/Mp2, CL, vout) from inventory.",
       "requires_grounding": true,
@@ -41,4 +35,3 @@
   ],
   "scoring": { "hallucination_penalty": 0.25, "min_pass": 0.70 }
 }
-

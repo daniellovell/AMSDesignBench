@@ -3,7 +3,6 @@ From the {modality} artifact, determine the small-signal output resistance (r_ou
 
 Required sections (use these exact headers):
 - Topology
-- Assumptions
 - Key relation
 - Grounded evidence
 - Answer

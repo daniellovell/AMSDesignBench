@@ -3,17 +3,16 @@ From the {modality} artifact, determine the large-signal output swing limits for
 
 Required sections (use these exact headers):
 - Topology
-- Assumptions
 - Key relation
 - Grounded evidence
 - Answer
 
 Guidance:
 - In Topology: explicitly name the topology (e.g., 5T single-stage, cascoded/telescopic, high-swing mirror, two-stage) and identify which devices connect to `vout` and to the supply rails.
-- In Assumptions: state that devices must remain in saturation (headroom/overdrive constraints); note any matching or symmetry assumptions, and define Vov (V*).
 - In Key relation: give symbolic expressions for both limits:
   • High-side limit (near VDD): vout_max ≈ VDD minus the required PMOS headroom(s) tied to `vout`.
   • Low-side limit (near GND): vout_min ≈ sum of the required NMOS headroom(s) tied to `vout` and any stacked devices that must remain saturated (tail, input pair, cascodes as applicable).
+- In Key relation: briefly state headroom/saturation conditions and, where used, define Vov (V*); note any minimal matching/symmetry conditions inline.
 - In Grounded evidence: cite real element IDs and nets from the artifact (e.g., `M1`, `M2`, `Mtail`, `Mp1`, `Mp2`, `M6`, `M8`, `vout`, `VDD`).
 - Prefer concise symbolic forms with Vov/ΔV/V* notation (e.g., Vov_p, Vov_n, Vov_tail).
 

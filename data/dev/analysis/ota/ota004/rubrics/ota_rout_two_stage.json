@@ -21,12 +21,6 @@
       "weight": 0.25
     },
     {
-      "id": "assumptions",
-      "desc": "Mentions small-signal, output node dominated by second-stage devices, channel-length modulation via ro, etc.",
-      "patterns_any": ["small-signal", "output node", "second stage", "r_o"],
-      "weight": 0.10
-    },
-    {
       "id": "grounding",
       "desc": "References real elements (e.g., M6, M7, vout) from inventory.",
       "requires_grounding": true,

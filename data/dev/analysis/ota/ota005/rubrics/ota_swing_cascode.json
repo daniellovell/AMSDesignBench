@@ -32,14 +32,6 @@
       "weight": 0.20
     },
     {
-      "id": "assumptions",
-      "desc": "States saturation/headroom conditions and Vov/V* definitions; single-ended output at vop.",
-      "section": "Assumptions",
-      "patterns_any": ["saturation", "headroom", "Vov", "V*", "ΔV", "single-ended"],
-      "min_any": 2,
-      "weight": 0.10
-    },
-    {
       "id": "grounding",
       "desc": "References real elements from inventory (e.g., M1/M2/M6/M7 at vop).",
       "requires_grounding": true,
@@ -54,4 +46,3 @@
   ],
   "scoring": { "hallucination_penalty": 0.25, "min_pass": 0.70 }
 }
-
