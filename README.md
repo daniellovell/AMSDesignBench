@@ -115,13 +115,24 @@ Runs are designed to be deterministic. The randomization of SPICE netlists is co
 ## Families and Templates
 
 - Families: The harness supports multiple evaluation families under each split (e.g., `data/dev/analysis`, `data/dev/debugging`, `data/dev/design`). Family directories contain items (e.g., `ota/ota001/`) with family-specific `questions.jsonl`, `rubrics/`, and `refs.json`.
-- Shared templates: Common circuit sources live under `data/<split>/templates/` (e.g., `data/dev/templates/ota/ota001/`). Place canonical artifacts there (`netlist.sp`, `inventory.json`, optionally `design.adl`, `veriloga.va`).
+- Shared templates: Common circuit sources live under `data/<split>/templates/` (e.g., `data/dev/templates/ota/ota001/`). Place canonical artifacts there (`netlist.sp`, `inventory.json`, optionally `veriloga.va`).
 - Referencing templates:
   - In each item’s `meta.json`, set `"template_path": "../../templates/<family>/<item_id>"` (relative to the item directory).
   - In `questions.jsonl`, set `"artifact_path"` to the desired artifact in the template (e.g., `../../templates/ota/ota001/netlist.sp`). If omitted, the harness falls back to the local artifact filename.
   - The harness resolves inventory from the template if `template_path` is defined; otherwise it uses a local `inventory.json` if present.
 
 This structure avoids duplication across families while keeping family-specific prompts, rubrics, and refs close to their items.
+
+### Modalities and auto-detection
+
+- The runner expands questions with `modality: auto` into one question per available artifact found in the item directory or the template directory.
+- Recognized artifacts and their modalities:
+  - `netlist.sp` → `spice_netlist` (SPICE)
+  - `netlist.cas` → `cascode` (ADL)
+  - `netlist.cir` → `casIR` (intermediate representation)
+  - `veriloga.va` → `veriloga`
+  - (legacy ADL `.adl` no longer supported)
+- You can also control the set via `meta.json` `modalities`, but auto-detection will include any additional recognized files present.
 
 ### Debugging family
 

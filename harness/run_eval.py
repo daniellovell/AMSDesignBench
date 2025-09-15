@@ -117,11 +117,13 @@ def load_questions(item_dir: Path) -> List[Question]:
     artifact_by_modality = {
         "spice_netlist": "netlist.sp",
         "veriloga": "veriloga.va",
-        "adl": "design.adl",
+        # New representations
+        "cascode": "netlist.cas",  # ADL (Alt circuit description language)
+        "casIR": "netlist.cir",    # Intermediate representation
     }
     # Back-compat: map old modality names
     canonical_modality = {
-        "netlist": "spice_netlist",
+        "casir": "casIR",
     }
     available_modalities: List[str] = []
     if meta_path.exists():
@@ -140,10 +142,17 @@ def load_questions(item_dir: Path) -> List[Question]:
                         exists_tpl = bool(tpl_dir and (tpl_dir / ap_name).exists())
                         if exists_local or exists_tpl:
                             available_modalities.append(m_canon)
+            # Also auto-detect any additional artifacts present (local or template)
+            for m, fn in artifact_by_modality.items():
+                exists_local = (item_dir / fn).exists()
+                exists_tpl = bool(tpl_dir and (tpl_dir / fn).exists())
+                if exists_local or exists_tpl:
+                    if m not in available_modalities:
+                        available_modalities.append(m)
         except Exception:
             pass
-    # Fallback: infer by existing artifacts
-    if not available_modalities:
+    else:
+        # Infer by existing artifacts (no meta)
         for m, fn in artifact_by_modality.items():
             if (item_dir / fn).exists():
                 available_modalities.append(m)

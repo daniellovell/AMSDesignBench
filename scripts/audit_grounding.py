@@ -7,10 +7,11 @@ from rich import print
 ARTIFACT_BY_MODALITY = {
     "spice_netlist": "netlist.sp",
     "veriloga": "veriloga.va",
-    "adl": "design.adl",
+    "cascode": "netlist.cas",
+    "casIR": "netlist.cir",
 }
 
-CANONICAL = {"netlist": "spice_netlist"}
+CANONICAL = {"casir": "casIR"}
 
 
 def available_modalities(item_dir: Path) -> list[str]:
