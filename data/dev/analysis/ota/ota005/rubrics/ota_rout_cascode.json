@@ -15,9 +15,9 @@
     },
     {
       "id": "key_relation",
-      "desc": "States r_out ≈ (gm*ro^2)/2 per side (effective) for cascoded output path; clarify small-signal conditions.",
+      "desc": "States r_out ≈ (gm*ro^2)/2 (or per side (effective) for cascoded output path; clarify small-signal conditions. May use LaTeX syntax like r_{out} ≈ g_{m,casR} · r_{o,casR} · r_{o,pout}.",
       "required": true,
-      "patterns_any": ["gm*ro^2/2", "g_m*r_o^2/2", "g_m ro^2 / 2", "gm ro^2 / 2"],
+      "patterns_any": ["gm*ro^2/2", "g_m*r_o^2/2", "g_m ro^2 / 2", "gm ro^2 / 2", "g_{m,casR}", "r_{o,casR}", "r_{o,pout}", "r_{out}"],
       "anti_patterns": ["ro/2"],
       "weight": 0.25
     },

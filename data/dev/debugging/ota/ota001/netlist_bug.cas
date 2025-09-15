@@ -1,0 +1,20 @@
+package analog.ota; import lib.motifs.*;
+
+class OTA5T implements Amplifier {
+  supply VDD=1.8V; ground GND;
+  port in_p vinp, in_n vinn; port out vout; bias vbias_n;
+
+  use {
+    // Differential pair with explicit tail node
+    dp = new DiffPairNMOS(vinp, vinn) { gnd=GND; tail=ntail; };
+    tail = new TailCurrentSourceNMOS() { out=ntail; gate=vbias_n; gnd=GND; };
+
+    // 5T NMOS load: diode on left leg (n1), mirrors to right leg (n2) and to vout
+    attach FiveTLoadPMOS on dp { vdd=VDD; out=vout; ref=left; };
+
+    C(vout, GND, 1pF);
+  }
+
+  // (optional) aliases to preserve SPICE node names
+  alias n1 = dp.out_l; alias n2 = dp.out_r;
+}

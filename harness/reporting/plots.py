@@ -50,7 +50,12 @@ def _ensure_dir(p: Path):
     p.mkdir(parents=True, exist_ok=True)
 
 
-def plot_grouped_bars(data: Dict[Tuple[str, str, str], Dict[str, float]], out_dir: Path, families: List[str] | None = None):
+def plot_grouped_bars(
+    data: Dict[Tuple[str, str, str], Dict[str, float]],
+    out_dir: Path,
+    families: List[str] | None = None,
+    silent: bool = False,
+):
     try:
         import matplotlib.pyplot as plt  # type: ignore
         import numpy as np  # type: ignore
@@ -84,13 +89,30 @@ def plot_grouped_bars(data: Dict[Tuple[str, str, str], Dict[str, float]], out_di
         _ensure_dir(out_dir)
         path = out_dir / f"grouped_bar_{fam.replace('/', '_')}.png"
         fig.tight_layout()
-        fig.savefig(path, dpi=200)
-        plt.close(fig)
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
+        try:
+            fig.savefig(path, dpi=200)
+        except Exception as e:
+            print(f"[plots] Failed to save {path}: {e}")
+        if silent:
+            plt.close(fig)
+        else:
+            try:
+                plt.show(block=False)
+            except Exception:
+                pass
         paths.append(path)
     return paths
 
 
-def plot_heatmap_overall(data: Dict[Tuple[str, str, str], Dict[str, float]], out_dir: Path):
+def plot_heatmap_overall(
+    data: Dict[Tuple[str, str, str], Dict[str, float]],
+    out_dir: Path,
+    silent: bool = False,
+):
     try:
         import matplotlib.pyplot as plt  # type: ignore
         import numpy as np  # type: ignore
@@ -125,31 +147,75 @@ def plot_heatmap_overall(data: Dict[Tuple[str, str, str], Dict[str, float]], out
     fig.tight_layout()
     _ensure_dir(out_dir)
     path = out_dir / "heatmap_model_modality.png"
-    fig.savefig(path, dpi=200)
-    plt.close(fig)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+    try:
+        fig.savefig(path, dpi=200)
+    except Exception as e:
+        print(f"[plots] Failed to save {path}: {e}")
+    if silent:
+        plt.close(fig)
+    else:
+        try:
+            plt.show(block=False)
+        except Exception:
+            pass
     return path
 
 
+def _find_latest_results() -> Path | None:
+    # Prefer outputs/latest/results.jsonl if available
+    latest = Path("outputs/latest/results.jsonl")
+    if latest.exists():
+        return latest
+    # Fallback: try outputs/latest symlink to run dir
+    latest_dir = Path("outputs/latest")
+    if latest_dir.is_dir():
+        p = latest_dir / "combined_results.jsonl"
+        if p.exists():
+            return p
+    # Fallback: scan outputs/run_* for latest modified combined_results.jsonl
+    root = Path("outputs")
+    if root.exists():
+        cands = sorted(root.glob("run_*/combined_results.jsonl"), key=lambda p: p.stat().st_mtime, reverse=True)
+        if cands:
+            return cands[0]
+    return None
+
+
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("results", help="Path to combined_results.jsonl")
+    ap = argparse.ArgumentParser(description="Generate plots from combined_results.jsonl. If no path is provided, uses outputs/latest.")
+    ap.add_argument("results", nargs="?", help="Path to combined_results.jsonl (default: outputs/latest/results.jsonl)")
     ap.add_argument("--out-dir", default=None, help="Directory to write plots (default: alongside results)")
-    ap.add_argument("--families", nargs="*", default=None, help="Optional subset of families to plot")
+    ap.add_argument("--families", nargs="*", default=None, help="Optional subset of families to plot (e.g., analysis/ota)")
+    ap.add_argument("--silent", action="store_true", help="Do not open interactive windows; only write files")
     args = ap.parse_args()
-    res_path = Path(args.results)
+    res_path = Path(args.results) if args.results else (_find_latest_results() or Path("outputs/latest/results.jsonl"))
+    if not res_path.exists():
+        raise SystemExit(f"Results not found: {res_path}. Provide a path or run an eval first.")
     recs = load_results(res_path)
     if not recs:
         raise SystemExit(f"No records found in {res_path}")
+    print(f"[plots] Using results: {res_path}")
     data = aggregate_judge(recs)
     out_dir = Path(args.out_dir) if args.out_dir else (res_path.parent / "plots")
     _ensure_dir(out_dir)
-    heat = plot_heatmap_overall(data, out_dir)
-    bars = plot_grouped_bars(data, out_dir, families=args.families)
+    heat = plot_heatmap_overall(data, out_dir, silent=args.silent)
+    bars = plot_grouped_bars(data, out_dir, families=args.families, silent=args.silent)
     print("Wrote:")
     if heat:
         print(f"  {heat}")
     for p in bars:
         print(f"  {p}")
+    # If not silent, bring figures to front / block once at end
+    if not args.silent:
+        try:
+            import matplotlib.pyplot as plt  # type: ignore
+            plt.show()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

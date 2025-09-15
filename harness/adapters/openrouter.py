@@ -1,7 +1,11 @@
 from __future__ import annotations
 import os
 from typing import Any, Dict, List
+import time
+import random as _rnd
+import re
 from .base import BaseAdapter
+from ..utils.rate_limiter import get_limiter
 
 try:
     from openai import OpenAI
@@ -66,11 +70,33 @@ class OpenRouterAdapter(BaseAdapter):
                 "temperature": self.temperature,
                 "max_tokens": self.max_tokens,
             }
+            # Cross-thread rate limiting
+            try:
+                est = int((len(SYS_PROMPT) + len(user)) / float(os.getenv("OPENROUTER_TOKEN_DIVISOR", 4))) + int(self.max_tokens)
+                rpm = float(os.getenv("OPENROUTER_RPM", 0) or 0)
+                tpm = float(os.getenv("OPENROUTER_TPM", 0) or 0)
+                if rpm > 0 or tpm > 0:
+                    get_limiter("openrouter", rpm=rpm, tpm=tpm).acquire(token_cost=est, req_cost=1.0)
+            except Exception:
+                pass
             # Similar adaptations as OpenAI adapter for reasoning models
             if "gpt-5" in str(self.model).lower():
                 params.pop("max_tokens", None)
                 params.pop("temperature", None)
-            for _ in range(3):
+            # Parameter adaptation + robust backoff for rate limits/overload
+            def _parse_retry_after(msg: str) -> float:
+                m = re.search(r"try again in\s*([0-9]+\.?[0-9]*)s", msg, flags=re.I)
+                if m:
+                    try:
+                        return float(m.group(1))
+                    except Exception:
+                        return 0.0
+                return 0.0
+            max_attempts = int(os.getenv("OPENROUTER_MAX_RETRIES", 8))
+            base_delay = float(os.getenv("OPENROUTER_BACKOFF_BASE", 1.0))
+            attempt = 0
+            while attempt < max_attempts:
+                attempt += 1
                 try:
                     resp = self.client.chat.completions.create(**params)
                     break
@@ -85,8 +111,17 @@ class OpenRouterAdapter(BaseAdapter):
                     if "temperature" in txt and ("unsupported" in txt or "does not support" in txt or "only the default" in txt):
                         params.pop("temperature", None)
                         adapted = True
-                    if not adapted:
-                        raise
+                    if adapted:
+                        continue
+                    is_rate = ("rate limit" in txt) or ("429" in txt) or ("tpm" in txt) or ("rpm" in txt)
+                    is_overload = ("service unavailable" in txt) or ("overloaded" in txt) or ("temporarily" in txt) or ("timeout" in txt)
+                    if is_rate or is_overload:
+                        parsed = _parse_retry_after(emsg)
+                        delay = parsed if parsed > 0 else (base_delay * (2 ** (attempt - 1)))
+                        delay += _rnd.uniform(0.1, 0.5)
+                        time.sleep(min(delay, 20.0))
+                        continue
+                    raise
             text = (getattr(resp.choices[0].message, "content", None) or "").strip()
             outs.append(text)
         return outs

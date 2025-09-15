@@ -171,7 +171,7 @@ def load_questions(item_dir: Path) -> List[Question]:
             except Exception:
                 continue
             continue
-
+        # Normalize modality and track
         mod = raw.get("modality")
         needs_expand = mod in (None, "", "auto", "*", "all")
         base_id = str(raw.get("id", item_dir.name))
@@ -183,16 +183,85 @@ def load_questions(item_dir: Path) -> List[Question]:
                 qdict = dict(raw)
                 qdict["id"] = f"{base_id}_{m}"
                 qdict["modality"] = m
-                # Respect explicit artifact_path if provided (e.g., template-relative path)
-                qdict["artifact_path"] = qdict.get("artifact_path") or ap
+                # When expanding modalities, if an explicit artifact_path was provided
+                # (e.g., a template-relative path to netlist.sp), rewrite just the
+                # filename to the canonical artifact for the specific modality while
+                # preserving the directory. This ensures casIR/cascode expansions use
+                # netlist.cir/netlist.cas respectively rather than always netlist.sp.
+                orig_ap = qdict.get("artifact_path")
+                if isinstance(orig_ap, str) and orig_ap.strip():
+                    try:
+                        # Interpret path relative to the item_dir for existence checks
+                        rel = (item_dir / orig_ap)
+                        if rel.exists() and rel.is_dir():
+                            # Treat as a directory base; append canonical filename
+                            new_ap = str(Path(orig_ap) / ap)
+                        else:
+                            base = Path(orig_ap)
+                            # Preserve directory when present; otherwise fall back to the filename
+                            parent = base.parent
+                            new_ap = str(parent / ap) if str(parent) not in ("", ".") else ap
+                    except Exception:
+                        new_ap = ap
+                    qdict["artifact_path"] = new_ap
+                else:
+                    # No explicit path provided; use canonical filename for modality
+                    qdict["artifact_path"] = ap
                 out.append(Question.model_validate(qdict))
         else:
             # Normalize modality and artifact path if missing
             m = canonical_modality.get(str(mod), str(mod))
             if "artifact_path" not in raw and m in artifact_by_modality:
                 raw["artifact_path"] = artifact_by_modality[m]
+            else:
+                # If an artifact_path is provided and points to a directory, append
+                # the canonical filename for the modality (supports dir-style inputs).
+                try:
+                    ap_in = raw.get("artifact_path")
+                    if isinstance(ap_in, str) and ap_in.strip() and m in artifact_by_modality:
+                        rel = (item_dir / ap_in)
+                        if rel.exists() and rel.is_dir():
+                            raw["artifact_path"] = str(Path(ap_in) / artifact_by_modality[m])
+                except Exception:
+                    pass
             raw["modality"] = m
             out.append(Question.model_validate(raw))
+            # Special-case: For debugging items authored as spice_netlist only,
+            # auto-add parallel questions for any additional available modalities
+            # discovered from template (e.g., casIR, cascode).
+            try:
+                if str(raw.get("track", "")).lower() == "debugging" and m == "spice_netlist":
+                    for m2 in available_modalities:
+                        if m2 == "spice_netlist":
+                            continue
+                        qdict = dict(raw)
+                        qdict["id"] = f"{base_id}_{m2}"
+                        qdict["modality"] = m2
+                        # Rewrite artifact_path to bugged file if original used bugged SPICE
+                        ap_in = str(raw.get("artifact_path", "")).strip()
+                        canonical = artifact_by_modality[m2]
+                        new_ap = canonical
+                        if ap_in:
+                            try:
+                                rel = (item_dir / ap_in)
+                                if rel.exists() and rel.is_dir():
+                                    new_ap = str(Path(ap_in) / canonical)
+                                else:
+                                    # If using bugged SPICE artifact, mirror to bugged filename for modality
+                                    if ap_in.endswith("netlist_bug.sp"):
+                                        if m2 == "casIR":
+                                            new_ap = "netlist_bug.cir"
+                                        elif m2 == "cascode":
+                                            new_ap = "netlist_bug.cas"
+                                    else:
+                                        new_ap = canonical
+                            except Exception:
+                                new_ap = canonical
+                        qdict["artifact_path"] = new_ap
+                        out.append(Question.model_validate(qdict))
+            except Exception:
+                # Be permissive if auto-add fails
+                pass
     return out
 
 
@@ -257,6 +326,18 @@ def main():
     )
     ap.add_argument("--split", default="dev", help="data split: train|dev|test")
     ap.add_argument("--max-items", type=int, default=0, help="limit items")
+    ap.add_argument(
+        "--family",
+        choices=["analysis", "debugging", "design"],
+        default=None,
+        help="Limit to a specific evaluation family under data/<split>/<family>.",
+    )
+    ap.add_argument(
+        "--item-index",
+        type=int,
+        default=0,
+        help="1-based item index within the selected scope (after family filter). 0 = all.",
+    )
     ap.add_argument("--judge-model", default=None, help="override judge model name")
     ap.add_argument("--model-workers", type=int, default=0, help="parallel model workers (0 = run all models in parallel)")
     ap.add_argument("--item-workers", type=int, default=8, help="per-model concurrent workers for items/questions")
@@ -320,7 +401,16 @@ def main():
     rubrics_cache: Dict[str, Any] = {}
     knowledge_cache: Dict[str, str] = {}
 
-    items = iter_items(split_dir)
+    # Scope items by optional family (e.g., debugging, analysis, design)
+    search_root = split_dir if not args.family else (split_dir / args.family)
+    if not search_root.exists():
+        raise SystemExit(f"Scope not found: {search_root}")
+    items = iter_items(search_root)
+    # Optional 1-based item index selection
+    if args.item_index and args.item_index > 0:
+        if args.item_index > len(items):
+            raise SystemExit(f"item-index {args.item_index} exceeds available items ({len(items)}) in {search_root}")
+        items = [items[args.item_index - 1]]
     if args.max_items and args.max_items > 0:
         items = items[: args.max_items]
 
@@ -335,7 +425,12 @@ def main():
         mdir.mkdir(parents=True, exist_ok=True)
         model_files[slug] = (mdir / "results.jsonl").open("w")
 
-    print(f"[cyan]Evaluating[/cyan] split=[bold]{args.split}[/bold] on models: {', '.join(model_slugs)}")
+    scope_msg = f" split=[bold]{args.split}[/bold]"
+    if args.family:
+        scope_msg += f" family=[bold]{args.family}[/bold]"
+    if args.item_index and args.item_index > 0:
+        scope_msg += f" item-index=[bold]{args.item_index}[/bold]"
+    print(f"[cyan]Evaluating[/cyan]{scope_msg} on models: {', '.join(model_slugs)}")
 
     write_lock = threading.Lock()
     progress_lock = threading.Lock()
@@ -588,6 +683,101 @@ def main():
         lines[idx] = " ".join(parts)
         return "\n".join(lines) + ("\n" if text.endswith("\n") else ""), dev_id, from_type, to_type
 
+    def inject_device_swap_casir(text: str, seed: int):
+        """Swap the polarity of a single MOS-like motif in a casIR JSON artifact.
+        Looks for motif.type containing 'NMOS' or 'PMOS' (case-insensitive) and flips it.
+        Returns (mutated_text, swapped_id, from_type, to_type). If none found, returns
+        (text, None, None, None).
+        """
+        try:
+            data = json.loads(text)
+        except Exception:
+            return text, None, None, None
+        motifs = data.get("motifs") or []
+        candidates = []  # (index, id, type)
+        for i, m in enumerate(motifs):
+            if not isinstance(m, dict):
+                continue
+            mid = str(m.get("id", "")).strip()
+            mtype = str(m.get("type", "")).strip()
+            if not mid or not mtype:
+                continue
+            lt = mtype.lower()
+            if ("nmos" in lt) or ("pmos" in lt):
+                candidates.append((i, mid, mtype))
+        if not candidates:
+            return text, None, None, None
+        rnd = random.Random(seed)
+        idx, mid, mtype = rnd.choice(candidates)
+        lt = mtype.lower()
+        if "nmos" in lt and "pmos" not in lt:
+            new_type = mtype.replace("NMOS", "PMOS").replace("nmos", "pmos")
+            from_type, to_type = "NMOS", "PMOS"
+        elif "pmos" in lt and "nmos" not in lt:
+            new_type = mtype.replace("PMOS", "NMOS").replace("pmos", "nmos")
+            from_type, to_type = "PMOS", "NMOS"
+        else:
+            # If both appear or ambiguous, flip the first occurrence preference NMOS->PMOS
+            if lt.find("nmos") <= lt.find("pmos"):
+                new_type = mtype.replace("NMOS", "PMOS").replace("nmos", "pmos")
+                from_type, to_type = "NMOS", "PMOS"
+            else:
+                new_type = mtype.replace("PMOS", "NMOS").replace("pmos", "nmos")
+                from_type, to_type = "PMOS", "NMOS"
+        try:
+            data["motifs"][idx]["type"] = new_type
+        except Exception:
+            return text, None, None, None
+        mutated = json.dumps(data, indent=2)
+        if text.endswith("\n"):
+            mutated += "\n"
+        return mutated, mid, from_type, to_type
+
+    def inject_device_swap_cascode(text: str, seed: int):
+        """Swap one MOS polarity in ADL/"cascode" artifact by flipping NMOS<->PMOS
+        in a motif type token (e.g., DiffPairNMOS <-> DiffPairPMOS).
+        Returns (mutated_text, swapped_label, from_type, to_type).
+        """
+        lines = text.splitlines()
+        import re
+        pattern = re.compile(r"\b([A-Za-z0-9_]*)(NMOS|PMOS)\b")
+        candidates = []  # (line_idx, span, full_token)
+        for i, raw in enumerate(lines):
+            for m in pattern.finditer(raw):
+                full = m.group(0)
+                candidates.append((i, (m.start(), m.end()), full))
+        if not candidates:
+            return text, None, None, None
+        rnd = random.Random(seed)
+        i, (s, e), token = rnd.choice(candidates)
+        if token.endswith("NMOS") or token.endswith("nmos"):
+            new_token = token.replace("NMOS", "PMOS").replace("nmos", "pmos")
+            from_type, to_type = "NMOS", "PMOS"
+        else:
+            new_token = token.replace("PMOS", "NMOS").replace("pmos", "nmos")
+            from_type, to_type = "PMOS", "NMOS"
+        # Replace within the chosen line
+        line = lines[i]
+        lines[i] = line[:s] + new_token + line[e:]
+        # Try to infer a nearby label/id for reporting (e.g., lhs var before '=')
+        swapped_label = token
+        try:
+            # If line has pattern 'name = new Type', grab 'name'
+            m2 = re.search(r"\b([A-Za-z0-9_]+)\s*=\s*new\s+", line)
+            if m2:
+                swapped_label = m2.group(1)
+            else:
+                # If 'attach Type on name', grab 'name'
+                m3 = re.search(r"attach\s+[A-Za-z0-9_]+\s+on\s+([A-Za-z0-9_]+)", line)
+                if m3:
+                    swapped_label = m3.group(1)
+        except Exception:
+            pass
+        mutated = "\n".join(lines)
+        if text.endswith("\n"):
+            mutated += "\n"
+        return mutated, swapped_label, from_type, to_type
+
     def run_for_model(slug: str):
         nonlocal total
         adapter = adapters[slug]
@@ -603,8 +793,17 @@ def main():
             ppath = (item_dir.parent / "prompts" / q.prompt_template)
             if not ppath.exists():
                 raise SystemExit(f"Prompt template not found for {q.id}: {ppath}")
+            def _display_modality(mod: str) -> str:
+                # Human-friendly modality name for prompts to avoid confusion
+                if mod == "cascode":
+                    return "analog description language"
+                if mod == "spice_netlist":
+                    return "SPICE netlist"
+                if mod == "casIR":
+                    return "casIR"
+                return mod
             prompt_tmpl = ppath.read_text()
-            prompt = prompt_tmpl.format(modality=q.modality)
+            prompt = prompt_tmpl.format(modality=_display_modality(q.modality))
 
             # Artifact
             art_path = item_dir / q.artifact_path
@@ -618,47 +817,127 @@ def main():
             rand_info: Dict[str, Any] = {}
             # Debugging support: generate bugged artifact from template if requested
             bug_info: Dict[str, Any] = {}
-            if str(q.track).lower() == "debugging" and q.modality == "spice_netlist":
-                # Try to load template netlist regardless of local artifact
-                meta_path = item_dir / "meta.json"
-                tpl_net = None
-                if meta_path.exists():
+            if str(q.track).lower() == "debugging":
+                if q.modality == "spice_netlist":
+                    meta_path = item_dir / "meta.json"
+                    tpl_net = None
+                    if meta_path.exists():
+                        try:
+                            m = json.loads(meta_path.read_text())
+                            tpath = m.get("template_path") or m.get("template")
+                            if isinstance(tpath, str) and tpath.strip():
+                                tdir = (item_dir / tpath).resolve()
+                                tnet = tdir / "netlist.sp"
+                                if tnet.exists():
+                                    tpl_net = tnet.read_text()
+                        except Exception:
+                            tpl_net = None
+                    base_text = tpl_net or artifact_text
+                    meta_seed = None
+                    mpath = item_dir / "meta.json"
+                    if mpath.exists():
+                        try:
+                            mm = json.loads(mpath.read_text())
+                            ms = mm.get("gen_seed")
+                            if isinstance(ms, int):
+                                meta_seed = ms
+                        except Exception:
+                            meta_seed = None
+                    if meta_seed is None:
+                        meta_seed = int.from_bytes(hashlib.sha256(str(item_dir).encode()).digest()[:8], 'big')
+                    bug_seed = int.from_bytes(hashlib.sha256(f"{meta_seed}:{Path(it.item_dir).name}:{q.id}:bug".encode()).digest()[:8], 'big')
+                    mutated, dev_id, from_t, to_t = inject_device_swap_spice(base_text or "", bug_seed)
+                    if dev_id:
+                        artifact_used = mutated
+                        bug_info = {"bug_type": "device_polarity_swap", "swapped_id": dev_id, "from_type": from_t, "to_type": to_t}
+                    else:
+                        artifact_used = base_text
                     try:
-                        m = json.loads(meta_path.read_text())
-                        tpath = m.get("template_path") or m.get("template")
-                        if isinstance(tpath, str) and tpath.strip():
-                            tdir = (item_dir / tpath).resolve()
-                            tnet = tdir / "netlist.sp"
-                            if tnet.exists():
-                                tpl_net = tnet.read_text()
+                        bug_path = item_dir / "netlist_bug.sp"
+                        bug_path.write_text(artifact_used)
+                        art_path = bug_path
                     except Exception:
-                        tpl_net = None
-                base_text = tpl_net or artifact_text
-                # Inject single-device polarity swap if possible
-                meta_seed = None
-                mpath = item_dir / "meta.json"
-                if mpath.exists():
+                        pass
+                elif q.modality == "casIR":
+                    meta_path = item_dir / "meta.json"
+                    tpl_cir = None
+                    if meta_path.exists():
+                        try:
+                            m = json.loads(meta_path.read_text())
+                            tpath = m.get("template_path") or m.get("template")
+                            if isinstance(tpath, str) and tpath.strip():
+                                tdir = (item_dir / tpath).resolve()
+                                tcir = tdir / "netlist.cir"
+                                if tcir.exists():
+                                    tpl_cir = tcir.read_text()
+                        except Exception:
+                            tpl_cir = None
+                    base_text = tpl_cir or artifact_text
+                    meta_seed = None
+                    mpath = item_dir / "meta.json"
+                    if mpath.exists():
+                        try:
+                            mm = json.loads(mpath.read_text())
+                            ms = mm.get("gen_seed")
+                            if isinstance(ms, int):
+                                meta_seed = ms
+                        except Exception:
+                            meta_seed = None
+                    if meta_seed is None:
+                        meta_seed = int.from_bytes(hashlib.sha256(str(item_dir).encode()).digest()[:8], 'big')
+                    bug_seed = int.from_bytes(hashlib.sha256(f"{meta_seed}:{Path(it.item_dir).name}:{q.id}:bug".encode()).digest()[:8], 'big')
+                    mutated, dev_id, from_t, to_t = inject_device_swap_casir(base_text or "", bug_seed)
+                    if dev_id:
+                        artifact_used = mutated
+                        bug_info = {"bug_type": "device_polarity_swap", "swapped_id": dev_id, "from_type": from_t, "to_type": to_t}
+                    else:
+                        artifact_used = base_text
                     try:
-                        mm = json.loads(mpath.read_text())
-                        ms = mm.get("gen_seed")
-                        if isinstance(ms, int):
-                            meta_seed = ms
+                        bug_path = item_dir / "netlist_bug.cir"
+                        bug_path.write_text(artifact_used)
+                        art_path = bug_path
                     except Exception:
-                        meta_seed = None
-                if meta_seed is None:
-                    meta_seed = int.from_bytes(hashlib.sha256(str(item_dir).encode()).digest()[:8], 'big')
-                bug_seed = int.from_bytes(hashlib.sha256(f"{meta_seed}:{Path(it.item_dir).name}:{q.id}:bug".encode()).digest()[:8], 'big')
-                mutated, dev_id, from_t, to_t = inject_device_swap_spice(base_text or "", bug_seed)
-                if dev_id:
-                    artifact_used = mutated
-                    bug_info = {
-                        "bug_type": "device_polarity_swap",
-                        "swapped_id": dev_id,
-                        "from_type": from_t,
-                        "to_type": to_t,
-                    }
-                else:
-                    artifact_used = base_text
+                        pass
+                elif q.modality == "cascode":
+                    meta_path = item_dir / "meta.json"
+                    tpl_cas = None
+                    if meta_path.exists():
+                        try:
+                            m = json.loads(meta_path.read_text())
+                            tpath = m.get("template_path") or m.get("template")
+                            if isinstance(tpath, str) and tpath.strip():
+                                tdir = (item_dir / tpath).resolve()
+                                tcas = tdir / "netlist.cas"
+                                if tcas.exists():
+                                    tpl_cas = tcas.read_text()
+                        except Exception:
+                            tpl_cas = None
+                    base_text = tpl_cas or artifact_text
+                    meta_seed = None
+                    mpath = item_dir / "meta.json"
+                    if mpath.exists():
+                        try:
+                            mm = json.loads(mpath.read_text())
+                            ms = mm.get("gen_seed")
+                            if isinstance(ms, int):
+                                meta_seed = ms
+                        except Exception:
+                            meta_seed = None
+                    if meta_seed is None:
+                        meta_seed = int.from_bytes(hashlib.sha256(str(item_dir).encode()).digest()[:8], 'big')
+                    bug_seed = int.from_bytes(hashlib.sha256(f"{meta_seed}:{Path(it.item_dir).name}:{q.id}:bug".encode()).digest()[:8], 'big')
+                    mutated, dev_id, from_t, to_t = inject_device_swap_cascode(base_text or "", bug_seed)
+                    if dev_id:
+                        artifact_used = mutated
+                        bug_info = {"bug_type": "device_polarity_swap", "swapped_id": dev_id, "from_type": from_t, "to_type": to_t}
+                    else:
+                        artifact_used = base_text
+                    try:
+                        bug_path = item_dir / "netlist_bug.cas"
+                        bug_path.write_text(artifact_used)
+                        art_path = bug_path
+                    except Exception:
+                        pass
 
             if q.modality == "spice_netlist" and artifact_used:
                 meta_seed = None
@@ -681,15 +960,20 @@ def main():
                 rand_info = {"seed": per_item_seed}
 
             # Predict
-            pred = adapter.predict([
-                {
-                    "prompt": prompt,
-                    "artifact_path": str(item_dir / q.artifact_path),
-                    "artifact": artifact_used,
-                    "inventory_ids": inv_ids,
-                    "question": q.model_dump(),
-                }
-            ])[0]
+            error_msg: str | None = None
+            try:
+                pred = adapter.predict([
+                    {
+                        "prompt": prompt,
+                        "artifact_path": str(item_dir / q.artifact_path),
+                        "artifact": artifact_used,
+                        "inventory_ids": inv_ids,
+                        "question": q.model_dump(),
+                    }
+                ])[0]
+            except Exception as e:
+                pred = ""
+                error_msg = str(getattr(e, "message", e))
 
             # Rubric
             if not q.rubric_path:
@@ -702,11 +986,77 @@ def main():
                 rubric = rubrics_cache.get(rkey)
                 if rubric is None:
                     rubrics_cache[rkey] = rubric = load_rubric(rpath)
-            scores = score_answer(pred, rubric, it.inventory)
+            # Build an effective inventory depending on modality
+            def _inventory_from_casir(text: str) -> Inventory:
+                try:
+                    data = json.loads(text)
+                except Exception:
+                    return it.inventory
+                elems: Dict[str, Any] = {}
+                nets: List[str] = []
+                for n in data.get("nets", []) or []:
+                    if isinstance(n, dict):
+                        nid = str(n.get("id", "")).strip()
+                    else:
+                        nid = str(n).strip()
+                    if nid:
+                        nets.append(nid)
+                try:
+                    from .types import InventoryElement  # type: ignore
+                except Exception:
+                    from harness.types import InventoryElement  # type: ignore
+                elements: Dict[str, InventoryElement] = {}
+                cap_ids: List[str] = []
+                for m in data.get("motifs", []) or []:
+                    mid = str(m.get("id", "")).strip()
+                    mtype = str(m.get("type", "motif")).strip()
+                    ports = m.get("ports", {}) or {}
+                    conns: List[str] = []
+                    for v in ports.values():
+                        if isinstance(v, str) and v.strip():
+                            conns.append(v.strip())
+                    aliases: List[str] = []
+                    if mtype.lower() in ("cap", "capacitor"):
+                        cap_ids.append(mid)
+                        aliases.extend(["Cload", "CL"])
+                    elements[mid] = InventoryElement(type=mtype, nets=conns or None, aliases=aliases or None)
+                try:
+                    from .types import Inventory as Inv  # type: ignore
+                except Exception:
+                    from harness.types import Inventory as Inv  # type: ignore
+                inv = Inv(elements=elements, nets=sorted(set(nets)))
+                return inv
+
+            eff_inv: Inventory = it.inventory
+            if q.modality == "casIR" and artifact_used:
+                eff_inv = _inventory_from_casir(artifact_used)
+            elif q.modality == "cascode":
+                try:
+                    from .types import Inventory as Inv  # type: ignore
+                except Exception:
+                    from harness.types import Inventory as Inv  # type: ignore
+                eff_inv = Inv(elements={}, nets=[], blocks={})
+
+            # Adapt rubric for modalities that should not score grounding
+            rjson = rubric.model_dump()
+            if q.modality == "cascode":
+                for c in rjson.get("criteria", []) or []:
+                    if bool(c.get("requires_grounding")):
+                        c["weight"] = 0.0
+                s = rjson.get("scoring", {}) or {}
+                if "hallucination_penalty" in s:
+                    s["hallucination_penalty"] = 0.0
+                rjson["scoring"] = s
+            try:
+                from .scoring.rubric import Rubric as RubricModel  # type: ignore
+            except Exception:
+                from harness.scoring.rubric import Rubric as RubricModel  # type: ignore
+            rubric_eff = RubricModel.model_validate(rjson)
+
+            scores = score_answer(pred, rubric_eff, eff_inv)
 
             # Judge
             judge = None
-            # Always run judge (anchored scoring)
             kpath = Path("knowledge") / f"{q.rubric_id}.md"
             if not kpath.exists():
                 alt = Path("knowledge") / "const_gm_currents.md"
@@ -730,39 +1080,35 @@ def main():
                 from .scoring.judge_anchored import judge_answer as judge_call  # type: ignore
             except Exception:
                 from harness.scoring.judge_anchored import judge_answer as judge_call  # type: ignore
-            # Build a compact inventory summary for the judge (token-efficient)
             def _inventory_summary() -> Dict[str, Any]:
-                alias_map = it.inventory.alias_map()
+                alias_map = eff_inv.alias_map()
                 allowed = sorted(set(alias_map.keys()))
                 canonical_map = {k: v for k, v in alias_map.items() if k != v}
-                # Heuristic synonyms to reduce false negatives
                 if "CL" in alias_map.values():
                     canonical_map.setdefault("Cload", "CL")
                     if "Cload" not in allowed:
                         allowed.append("Cload")
-                # Ground reference synonyms
-                if any(n.strip().upper() == "0" or n.strip() == "0" for n in it.inventory.nets):
+                if any(n.strip().upper() == "0" or n.strip() == "0" for n in eff_inv.nets):
                     for syn in ("GND", "VSS"):
                         canonical_map.setdefault(syn, "0")
                         if syn not in allowed:
                             allowed.append(syn)
-                # Case-insensitive matching hint (judge treats as case-insensitive)
-                return {
-                    "allowed_ids": sorted(allowed),
-                    "canonical_map": canonical_map,
-                }
+                summary: Dict[str, Any] = {"allowed_ids": sorted(allowed), "canonical_map": canonical_map}
+                if q.modality == "cascode":
+                    summary["grounding_disabled"] = True
+                return summary
 
             inv_summary = _inventory_summary()
-            try:
-                judge = judge_call(pred, rubric.model_dump(), ktext, refs, inv_summary, model=args.judge_model)
-            except Exception:
-                judge = None
+            if pred:
+                try:
+                    judge = judge_call(pred, rjson, ktext, refs, inv_summary, model=args.judge_model)
+                except Exception:
+                    judge = None
             if judge and isinstance(judge.get("scores"), dict):
                 j_scores = judge["scores"]
                 if "overall" not in judge:
                     judge["overall"] = sum(j_scores.values())/len(j_scores) if j_scores else 0.0
 
-            # Topic/family
             try:
                 topic_str = str(Path(it.item_dir).resolve().relative_to(split_dir.resolve()).parent).replace(os.sep, "/")
             except Exception:
@@ -788,6 +1134,8 @@ def main():
                 "scores": scores,
                 "judge": judge,
             }
+            if error_msg:
+                rec["error"] = error_msg
             if judge and isinstance(judge.get("overall", None), (int, float)):
                 rec["raw_blended"] = 0.8 * scores["raw"] + 0.2 * float(judge["overall"])
 

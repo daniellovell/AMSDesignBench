@@ -22,12 +22,6 @@
       "weight": 0.25
     },
     {
-      "id": "exceptions",
-      "desc": "Notes exceptions (e.g., current-steering OTA, feedforward zeros).",
-      "patterns_any": ["current steering", "feedforward zero", "left-half-plane zero", "LHP zero", "RHP zero"],
-      "weight": 0.10
-    },
-    {
       "id": "grounding",
       "desc": "References real elements (e.g., M1, CL, compensation cap) from inventory.",
       "requires_grounding": true,

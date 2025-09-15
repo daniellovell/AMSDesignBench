@@ -5,12 +5,12 @@
   "criteria": [
     {
       "id": "topology",
-      "desc": "Identifies single-stage telescopic high-swing OTA (single-ended) with cascoded output path at vop.",
+      "desc": "Identifies a single-ended telescopic/folded cascode one-stage OTA (high-swing variant acceptable).",
       "required": true,
       "section": "Topology",
-      "patterns_any": ["single-stage", "telescopic", "cascod", "high-swing", "single-ended"],
+      "patterns_any": ["telescopic", "folded cascode", "single-ended", "single ended", "high-swing"],
       "min_any": 2,
-      "anti_patterns": ["fully differential", "two-stage"],
+      "anti_patterns": ["two-stage", "miller compensation", "second stage", "fully differential"],
       "weight": 0.10
     },
     {

@@ -14,9 +14,9 @@
     },
     {
       "id": "key_relation",
-      "desc": "States r_out ≈ ro/2 for one-stage differential OTA with current mirror load, and context for validity.",
+      "desc": "States r_out ≈ ro/2 (or equivalently, r_op || r_on) for one-stage differential OTA with current mirror load, and context for validity.",
       "required": true,
-      "patterns_any": ["ro/2", "r_o/2", "r_out ≈ r_o/2", "rout ≈ ro/2"],
+      "patterns_any": ["ro/2", "r_o/2", "r_out ≈ r_o/2", "rout ≈ ro/2", "r_op || r_on", "r_op || r_on"],
       "anti_patterns": ["gm*ro^2/2", "g_m*r_o^2/2"],
       "weight": 0.25
     },

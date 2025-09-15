@@ -91,9 +91,13 @@ def score_answer(answer: str, rubric: Rubric, inventory: Inventory) -> Dict[str,
         if c.requires_grounding:
             g = groundedness(full_text, inventory)
             min_refs = c.min_refs or 0
-            if len(g["true_positive"]) >= min_refs:
-                score += grounding_weight or c.weight
-            per_crit[c.id] = {"score": score / max(c.weight, 1e-9), "groundedness": g}
+            if c.weight <= 0:
+                # Grounding not applicable (e.g., cascode modality) → auto-award
+                per_crit[c.id] = {"score": 1.0, "groundedness": g}
+            else:
+                if len(g["true_positive"]) >= min_refs:
+                    score += grounding_weight or c.weight
+                per_crit[c.id] = {"score": score / max(c.weight, 1e-9), "groundedness": g}
         else:
             per_crit[c.id] = {"score": score / max(c.weight, 1e-9) if c.weight > 0 else 1.0}
 

@@ -75,6 +75,8 @@ Models can also be specified in `bench_config.yaml` under the `eval.models` key.
 | `--max-items`     | Limit the number of items to run for each model (useful for testing).          | `None`     |
 | `--model-workers` | The number of models to run in parallel.                                       | `0` (all)  |
 | `--item-workers`  | The number of items to process in parallel for each model.                     | `8`        |
+| `--family`        | Limit to a specific evaluation family under `data/<split>` (`analysis`, `debugging`, `design`). | `None`     |
+| `--item-index`    | 1-based item index within the selected scope (after family filter). `0` = all. | `0`        |
 | `--judge-model`   | The model to use for the LLM judge.                                            | `gpt-4o`   |
 
 ### 3. Viewing Results
@@ -83,15 +85,34 @@ All outputs are saved to a timestamped directory inside `outputs/`. A symbolic l
 
 At the end of each evaluation, a comprehensive HTML report is automatically generated. To view it, open `outputs/latest/report/index.html` in your browser.
 
-You can also generate summaries or re-render the report manually:
+You can also generate summaries, plots, or re-render the report manually:
 
 *   **Summarize results for all models:**
     ```bash
     python3 -m harness.reporting.compare outputs/latest/combined_results.jsonl
+    
+    # Generate plots (auto-detect latest results)
+    python3 -m harness.reporting.plots
     ```
 *   **Re-render the HTML report:**
     ```bash
     python3 -m harness.reporting.render outputs/latest/combined_results.jsonl
+
+### Plots
+
+- The plotting utility generates a judge-score heatmap and per-family grouped bar charts by model × modality.
+- Default (auto-detect latest):
+
+  python3 -m harness.reporting.plots
+
+- Custom results path and output directory:
+
+  python3 -m harness.reporting.plots outputs/run_20250101_120000/combined_results.jsonl --out-dir outputs/run_20250101_120000/plots
+
+Notes:
+- Plots are written next to the results under a `plots/` folder by default (e.g., `outputs/latest/plots`).
+- Requires matplotlib and numpy: `pip install matplotlib numpy`.
+- By default, windows are opened interactively (show). To suppress and only write files, pass `--silent`.
     ```
 
 ## Repository Structure
@@ -118,7 +139,10 @@ Runs are designed to be deterministic. The randomization of SPICE netlists is co
 - Shared templates: Common circuit sources live under `data/<split>/templates/` (e.g., `data/dev/templates/ota/ota001/`). Place canonical artifacts there (`netlist.sp`, `inventory.json`, optionally `veriloga.va`).
 - Referencing templates:
   - In each item’s `meta.json`, set `"template_path": "../../templates/<family>/<item_id>"` (relative to the item directory).
-  - In `questions.jsonl`, set `"artifact_path"` to the desired artifact in the template (e.g., `../../templates/ota/ota001/netlist.sp`). If omitted, the harness falls back to the local artifact filename.
+  - In `questions.jsonl`, you can:
+    - Omit `"artifact_path"` and let the runner use canonical filenames per modality (e.g., `netlist.sp`, `netlist.cir`, `netlist.cas`).
+    - Provide `"artifact_path"` as the template directory (e.g., `../../templates/ota/ota001`). For `modality: auto` (and also for explicit modalities), the runner appends the canonical filename for each modality, so casIR/cascode will correctly use `netlist.cir`/`netlist.cas`.
+    - Provide a full path to a specific artifact (e.g., `../../templates/ota/ota001/netlist.sp`). For `modality: auto`, the runner will preserve the directory and substitute the filename per modality so expansions point to the correct artifacts.
   - The harness resolves inventory from the template if `template_path` is defined; otherwise it uses a local `inventory.json` if present.
 
 This structure avoids duplication across families while keeping family-specific prompts, rubrics, and refs close to their items.
@@ -132,13 +156,29 @@ This structure avoids duplication across families while keeping family-specific 
   - `netlist.cir` → `casIR` (intermediate representation)
   - `veriloga.va` → `veriloga`
   - (legacy ADL `.adl` no longer supported)
+  
+Prompt wording:
+- For clarity, prompts replace `cascode` with “analog description language” (e.g., “From the analog description language artifact…”), to avoid conflating with the cascode circuit topology.
+  
+Examples:
+- Run a single debugging item (e.g., `ota002`) only: `python -m harness.run_eval --split dev --family debugging --item-index 2`
+- Run two OpenAI models on `analysis` family: `python -m harness.run_eval --split dev --family analysis --models openai:gpt-4o-mini openai:gpt-4o --model-workers 2`
+
+### Inventory passed to judges
+
+- `spice_netlist`: Judges receive an inventory derived from the item/template `inventory.json` (IDs, nets, and aliases). Grounding criteria apply and hallucination penalties may be used per rubric.
+- `casIR`: The `.cir` artifact itself defines the inventory at evaluation time. The harness parses its nets and motif IDs (adds helpful aliases such as `Cload`/`CL` for capacitors) and provides that to judges and to groundedness scoring.
+- `cascode`: No concrete inventory exists. The harness disables grounding-based rubric criteria and hallucination penalties for this modality so answers are not scored on citing element IDs. Judges receive an empty inventory and a rubric with grounding weights set to 0.
 - You can also control the set via `meta.json` `modalities`, but auto-detection will include any additional recognized files present.
 
 ### Debugging family
 
 - For items under `data/<split>/debugging/...`, the harness can programmatically inject faults into the template netlist.
-- The initial fault type is a device polarity swap (NMOS↔PMOS). For each debugging question with `modality: "spice_netlist"`, the runner loads the template `netlist.sp` and deterministically flips the model of one randomly chosen MOS device (`nch`↔`pch` or `NMOS`↔`PMOS`).
-- The injected `swapped_id`, `from_type`, and `to_type` are passed to the judge via `refs`, enabling rubric/LLM-as-judge to verify that the answer names the correct device and fix.
+- Fault type: device polarity swap (NMOS↔PMOS).
+- SPICE: For `modality: "spice_netlist"`, the runner loads the template `netlist.sp` and flips one MOS device (`nch`↔`pch` or `NMOS`↔`PMOS`). Writes `netlist_bug.sp`.
+- casIR: If a `.cir` exists in the template, a parallel question is auto-added. The runner flips one motif `type` containing NMOS/PMOS inside the JSON and writes `netlist_bug.cir`.
+- cascode (ADL): If a `.cas` exists, a parallel question is auto-added. The runner flips one occurrence of `NMOS`↔`PMOS` in type tokens and writes `netlist_bug.cas`.
+- The injected `swapped_id`, `from_type`, and `to_type` are included in `refs` for scoring and judging.
 
 ### Design family
 

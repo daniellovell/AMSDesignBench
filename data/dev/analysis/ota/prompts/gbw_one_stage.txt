@@ -8,9 +8,9 @@ Required sections (use these exact headers):
 - Answer
 
 Guidance:
-- In Topology: explicitly name the topology (e.g., single-stage, telescopic cascode, folded cascode, two-stage, high-swing mirror) and justify in 1 sentence using observed elements.
+- In Topology: explicitly name the topology (e.g., single-stage, telescopic cascode, folded cascode, two-stage, high-swing mirror) and justify in 1 sentence using observed elements. Identify single-ended vs differential OTA.
 - In Key relation: give the simplest symbolic relation that applies to this topology. Include modifiers when topology demands it (e.g., current-mirror ratio k → GBW ≈ (gm/CL)·k). State conditions (unity-gain, dominant pole, etc.).
 - In Grounded evidence: cite element IDs and nets from the artifact (e.g., `M1`, `M2`, `Cload`, `vout`).
 - Avoid generic statements without conditions. Do not assume Miller/two-stage unless visible in the artifact.
 
-Return markdown only.
+Return markdown only. NEVER use LaTeX or MathJax formatting in your response.

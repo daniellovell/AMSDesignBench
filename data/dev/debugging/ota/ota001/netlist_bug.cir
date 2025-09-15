@@ -1,0 +1,83 @@
+{
+  "nets": [
+    {
+      "id": "VDD",
+      "type": "supply"
+    },
+    {
+      "id": "GND",
+      "type": "supply"
+    },
+    {
+      "id": "vinp"
+    },
+    {
+      "id": "vinn"
+    },
+    {
+      "id": "n1"
+    },
+    {
+      "id": "n2"
+    },
+    {
+      "id": "ntail"
+    },
+    {
+      "id": "vout"
+    },
+    {
+      "id": "vbias_n",
+      "type": "bias"
+    }
+  ],
+  "motifs": [
+    {
+      "id": "dp",
+      "type": "DiffPairPMOS",
+      "ports": {
+        "in_p": "vinp",
+        "in_n": "vinn",
+        "out_l": "n1",
+        "out_r": "n2",
+        "tail": "ntail",
+        "gnd": "GND"
+      }
+    },
+    {
+      "id": "tail",
+      "type": "TailCurrentSourceNMOS",
+      "ports": {
+        "out": "ntail",
+        "gate": "vbias_n",
+        "gnd": "GND"
+      }
+    },
+    {
+      "id": "m5t",
+      "type": "FiveTLoadPMOS",
+      "params": {
+        "ref": "left"
+      },
+      "ports": {
+        "target": "dp",
+        "out": "vout",
+        "vdd": "VDD"
+      }
+    },
+    {
+      "id": "cl",
+      "type": "Cap",
+      "ports": {
+        "p": "vout",
+        "n": "GND"
+      },
+      "params": {
+        "C": 1e-12
+      }
+    }
+  ],
+  "provenance": {
+    "source": "OTA5T"
+  }
+}

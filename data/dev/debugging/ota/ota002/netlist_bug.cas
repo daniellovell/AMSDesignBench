@@ -1,0 +1,25 @@
+package analog.ota; import lib.motifs.*;
+
+class OTATelescopicDiff implements Amplifier {
+  supply VDD=1.8V; ground GND;
+  port in_p vip, in_n vin; diff out(vop, von);
+  bias vb1, vb2, vb3, vtail;
+
+  use {
+    dp   = new DiffPairNMOS(vip, vin) { gnd=GND; tail=N005; };
+    itail = new TailCurrentSourceNMOS() { out=N005; gate=vtail; gnd=GND; };
+
+    // PMOS cascodes on both branches
+    pair casN = NMOSCascode(dp.out_l, dp.out_r) { bias=vb3; gnd=GND; };
+
+    // PMOS cascoded loads with top current sources (vb1) and cascode gates (vb2)
+    pair loadP = PMOSCascodeLoad(casN.out_l, casN.out_r) { bias=vb2; top_gate=vb1; vdd=VDD; };
+
+    alias von = loadP.out_l; alias vop = loadP.out_r;
+
+    C(vop, GND, 1pF); C(von, GND, 1pF);
+  }
+
+  // Preserve internal node names for mapping
+  alias N003 = casN.mid_l; alias N004 = casN.mid_r;
+}

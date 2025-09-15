@@ -1,0 +1,21 @@
+package analog.ota; import lib.motifs.*;
+
+class OTA2Stage_Uncomp implements Amplifier {
+  supply vdd=1.8V; ground GND;
+  port in_p vinp, in_n vinn; port out vout;
+  bias vbn, vbp;  // tail NMOS bias and PMOS load bias
+
+  use {
+    // Stage 1: 5T OTA with mirror to 'vint'
+    dp = new DiffPairNMOS(vinp, vinn) { gnd=GND; tail=ntail; };
+    tail = new TailCurrentSourceNMOS() { out=ntail; gate=vbn; gnd=GND; };
+    attach FiveTLoadPMOS on dp { vdd=vdd; out=vint; ref=left; };
+    alias n1 = dp.out_l;
+
+    // Stage 2: NMOS common source with PMOS gate-biased load
+    cs2  = new CSStageNMOS(in=vint, out=vout) { gnd=GND; };
+    pld  = new PMOSGateBiasedLoad(node=vout) { gate=vbp; vdd=vdd; };
+
+    C(vout, GND, 1pF);
+  }
+}

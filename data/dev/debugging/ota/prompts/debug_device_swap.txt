@@ -9,8 +9,8 @@ Required sections (use these exact headers):
 - Answer
 
 Guidance:
-- In Fault: identify the specific device that is the wrong transistor type (e.g., an NMOS input device instantiated as PMOS) and explain the impact on biasing/gain.
+- In Fault: specific device/structure/motif that is at fault.
 - In Grounded evidence: cite the exact element ID and show the problematic line or node context from the artifact.
-- In Fix: propose a concrete change (e.g., change `pch` to `nch` for M1 and correct body tie), and mention any node re-ties needed.
+- In Fix: propose a concrete change and mention any node re-ties needed.
 
 Return markdown only.

@@ -1,7 +1,11 @@
 from __future__ import annotations
 import os
 from typing import Any, Dict, List
+import time
+import random as _rnd
+import re
 from .base import BaseAdapter
+from ..utils.rate_limiter import get_limiter
 
 try:
     import anthropic  # type: ignore
@@ -58,9 +62,30 @@ class AnthropicAdapter(BaseAdapter):
                 "temperature": self.temperature,
                 "max_tokens": self.max_tokens,
             }
+            # Cross-thread rate limiting
+            try:
+                est = int((len(SYS_PROMPT) + len(user)) / float(os.getenv("ANTHROPIC_TOKEN_DIVISOR", 4))) + int(self.max_tokens)
+                rpm = float(os.getenv("ANTHROPIC_RPM", 0) or 0)
+                tpm = float(os.getenv("ANTHROPIC_TPM", 0) or 0)
+                if rpm > 0 or tpm > 0:
+                    get_limiter("anthropic", rpm=rpm, tpm=tpm).acquire(token_cost=est, req_cost=1.0)
+            except Exception:
+                pass
 
-            # Attempt a couple adaptive retries for temperature-only restrictions.
-            for _ in range(2):
+            # Adaptive retries + exponential backoff for rate/overload
+            def _parse_retry_after(msg: str) -> float:
+                m = re.search(r"try again in\s*([0-9]+\.?[0-9]*)s", msg, flags=re.I)
+                if m:
+                    try:
+                        return float(m.group(1))
+                    except Exception:
+                        return 0.0
+                return 0.0
+            max_attempts = int(os.getenv("ANTHROPIC_MAX_RETRIES", 8))
+            base_delay = float(os.getenv("ANTHROPIC_BACKOFF_BASE", 1.0))
+            attempt = 0
+            while attempt < max_attempts:
+                attempt += 1
                 try:
                     resp = self.client.messages.create(**params)  # type: ignore[arg-type]
                     break
@@ -70,8 +95,17 @@ class AnthropicAdapter(BaseAdapter):
                     if "temperature" in msg and ("unsupported" in msg or "does not support" in msg or "only the default" in msg):
                         params.pop("temperature", None)
                         adapted = True
-                    if not adapted:
-                        raise
+                    if adapted:
+                        continue
+                    is_rate = ("rate limit" in msg) or ("429" in msg)
+                    is_overload = ("service unavailable" in msg) or ("overloaded" in msg) or ("temporarily" in msg) or ("timeout" in msg)
+                    if is_rate or is_overload:
+                        parsed = _parse_retry_after(msg)
+                        delay = parsed if parsed > 0 else (base_delay * (2 ** (attempt - 1)))
+                        delay += _rnd.uniform(0.1, 0.5)
+                        time.sleep(min(delay, 20.0))
+                        continue
+                    raise
 
             # Extract text blocks
             text = ""

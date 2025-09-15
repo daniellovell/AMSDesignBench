@@ -338,7 +338,10 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
                 judge_html = "<b>Judge:</b> " + (f"overall {judge_overall:.2f}" if isinstance(judge_overall, (int, float)) else "-")
                 if judge_rows:
                     judge_html += "<br/><table class=small><tr><th>Criterion</th><th>Score</th></tr>" + "".join(judge_rows) + "</table>"
-
+            # Show any adapter/harness error captured for this record
+            err = r.get("error")
+            if err:
+                judge_html += ("<div class=small style='color:#b00'>Error: " + esc(str(err)) + "</div>")
             answer = r.get("answer", "")
             answer_html = f"<details><summary>View answer</summary><div class=mono>{esc(answer)}</div></details>"
             blocks.append(
