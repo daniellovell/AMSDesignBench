@@ -42,12 +42,22 @@ class AnthropicAdapter(BaseAdapter):
             question = item.get("question", {})
             req_sections = question.get("require_sections", [])
             modality = question.get("modality", "")
-            artifact_path = item.get("artifact_path", "")
+            def _display_modality(mod: str) -> str:
+                m = (mod or "").strip()
+                if m == "cascode":
+                    return "analog description language"
+                if m == "spice_netlist":
+                    return "SPICE netlist"
+                if m == "casIR":
+                    return "casIR"
+                return m or "artifact"
 
             artifact = item.get("artifact", "")
-            art_block = f"\nArtifact ({modality}):\n```spice\n{artifact}\n```\n" if artifact else "\n"
+            disp_mod = _display_modality(modality)
+            fence = "spice" if modality == "spice_netlist" else ("json" if modality == "casIR" else "text")
+            art_block = f"\nArtifact ({disp_mod}):\n```{fence}\n{artifact}\n```\n" if artifact else "\n"
             user = (
-                f"Artifact modality: {modality}. Artifact path: {artifact_path}.\n"
+                f"Artifact modality: {disp_mod}.\n"
                 f"Inventory IDs you may cite: {', '.join(inv_ids)}\n"
                 f"Required sections: {', '.join(req_sections)}\n"
                 f"{art_block}\n"

@@ -1,7 +1,7 @@
 {
   "topology": "five_transistor_ota",
   "gen_seed": 301,
-  "modalities": ["spice_netlist"],
+  "modalities": ["spice_netlist", "casIR", "cascode"],
   "bench_version": "0.1.0",
   "template_path": "../../../templates/ota/ota001"
 }

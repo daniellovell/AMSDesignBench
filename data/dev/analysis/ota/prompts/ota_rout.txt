@@ -8,7 +8,7 @@ Required sections (use these exact headers):
 - Answer
 
 Guidance:
-- In Topology: explicitly name the topology (e.g., single-stage, telescopic cascode, folded cascode, two-stage, high-swing mirror) and justify using observed devices. Identify single-ended vs differential OTA.
+- In Topology: explicitly name the topology and justify in 1 sentence using observed elements. Identify single-ended vs differential OTA.
 - In Key relation: state r_out symbolically for this topology and the conditions for validity (matching, high ro, small-signal, etc.).
 - In Grounded evidence: cite real element IDs/nets that set r_out at `vout` (e.g., devices tied to the output node).
 

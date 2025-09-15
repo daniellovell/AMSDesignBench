@@ -173,7 +173,8 @@ def load_questions(item_dir: Path) -> List[Question]:
             continue
         # Normalize modality and track
         mod = raw.get("modality")
-        needs_expand = mod in (None, "", "auto", "*", "all")
+        # Also expand if modality is the umbrella 'design' (back-compat for design family)
+        needs_expand = mod in (None, "", "auto", "*", "all", "design")
         base_id = str(raw.get("id", item_dir.name))
         if needs_expand:
             for m in available_modalities:
@@ -207,6 +208,7 @@ def load_questions(item_dir: Path) -> List[Question]:
                 else:
                     # No explicit path provided; use canonical filename for modality
                     qdict["artifact_path"] = ap
+                # Keep the original prompt_template; at runtime we can swap it based on modality
                 out.append(Question.model_validate(qdict))
         else:
             # Normalize modality and artifact path if missing
@@ -341,8 +343,23 @@ def main():
     ap.add_argument("--judge-model", default=None, help="override judge model name")
     ap.add_argument("--model-workers", type=int, default=0, help="parallel model workers (0 = run all models in parallel)")
     ap.add_argument("--item-workers", type=int, default=8, help="per-model concurrent workers for items/questions")
+    # Judge tuning
+    ap.add_argument("--judge-rpm", type=float, default=None, help="Rate limit RPM for judge API (sets OPENAI_JUDGE_RPM)")
+    ap.add_argument("--judge-tpm", type=float, default=None, help="Token per minute limit for judge API (sets OPENAI_JUDGE_TPM)")
+    ap.add_argument("--judge-max-retries", type=int, default=None, help="Max retries for judge API (sets OPENAI_JUDGE_MAX_RETRIES)")
+    ap.add_argument("--judge-concurrency", type=int, default=None, help="Max concurrent judge calls (sets OPENAI_JUDGE_CONCURRENCY)")
     args = ap.parse_args()
     # Judge is always enabled; no flag required
+
+    # Apply judge tuning via environment for scorer module
+    if args.judge_rpm is not None:
+        os.environ["OPENAI_JUDGE_RPM"] = str(args.judge_rpm)
+    if args.judge_tpm is not None:
+        os.environ["OPENAI_JUDGE_TPM"] = str(args.judge_tpm)
+    if args.judge_max_retries is not None:
+        os.environ["OPENAI_JUDGE_MAX_RETRIES"] = str(args.judge_max_retries)
+    if args.judge_concurrency is not None:
+        os.environ["OPENAI_JUDGE_CONCURRENCY"] = str(args.judge_concurrency)
 
     # Load bench config (YAML)
     import yaml
@@ -378,8 +395,8 @@ def main():
     for spec in model_specs:
         name, kwargs = parse_model_spec(spec)
         adapter = get_adapter(name, **kwargs)
-        # Create a unique slug for outputs
-        if name == "openai" and "model" in kwargs and kwargs["model"]:
+        # Create a unique, descriptive slug for outputs
+        if kwargs.get("model"):
             slug = f"{name}_{kwargs['model']}".replace("/", "-")
         else:
             slug = name
@@ -683,6 +700,58 @@ def main():
         lines[idx] = " ".join(parts)
         return "\n".join(lines) + ("\n" if text.endswith("\n") else ""), dev_id, from_type, to_type
 
+    def _strip_json_comments(s: str) -> str:
+        """Remove // line comments and /* */ block comments from JSON-like text.
+        Preserves content inside quoted strings. Intended for casIR artifacts
+        that allow comments but are otherwise valid JSON.
+        """
+        out_chars: list[str] = []
+        in_str = False
+        str_ch = ''
+        esc = False
+        i = 0
+        n = len(s)
+        in_line = False
+        in_block = False
+        while i < n:
+            ch = s[i]
+            ch2 = s[i+1] if i+1 < n else ''
+            if in_line:
+                if ch == '\n':
+                    in_line = False
+                    out_chars.append(ch)
+                i += 1
+                continue
+            if in_block:
+                if ch == '*' and ch2 == '/':
+                    in_block = False
+                    i += 2
+                else:
+                    i += 1
+                continue
+            if not in_str and ch == '/' and ch2 == '/':
+                in_line = True
+                i += 2
+                continue
+            if not in_str and ch == '/' and ch2 == '*':
+                in_block = True
+                i += 2
+                continue
+            out_chars.append(ch)
+            if in_str:
+                if esc:
+                    esc = False
+                elif ch == '\\':
+                    esc = True
+                elif ch == str_ch:
+                    in_str = False
+            else:
+                if ch in ('"', "'"):
+                    in_str = True
+                    str_ch = ch
+            i += 1
+        return ''.join(out_chars)
+
     def inject_device_swap_casir(text: str, seed: int):
         """Swap the polarity of a single MOS-like motif in a casIR JSON artifact.
         Looks for motif.type containing 'NMOS' or 'PMOS' (case-insensitive) and flips it.
@@ -690,7 +759,7 @@ def main():
         (text, None, None, None).
         """
         try:
-            data = json.loads(text)
+            data = json.loads(_strip_json_comments(text))
         except Exception:
             return text, None, None, None
         motifs = data.get("motifs") or []
@@ -735,26 +804,39 @@ def main():
 
     def inject_device_swap_cascode(text: str, seed: int):
         """Swap one MOS polarity in ADL/"cascode" artifact by flipping NMOS<->PMOS
-        in a motif type token (e.g., DiffPairNMOS <-> DiffPairPMOS).
+        in motif type tokens (e.g., DiffPairNMOS <-> DiffPairPMOS). Ignores comments
+        and targets identifiers in code contexts: after 'new', after 'attach', or
+        identifiers used as call/constructor names (followed by '(') or assignment RHS.
         Returns (mutated_text, swapped_label, from_type, to_type).
         """
         lines = text.splitlines()
         import re
-        pattern = re.compile(r"\b([A-Za-z0-9_]*)(NMOS|PMOS)\b")
+        ident_pat = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*?(?:NMOS|PMOS)[A-Za-z0-9_]*)\b")
         candidates = []  # (line_idx, span, full_token)
         for i, raw in enumerate(lines):
-            for m in pattern.finditer(raw):
-                full = m.group(0)
-                candidates.append((i, (m.start(), m.end()), full))
+            # Ignore everything after '//' (treat as comment)
+            code = raw.split('//', 1)[0]
+            for m in ident_pat.finditer(code):
+                token = m.group(1)
+                s, e = m.span(1)
+                before = code[:s]
+                after = code[e:]
+                # Heuristic contexts to ensure we mutate code, not prose:
+                ctx_new = bool(re.search(r"\bnew\s+$", before))
+                ctx_attach = bool(re.search(r"\battach\s+$", before))
+                ctx_call = bool(re.match(r"\s*\(", after))
+                ctx_assign = bool(re.search(r"=\s*$", before))
+                if ctx_new or ctx_attach or ctx_call or ctx_assign:
+                    candidates.append((i, (s, e), token))
         if not candidates:
             return text, None, None, None
         rnd = random.Random(seed)
         i, (s, e), token = rnd.choice(candidates)
-        if token.endswith("NMOS") or token.endswith("nmos"):
-            new_token = token.replace("NMOS", "PMOS").replace("nmos", "pmos")
+        if token.lower().endswith("nmos"):
+            new_token = token[:-4] + "PMOS"
             from_type, to_type = "NMOS", "PMOS"
         else:
-            new_token = token.replace("PMOS", "NMOS").replace("pmos", "nmos")
+            new_token = token[:-4] + "NMOS"
             from_type, to_type = "PMOS", "NMOS"
         # Replace within the chosen line
         line = lines[i]
@@ -762,13 +844,12 @@ def main():
         # Try to infer a nearby label/id for reporting (e.g., lhs var before '=')
         swapped_label = token
         try:
-            # If line has pattern 'name = new Type', grab 'name'
-            m2 = re.search(r"\b([A-Za-z0-9_]+)\s*=\s*new\s+", line)
+            code = line.split('//', 1)[0]
+            m2 = re.search(r"\b([A-Za-z0-9_]+)\s*=\s*new\s+", code)
             if m2:
                 swapped_label = m2.group(1)
             else:
-                # If 'attach Type on name', grab 'name'
-                m3 = re.search(r"attach\s+[A-Za-z0-9_]+\s+on\s+([A-Za-z0-9_]+)", line)
+                m3 = re.search(r"attach\s+[A-Za-z0-9_]+\s+on\s+([A-Za-z0-9_]+)", code)
                 if m3:
                     swapped_label = m3.group(1)
         except Exception:
@@ -802,8 +883,64 @@ def main():
                 if mod == "casIR":
                     return "casIR"
                 return mod
+            # For design track, switch prompt template based on modality to include examples and modality-specific guidance
+            if str(q.track).lower() == "design":
+                # Default to existing template for SPICE
+                if q.modality == "casIR":
+                    ppath = (item_dir.parent / "prompts" / "design_ota_casir.txt")
+                elif q.modality == "cascode":
+                    ppath = (item_dir.parent / "prompts" / "design_ota_cas.txt")
             prompt_tmpl = ppath.read_text()
-            prompt = prompt_tmpl.format(modality=_display_modality(q.modality))
+            # Build example blocks for casIR/cascode modalities
+            examples = ""
+            # Build or load a plain-language design brief to tell the model exactly what to design
+            def _design_brief() -> str:
+                # Prefer a local design_brief.txt alongside the item questions
+                try:
+                    db_path = item_dir / "design_brief.txt"
+                    if db_path.exists():
+                        txt = db_path.read_text().strip()
+                        if txt:
+                            return txt
+                except Exception:
+                    pass
+                # If no brief is present, fail fast so datasets stay explicit
+                raise SystemExit(f"design_brief.txt not found for design item: {item_dir}")
+            # Only require a design brief for design track; other families do not need it
+            if str(q.track).lower() == "design":
+                design_brief = _design_brief()
+            else:
+                design_brief = ""
+            if str(q.track).lower() == "design" and q.modality in ("casIR", "cascode"):
+                try:
+                    # Canonical examples: ota003 and ota006 from templates
+                    base003 = Path("data/dev/templates/ota/ota003")
+                    base006 = Path("data/dev/templates/ota/ota006")
+                    if q.modality == "casIR":
+                        ex1 = (base003 / "netlist.cir").read_text()
+                        ex2 = (base006 / "netlist.cir").read_text()
+                        examples = (
+                            "Example 1 (ota003):\n```json\n" + ex1.strip() + "\n```\n\n" +
+                            "Example 2 (ota006):\n```json\n" + ex2.strip() + "\n```\n"
+                        )
+                    else:
+                        # cascode (analog description language)
+                        ex1 = (base003 / "netlist.cas").read_text()
+                        ex2 = (base006 / "netlist.cas").read_text()
+                        examples = (
+                            "Example 1 (ota003):\n```text\n" + ex1.strip() + "\n```\n\n" +
+                            "Example 2 (ota006):\n```text\n" + ex2.strip() + "\n```\n"
+                        )
+                except Exception:
+                    examples = ""
+            try:
+                prompt = prompt_tmpl.format(modality=_display_modality(q.modality), examples=examples, design_brief=design_brief)
+            except Exception:
+                # Back-compat: older templates may not use {examples}
+                try:
+                    prompt = prompt_tmpl.format(modality=_display_modality(q.modality), design_brief=design_brief)
+                except Exception:
+                    prompt = prompt_tmpl.format(modality=_display_modality(q.modality))
 
             # Artifact
             art_path = item_dir / q.artifact_path
@@ -814,6 +951,9 @@ def main():
                 except Exception:
                     artifact_text = ""
             artifact_used = artifact_text
+            # For design track, do not leak template artifacts to the model prompt
+            if str(q.track).lower() == "design":
+                artifact_used = ""
             rand_info: Dict[str, Any] = {}
             # Debugging support: generate bugged artifact from template if requested
             bug_info: Dict[str, Any] = {}
@@ -989,7 +1129,7 @@ def main():
             # Build an effective inventory depending on modality
             def _inventory_from_casir(text: str) -> Inventory:
                 try:
-                    data = json.loads(text)
+                    data = json.loads(_strip_json_comments(text))
                 except Exception:
                     return it.inventory
                 elems: Dict[str, Any] = {}
@@ -1028,8 +1168,27 @@ def main():
                 return inv
 
             eff_inv: Inventory = it.inventory
-            if q.modality == "casIR" and artifact_used:
-                eff_inv = _inventory_from_casir(artifact_used)
+            if q.modality == "casIR":
+                # Prefer artifact_used; for design track, fall back to template answer key
+                src_text_for_inv = None
+                if artifact_used:
+                    src_text_for_inv = artifact_used
+                else:
+                    # try template answer key (loaded below into refs)
+                    try:
+                        mpath = item_dir / "meta.json"
+                        if mpath.exists():
+                            mm = json.loads(mpath.read_text())
+                            tpath = mm.get("template_path") or mm.get("template")
+                            if isinstance(tpath, str) and tpath.strip():
+                                tdir = (item_dir / tpath).resolve()
+                                keyp = tdir / "netlist.cir"
+                                if keyp.exists():
+                                    src_text_for_inv = keyp.read_text()
+                    except Exception:
+                        src_text_for_inv = None
+                if src_text_for_inv:
+                    eff_inv = _inventory_from_casir(src_text_for_inv)
             elif q.modality == "cascode":
                 try:
                     from .types import Inventory as Inv  # type: ignore
@@ -1076,6 +1235,34 @@ def main():
                     refs = {}
             if bug_info:
                 refs = {**(refs or {}), **bug_info}
+            # For design tasks: attach per-modality answer keys to refs for the judge
+            if str(q.track).lower() == "design":
+                try:
+                    mpath = item_dir / "meta.json"
+                    if mpath.exists():
+                        m = json.loads(mpath.read_text())
+                        tpath = m.get("template_path") or m.get("template")
+                        if isinstance(tpath, str) and tpath.strip():
+                            tdir = (item_dir / tpath).resolve()
+                            if q.modality == "spice_netlist":
+                                ak = tdir / "netlist.sp"
+                                if ak.exists():
+                                    refs = {**(refs or {}), "answer_key_spice": ak.read_text()}
+                            if q.modality == "casIR":
+                                ak = tdir / "netlist.cir"
+                                if ak.exists():
+                                    refs = {**(refs or {}), "answer_key_casir": ak.read_text()}
+                            elif q.modality == "cascode":
+                                ak = tdir / "netlist.cas"
+                                if ak.exists():
+                                    refs = {**(refs or {}), "answer_key_cas": ak.read_text()}
+                except Exception:
+                    pass
+            # Always include minimal context for judge
+            refs = {**(refs or {}),
+                    "expected_modality": q.modality,
+                    "track": q.track,
+                    "aspect": (q.meta or {}).get("aspect")}
             try:
                 from .scoring.judge_anchored import judge_answer as judge_call  # type: ignore
             except Exception:

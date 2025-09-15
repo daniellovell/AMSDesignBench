@@ -1,5 +1,6 @@
 You are an expert analog IC designer.
-Synthesize the structure of a {modality} OTA based on the requested topology.
+Design brief: {design_brief}
+Synthesize the structure of a {modality} OTA that matches the brief.
 
 Required sections (use these exact headers):
 - Topology

@@ -5,8 +5,8 @@ class OTACurrentMirror implements Amplifier {
   port in_p vinp, in_n vinn; port out vout; bias vbias_n;
 
   use {
-    dp   = new DiffPairNMOS(vinp, vinn) { gnd=GND; tail=ntail; };
-    tail = new TailCurrentSourcePMOS() { out=ntail; gate=vbias_n; gnd=GND; };
+    dp   = new DiffPairPMOS(vinp, vinn) { gnd=GND; tail=ntail; };
+    tail = new TailCurrentSourceNMOS() { out=ntail; gate=vbias_n; gnd=GND; };
 
     // PMOS mirror group: diode @ n1 (sense), taps to n2, nmir, vout
     pm = mirror.PMOS(sense = dp.out_l, vdd = VDD, taps = { n2:1, nmir:2, vout:2 });

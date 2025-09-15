@@ -182,4 +182,17 @@ Examples:
 
 ### Design family
 
-- For items under `data/<split>/design/...`, prompts ask the model to synthesize a structure/netlist. No artifact is required; rubric checks focus on topology description and presence of a plausible SPICE-like netlist.
+- For items under `data/<split>/design/...`, prompts ask the model to synthesize a structure/netlist. No artifact is required; rubric checks focus on topology description and presence of a plausible netlist.
+- When a design item uses `modality: auto` and declares a `template_path` in `meta.json`, the runner expands into all available modalities discovered in the template (SPICE, casIR, analog description language `.cas`).
+- Modality-specific prompts:
+  - SPICE (`spice_netlist`): `design_ota.txt` (SPICE-like fenced block).
+  - casIR (`casIR`): `design_ota_casir.txt`, injects two examples from `templates/ota/ota003` and `ota006` and asks for casIR JSON.
+  - Analog description language (`cascode`): `design_ota_cas.txt`, injects two examples from `templates/ota/ota003` and `ota006` and asks for `.cas` ADL.
+- Judges receive per-modality answer keys from the template for structural comparison:
+  - casIR: `netlist.cir` is passed via refs and also used to derive an inventory for grounding.
+  - ADL (`cascode`): `netlist.cas` is passed via refs; grounding is disabled for this modality.
+
+Design brief:
+- Each design item must include a plain-text `design_brief.txt` in the item directory (e.g., `data/dev/design/ota/ota001/design_brief.txt`).
+- The brief is injected at the top of the prompt and tells the model exactly what topology to design.
+- If `design_brief.txt` is missing, the harness errors out to keep datasets explicit and avoid implicit assumptions.

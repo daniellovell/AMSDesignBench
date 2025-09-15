@@ -5,11 +5,12 @@
   "criteria": [
     {
       "id": "topology",
-      "desc": "Explicitly identifies topology in a Topology section as single-stage (not cascoded).",
+      "desc": "Explicitly identifies topology in a Topology section (e.g., single-stage / telescopic / folded cascode).",
       "required": true,
       "section": "Topology",
-      "patterns_any": ["single-stage", "one-stage", "single stage", "current mirror"],
-      "anti_patterns": ["cascode", "cascoded", "telescopic"],
+      "patterns_any": ["single-stage", "one-stage", "single stage", "telescopic", "folded cascode", "differential pair", "current mirror", "differential pair with a current mirror load"],
+      "min_any": 2,
+      "anti_patterns": ["two-stage", "miller compensation", "second stage"],
       "weight": 0.10
     },
     {

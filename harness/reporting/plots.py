@@ -1,6 +1,8 @@
 from __future__ import annotations
 import argparse
 import json
+import os
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -101,7 +103,15 @@ def plot_grouped_bars(
             plt.close(fig)
         else:
             try:
-                plt.show(block=False)
+                import matplotlib
+                backend = str(matplotlib.get_backend()).lower()
+                can_gui = ("agg" not in backend)
+                if sys.platform.startswith("linux") and not os.environ.get("DISPLAY"):
+                    can_gui = False
+                if can_gui:
+                    plt.show(block=False)
+                else:
+                    print(f"[plots] Non-interactive backend '{backend}'; skipping GUI display for grouped bars.")
             except Exception:
                 pass
         paths.append(path)
@@ -159,7 +169,15 @@ def plot_heatmap_overall(
         plt.close(fig)
     else:
         try:
-            plt.show(block=False)
+            import matplotlib
+            backend = str(matplotlib.get_backend()).lower()
+            can_gui = ("agg" not in backend)
+            if sys.platform.startswith("linux") and not os.environ.get("DISPLAY"):
+                can_gui = False
+            if can_gui:
+                plt.show(block=False)
+            else:
+                print(f"[plots] Non-interactive backend '{backend}'; skipping GUI display for heatmap.")
         except Exception:
             pass
     return path
@@ -209,11 +227,19 @@ def main():
         print(f"  {heat}")
     for p in bars:
         print(f"  {p}")
-    # If not silent, bring figures to front / block once at end
+    # If not silent and GUI-capable, bring figures to front / block once at end
     if not args.silent:
         try:
+            import matplotlib
             import matplotlib.pyplot as plt  # type: ignore
-            plt.show()
+            backend = str(matplotlib.get_backend()).lower()
+            can_gui = ("agg" not in backend)
+            if sys.platform.startswith("linux") and not os.environ.get("DISPLAY"):
+                can_gui = False
+            if can_gui:
+                plt.show()
+            else:
+                print(f"[plots] Non-interactive backend '{backend}'; use --silent or set MPLBACKEND to a GUI backend to suppress warnings.")
         except Exception:
             pass
 

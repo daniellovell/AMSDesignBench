@@ -1,16 +1,13 @@
 {
   "rubric_id": "design_two_stage",
   "version": "0.1.0",
-  "weights": { "structure": 0.50, "topology_terms": 0.20, "netlist_presence": 0.20, "safety": 0.10 },
+  "weights": { "structural_correctness": 0.70, "topology_terms": 0.20, "safety": 0.10 },
   "criteria": [
     {
-      "id": "structure",
-      "desc": "Describes first stage (diff pair + load) feeding a second gain stage with load at the output.",
+      "id": "structural_correctness",
+      "desc": "Netlist structure matches the two-stage reference (stage 1 mirror OTA into stage 2 NMOS CS with PMOS gate-biased load).",
       "required": true,
-      "section": "Structure",
-      "patterns_any": ["first stage", "second stage", "diff pair", "load", "gain stage", "VDD", "output"],
-      "min_any": 3,
-      "weight": 0.50
+      "weight": 0.70
     },
     {
       "id": "topology_terms",
@@ -18,14 +15,6 @@
       "section": "Topology",
       "patterns_any": ["two-stage", "second stage"],
       "min_any": 1,
-      "weight": 0.20
-    },
-    {
-      "id": "netlist_presence",
-      "desc": "Provides a SPICE-like netlist in a code block with transistor lines and placeholder W/L.",
-      "section": "Netlist",
-      "patterns_any": ["```", "M", "W=", "L="],
-      "min_any": 3,
       "weight": 0.20
     },
     {

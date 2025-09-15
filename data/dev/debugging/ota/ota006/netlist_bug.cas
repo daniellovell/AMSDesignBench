@@ -8,13 +8,13 @@ class OTATelescopic_SE_WS implements Amplifier {
   use {
     // Input differential pair with explicit tail node (N006)
     dp   = new DiffPairNMOS(vip, vin) { gnd=GND; tail=N006; };
-    tail = new TailCurrentSourceNMOS() { out=N006; gate=vtail; gnd=GND; };
+    tail = new TailCurrentSourcePMOS() { out=N006; gate=vtail; gnd=GND; };
 
     // NMOS cascodes (vb2): right branch to output, left branch to reference node N001
     ncas_out = new NMOSCascode(in=N005, out=vop) { bias=vb2; gnd=GND; };   // M1
     ncas_ref = new NMOSCascode(in=N004, out=N001){ bias=vb2; gnd=GND; };   // M2
 
-    // NMOS wide-swing active load:
+    // PMOS wide-swing active load:
     // - Mirror pair with common gate at N001 (M8,M9)
     // - Cascode devices with gate=vb1 to extend swing (M6 on out branch, M7 on ref branch)
     p_m8 = new PMOSMirror(from=N001, to=N003, vdd=VDD);                    // M8

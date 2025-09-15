@@ -1,32 +1,165 @@
 {
   "nets": [
-    {"id":"VDD","type":"supply"},{"id":"GND","type":"supply"},
-    {"id":"vip"},{"id":"vin"},
-    {"id":"vb1","type":"bias"},{"id":"vb2","type":"bias"},{"id":"vb3","type":"bias"},{"id":"vtail","type":"bias"},
-    {"id":"vop"},{"id":"von"},
-    {"id":"N001"},{"id":"N002"},{"id":"N003"},{"id":"N004"},{"id":"N005"}
+    {
+      "id": "VDD",
+      "type": "supply"
+    },
+    {
+      "id": "GND",
+      "type": "supply"
+    },
+    {
+      "id": "vip"
+    },
+    {
+      "id": "vin"
+    },
+    {
+      "id": "vb1",
+      "type": "bias"
+    },
+    {
+      "id": "vb2",
+      "type": "bias"
+    },
+    {
+      "id": "vb3",
+      "type": "bias"
+    },
+    {
+      "id": "vtail",
+      "type": "bias"
+    },
+    {
+      "id": "vop"
+    },
+    {
+      "id": "von"
+    },
+    {
+      "id": "N001"
+    },
+    {
+      "id": "N002"
+    },
+    {
+      "id": "N003"
+    },
+    {
+      "id": "N004"
+    },
+    {
+      "id": "N005"
+    }
   ],
   "motifs": [
     {
-      "id":"dp","type":"DiffPairNMOS",
-      "ports":{"in_p":"vip","in_n":"vin","out_l":"N003","out_r":"N004","tail":"N005","gnd":"GND"}
+      "id": "dp",
+      "type": "DiffPairNMOS",
+      "ports": {
+        "in_p": "vip",
+        "in_n": "vin",
+        "out_l": "N003",
+        "out_r": "N004",
+        "tail": "N005",
+        "gnd": "GND"
+      }
     },
-    {"id":"tail","type":"TailCurrentSourceNMOS","ports":{"out":"N005","gate":"vtail","gnd":"GND"}},
-
-    // NMOS cascodes (each exposes a mid node used by PMOS loads)
-    {"id":"casL","type":"NMOSCascode","ports":{"in":"N003","mid":"N003","out":"von","bias":"vb3","gnd":"GND"}},
-    {"id":"casR","type":"NMOSCascode","ports":{"in":"N004","mid":"N004","out":"vop","bias":"vb3","gnd":"GND"}},
-
-    // PMOS upper current sources (top devices) with gate=vb1
-    {"id":"ptopL","type":"PMOSCurrentSourceTop","ports":{"node":"N001","gate_top":"vb1","vdd":"VDD"}},
-    {"id":"ptopR","type":"PMOSCurrentSourceTop","ports":{"node":"N002","gate_top":"vb1","vdd":"VDD"}},
-
-    // PMOS cascode loads from the NMOS mid nodes up to the top nodes
-    {"id":"ploadL","type":"PMOSCascodeLoad","ports":{"in":"N003","out":"von","bias":"vb2","top_node":"N001","vdd":"VDD"}},
-    {"id":"ploadR","type":"PMOSCascodeLoad","ports":{"in":"N004","out":"vop","bias":"vb2","top_node":"N002","vdd":"VDD"}},
-
-    {"id":"clp","type":"Cap","ports":{"p":"vop","n":"GND"},"params":{"C":1e-12}},
-    {"id":"cln","type":"Cap","ports":{"p":"von","n":"GND"},"params":{"C":1e-12}}
+    {
+      "id": "tail",
+      "type": "TailCurrentSourceNMOS",
+      "ports": {
+        "out": "N005",
+        "gate": "vtail",
+        "gnd": "GND"
+      }
+    },
+    {
+      "id": "casL",
+      "type": "NMOSCascode",
+      "ports": {
+        "in": "N003",
+        "mid": "N003",
+        "out": "von",
+        "bias": "vb3",
+        "gnd": "GND"
+      }
+    },
+    {
+      "id": "casR",
+      "type": "NMOSCascode",
+      "ports": {
+        "in": "N004",
+        "mid": "N004",
+        "out": "vop",
+        "bias": "vb3",
+        "gnd": "GND"
+      }
+    },
+    {
+      "id": "ptopL",
+      "type": "PMOSCurrentSourceTop",
+      "ports": {
+        "node": "N001",
+        "gate_top": "vb1",
+        "vdd": "VDD"
+      }
+    },
+    {
+      "id": "ptopR",
+      "type": "NMOSCurrentSourceTop",
+      "ports": {
+        "node": "N002",
+        "gate_top": "vb1",
+        "vdd": "VDD"
+      }
+    },
+    {
+      "id": "ploadL",
+      "type": "PMOSCascodeLoad",
+      "ports": {
+        "in": "N003",
+        "out": "von",
+        "bias": "vb2",
+        "top_node": "N001",
+        "vdd": "VDD"
+      }
+    },
+    {
+      "id": "ploadR",
+      "type": "PMOSCascodeLoad",
+      "ports": {
+        "in": "N004",
+        "out": "vop",
+        "bias": "vb2",
+        "top_node": "N002",
+        "vdd": "VDD"
+      }
+    },
+    {
+      "id": "clp",
+      "type": "Cap",
+      "ports": {
+        "p": "vop",
+        "n": "GND"
+      },
+      "params": {
+        "C": 1e-12
+      }
+    },
+    {
+      "id": "cln",
+      "type": "Cap",
+      "ports": {
+        "p": "von",
+        "n": "GND"
+      },
+      "params": {
+        "C": 1e-12
+      }
+    }
   ],
-  "provenance":{"source":"OTATelescopicDiff"}
+  "provenance": {
+    "source": "OTATelescopicDiff"
+  }
 }

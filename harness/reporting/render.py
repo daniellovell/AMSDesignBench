@@ -327,6 +327,24 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
             scores = r.get("scores", {})
             judge = r.get("judge") or {}
             judge_overall = judge.get("overall")
+            # Optional: judge debug prompt
+            jdbg = judge.get("debug") or {}
+            judge_debug_html = ""
+            if isinstance(jdbg, dict) and (jdbg.get("system") or jdbg.get("instructions") or jdbg.get("payload")):
+                sys_txt = jdbg.get("system") or ""
+                inst_txt = jdbg.get("instructions") or ""
+                payload_txt = jdbg.get("payload")
+                try:
+                    payload_pretty = json.dumps(payload_txt, indent=2) if payload_txt is not None else ""
+                except Exception:
+                    payload_pretty = esc(str(payload_txt))
+                judge_debug_html = (
+                    "<details><summary>Judge Prompt</summary>"
+                    "<div class=small><b>System</b></div><div class=mono>" + esc(sys_txt) + "</div>"
+                    "<div class=small><b>Instructions</b></div><div class=mono>" + esc(inst_txt) + "</div>"
+                    "<div class=small><b>Payload</b></div><div class=mono>" + esc(payload_pretty) + "</div>"
+                    "</details>"
+                )
             # Judge breakdown
             judge_rows = []
             if isinstance(judge, dict) and isinstance(judge.get("scores"), dict):
@@ -338,6 +356,12 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
                 judge_html = "<b>Judge:</b> " + (f"overall {judge_overall:.2f}" if isinstance(judge_overall, (int, float)) else "-")
                 if judge_rows:
                     judge_html += "<br/><table class=small><tr><th>Criterion</th><th>Score</th></tr>" + "".join(judge_rows) + "</table>"
+                if judge_debug_html:
+                    judge_html += "<br/>" + judge_debug_html
+            # If judge returned a structured error, surface it prominently
+            jerr = judge.get("error") if isinstance(judge, dict) else None
+            if jerr:
+                judge_html += ("<div class=small style='color:#b00'>Judge error: " + esc(str(jerr)) + "</div>")
             # Show any adapter/harness error captured for this record
             err = r.get("error")
             if err:

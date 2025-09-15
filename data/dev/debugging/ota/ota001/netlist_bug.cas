@@ -7,9 +7,9 @@ class OTA5T implements Amplifier {
   use {
     // Differential pair with explicit tail node
     dp = new DiffPairNMOS(vinp, vinn) { gnd=GND; tail=ntail; };
-    tail = new TailCurrentSourceNMOS() { out=ntail; gate=vbias_n; gnd=GND; };
+    tail = new TailCurrentSourcePMOS() { out=ntail; gate=vbias_n; gnd=GND; };
 
-    // 5T NMOS load: diode on left leg (n1), mirrors to right leg (n2) and to vout
+    // 5T PMOS load: diode on left leg (n1), mirrors to right leg (n2) and to vout
     attach FiveTLoadPMOS on dp { vdd=VDD; out=vout; ref=left; };
 
     C(vout, GND, 1pF);
