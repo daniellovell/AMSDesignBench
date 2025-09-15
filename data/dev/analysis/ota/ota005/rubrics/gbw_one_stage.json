@@ -5,10 +5,10 @@
   "criteria": [
     {
       "id": "topology",
-      "desc": "Identifies a single-ended telescopic/folded cascode one-stage OTA in the Topology section.",
+      "desc": "Identifies a single-ended telescopic cascode one-stage OTA in the Topology section.",
       "required": true,
       "section": "Topology",
-      "patterns_any": ["telescopic", "folded cascode", "single-ended", "single ended"],
+      "patterns_any": ["telescopic", "cascode", "differential pair", "active load", "single-ended", "single ended"],
       "min_any": 2,
       "anti_patterns": ["two-stage", "miller compensation", "second stage", "fully differential"],
       "weight": 0.10
@@ -17,7 +17,12 @@
       "id": "key_relation",
       "desc": "States GBW ≈ gm/CL for one-stage OTA and conditions for validity.",
       "required": true,
-      "patterns_any": ["gm/C_L", "g_m/C_L", "GBW ~ gm/CL", "UGF ≈ gm/C_L", "GBW ≈ gm/CL", "GBW ~= gm/CL"],
+      "patterns_any": [
+        "gm/CL",
+        "GBW ≈ gm/CL",
+        "UGF ≈ gm/CL",
+        "GBW = gm / (2 * π * CL)"
+      ],
       "anti_patterns": ["ro*C_L sets GBW", "CL/gm"],
       "weight": 0.25
     },

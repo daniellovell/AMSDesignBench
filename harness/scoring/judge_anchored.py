@@ -39,7 +39,7 @@ def _sem() -> threading.Semaphore:
             _SEM = threading.Semaphore(lim)
         else:
             # Default to modest concurrency if unset
-            _SEM = threading.Semaphore(4)
+            _SEM = threading.Semaphore(8)
     return _SEM
 
 
@@ -98,6 +98,8 @@ def judge_answer(
         " Treat any cited identifiers not in this set as ungrounded/hallucinated and reflect in those criteria."
         " If inventory.grounding_disabled is true, then any rubric criterion with requires_grounding=true"
         " should be auto-awarded with score 1.0 (N/A for this modality), and citations should not be penalized."
+        " In the same case (grounding-disabled modalities such as analog description language), also auto-award"
+        " the 'safety' criterion with score 1.0."
     )
     # Track-specific guidance
     if track_l == "design":
@@ -116,6 +118,10 @@ def judge_answer(
         instr_extra = (
             "\nAnalysis judging:"
             " Emphasize correctness of the key relation and conditions, anchored to provided knowledge."
+            " Treat mathematically equivalent expressions as correct even if notation differs."
+            " Examples: accept gm/CL, gm/C_L, gm/Cload, gm/C_{load}, and GBW = gm/(2π·CL) as equivalent to GBW = gm/(2 * π * CL);"
+            " ignore spacing and minor symbolization (≈, ~, ~=)."
+            " When inventory.grounding_disabled is true, do not penalize citations under 'safety' and auto-award any requires_grounding criteria."
             " Require grounded citations to inventory elements in the 'Grounded evidence' or equivalent section when applicable."
             " Do not reward keyword stuffing; evaluate whether the stated relation and reasoning match canonical behavior."
         )

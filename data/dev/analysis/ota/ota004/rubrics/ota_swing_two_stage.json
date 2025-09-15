@@ -33,7 +33,7 @@
     },
     {
       "id": "grounding",
-      "desc": "References real elements from inventory (e.g., M6, M7, vout, VDD).",
+      "desc": "References real elements from inventory.",
       "requires_grounding": true,
       "min_refs": 2,
       "weight": 0.20

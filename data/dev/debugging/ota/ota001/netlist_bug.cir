@@ -54,16 +54,18 @@
       }
     },
     {
-      "id": "m5t",
-      "type": "FiveTLoadPMOS",
-      "params": {
-        "ref": "left"
-      },
+      "id": "pml",
+      "type": "PMOSMirrorActiveLoad",
       "ports": {
-        "target": "dp",
-        "out": "vout",
+        "sense": "n1",
         "vdd": "VDD"
-      }
+      },
+      "taps": [
+        {
+          "node": "vout",
+          "ratio": 1
+        }
+      ]
     },
     {
       "id": "cl",

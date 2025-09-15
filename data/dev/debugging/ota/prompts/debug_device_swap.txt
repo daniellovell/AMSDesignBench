@@ -1,5 +1,5 @@
 You are an expert analog IC designer.
-From the {modality} artifact, diagnose why the OTA shows poor DC bias/low gain.
+From the {modality} artifact, diagnose the catastrophic structural failure causing the OTA to show poor DC bias and no gain.
 
 Required sections (use these exact headers):
 - Symptoms
@@ -8,9 +8,14 @@ Required sections (use these exact headers):
 - Fix
 - Answer
 
+Hard constraints:
+- Assume all required bias sources exist and are correctly driven UNLESS the artifact explicitly shows an unconnected bias port or a bias
+port tied to an illegal rail (e.g., NMOS gate bias to VDD, PMOS gate bias to GND) OR the bias net is absent from the "nets" list. 
+Do NOT claim "missing bias" if a motif’s bias/ gate port is connected to any net typed as "bias".
+
 Guidance:
 - In Fault: specific device/structure/motif that is at fault.
 - In Grounded evidence: cite the exact element ID and show the problematic line or node context from the artifact.
 - In Fix: propose a concrete change and mention any node re-ties needed.
 
-Return markdown only.
+Return markdown only. NEVER use LaTeX or MathJax formatting in your response.

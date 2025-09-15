@@ -5,12 +5,12 @@
   "criteria": [
     {
       "id": "topology",
-      "desc": "Explicitly identifies single-stage current-mirror OTA with high-swing output path.",
+      "desc": "Explicitly identifies single-stage single-ended current-mirror OTA with high-swing output path.",
       "required": true,
       "section": "Topology",
-      "patterns_any": ["current mirror", "high-swing", "single-stage"],
+      "patterns_any": ["current mirror", "high-swing", "single-stage", "single-ended"],
       "min_any": 2,
-      "anti_patterns": ["cascode", "two-stage"],
+      "anti_patterns": ["cascode", "two-stage", "telescopic", "folded cascode"],
       "weight": 0.10
     },
     {

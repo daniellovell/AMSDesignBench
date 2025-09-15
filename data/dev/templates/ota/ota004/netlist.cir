@@ -6,9 +6,17 @@
     {"id":"vout"},{"id":"vbp","type":"bias"},{"id":"vbn","type":"bias"}
   ],
   "motifs": [
-    {"id":"dp","type":"DiffPairNMOS","ports":{"in_p":"vinp","in_n":"vinn","out_l":"n1","out_r":"vint","tail":"ntail","gnd":"GND"}},
+    {
+      "id":"dp","type":"DiffPairNMOS",
+      "ports":{"in_p":"vinp","in_n":"vinn","out_l":"n1","out_r":"vint","tail":"ntail","gnd":"GND"}
+    },
     {"id":"tail","type":"TailCurrentSourceNMOS","ports":{"out":"ntail","gate":"vbn","gnd":"GND"}},
-    {"id":"m5t","type":"FiveTLoadPMOS","params":{"ref":"left"},"ports":{"target":"dp","out":"vint","vdd":"vdd"}},
+
+    {
+      "id":"pml1","type":"PMOSMirrorActiveLoad",
+      "ports":{"sense":"n1","vdd":"vdd"},
+      "taps":[ {"node":"vint","ratio":1} ]
+    },
 
     {"id":"cs2","type":"CS_Stage_NMOS","ports":{"in":"vint","out":"vout","gnd":"GND"}},
     {"id":"pld","type":"PMOSGateBiasedLoad","ports":{"node":"vout","gate":"vbp","vdd":"vdd"}},

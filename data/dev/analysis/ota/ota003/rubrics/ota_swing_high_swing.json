@@ -5,12 +5,12 @@
   "criteria": [
     {
       "id": "topology",
-      "desc": "Identifies single-stage current-mirror OTA with high-swing output path (PMOS to VDD and NMOS mirror to ground).",
+      "desc": "Explicitly identifies single-stage single-ended current-mirror OTA with high-swing output path.",
       "required": true,
       "section": "Topology",
-      "patterns_any": ["high-swing", "current mirror", "single-stage"],
+      "patterns_any": ["current mirror", "high-swing", "single-stage", "single-ended"],
       "min_any": 2,
-      "anti_patterns": ["two-stage", "cascode"],
+      "anti_patterns": ["cascode", "two-stage", "telescopic", "folded cascode"],
       "weight": 0.10
     },
     {
@@ -18,8 +18,8 @@
       "desc": "High-side swing: vout_max ≈ VDD - Vov of the PMOS device tied directly to vout.",
       "required": true,
       "section": "Key relation",
-      "patterns_any": ["VDD - Vov", "VDD - Vov", "PMOS overdrive", "PMOS at vout"],
-      "min_any": 2,
+      "patterns_any": ["VDD - Vov", "VDD - Vov", "PMOS overdrive", "PMOS at vout", "VDD - Vov_p"],
+      "min_any": 1,
       "weight": 0.20
     },
     {

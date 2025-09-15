@@ -5,25 +5,25 @@
   "criteria": [
     {
       "id": "topology",
-      "desc": "Explicitly identifies topology in a Topology section (e.g., single-stage / telescopic / folded cascode).",
+      "desc": "Explicitly identifies topology in a Topology section",
       "required": true,
       "section": "Topology",
-      "patterns_any": ["single-stage", "one-stage", "single stage", "telescopic", "folded cascode", "differential pair", "current mirror", "differential pair with a current mirror load"],
+      "patterns_any": ["5-Transistor", "5T", "single-ended","single-stage", "one-stage", "single stage", "differential pair", "current mirror", "differential pair with a current mirror load"],
       "min_any": 2,
-      "anti_patterns": ["two-stage", "miller compensation", "second stage"],
+      "anti_patterns": ["two-stage", "miller compensation", "second stage", "folded cascode", "telescopic"],
       "weight": 0.10
     },
     {
       "id": "key_relation",
-      "desc": "States r_out ≈ ro/2 (or equivalently, r_op || r_on) for one-stage differential OTA with current mirror load, and context for validity.",
+      "desc": "States r_out at vout is the parallel combination of output NMOS and PMOS drain resistances. e.g. Mathematically equivalent to (ro_nmos || ro_pmos)",
       "required": true,
-      "patterns_any": ["ro/2", "r_o/2", "r_out ≈ r_o/2", "rout ≈ ro/2", "r_op || r_on", "r_op || r_on"],
+      "patterns_any": ["ro/2", "r_o/2", "r_out ≈ r_o/2", "rout ≈ ro/2", "r_op || r_on", "r_op || (r_on + r_tail)"],
       "anti_patterns": ["gm*ro^2/2", "g_m*r_o^2/2"],
       "weight": 0.25
     },
     {
       "id": "grounding",
-      "desc": "References real elements (e.g., M1/M2, Mp1/Mp2, CL, vout) from inventory.",
+      "desc": "References real elements from inventory.",
       "requires_grounding": true,
       "min_refs": 2,
       "weight": 0.20

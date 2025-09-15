@@ -114,13 +114,25 @@ function plot_results_matlab(resultsPath)
 
   % Sort for stable plotting
   models = sort(modelsSet);
-  % Custom order for modalities: SPICE, casIR, ADL
-  modalityOrder = ["SPICE", "casIR", "ADL"];
+  % Custom order for modalities: SPICE, casIR, Cascode ADL
+  modalityOrder = ["SPICE", "casIR", "Cascode ADL"];
   modalities = modalityOrder(ismember(modalityOrder, modalitiesSet));
   % Add any other modalities not in our predefined order
   otherModalities = modalitiesSet(~ismember(modalitiesSet, modalityOrder));
   modalities = [modalities, sort(otherModalities)];
   families = sort(familiesSet);
+
+  % Precompute shorter labels for models (used in heatmap and bars)
+  modelLabelsShort = cellstr(models);
+  for k = 1:length(modelLabelsShort)
+    lbl = modelLabelsShort{k};
+    lbl = strtrim(lbl);
+    lbl = regexprep(lbl, '^(anthropic|openai|openrouter)[-_:]', '');
+    % Drop trailing "-latest" or "_latest"
+    lbl = regexprep(lbl, '[-_]?latest$', '');
+    lbl = strrep(lbl, '_', '-');
+    modelLabelsShort{k} = lbl;
+  end
 
   % 1) Heatmap: aggregate across families → (model, modality)
   mm = containers.Map('KeyType','char','ValueType','any');
@@ -158,7 +170,8 @@ function plot_results_matlab(resultsPath)
   colormap(ax, pickColormap(CFG.colormap));
   colorbar(ax, 'Location','eastoutside');
   set(ax, 'XTick', 1:K, 'XTickLabel', cellstr(modalities));
-  set(ax, 'YTick', 1:M, 'YTickLabel', cellstr(models));
+  set(ax, 'YTick', 1:M, 'YTickLabel', modelLabelsShort);
+  set(ax, 'TickLabelInterpreter', 'none');
   xtickangle(ax, CFG.rotateXTick);
   title(ax, 'Judge score heatmap (model × modality)', 'FontName', CFG.fontName, 'FontSize', CFG.titleFontSize);
   ylabel(ax, 'Model', 'FontName', CFG.fontName, 'FontSize', CFG.labelFontSize);
@@ -215,12 +228,9 @@ function plot_results_matlab(resultsPath)
       end
     end
     % Fix x-axis labels to prevent subscript rendering
-    modelLabels = cellstr(models);
-    % Replace underscores with spaces or dashes to prevent subscript interpretation
-    for k = 1:length(modelLabels)
-        modelLabels{k} = strrep(modelLabels{k}, '_', '-');
-    end
+    modelLabels = modelLabelsShort;
     set(ax2, 'XTick', 1:M, 'XTickLabel', modelLabels);
+    set(ax2, 'TickLabelInterpreter', 'none');
     xtickangle(ax2, CFG.rotateXTick);
     ylim(ax2, [0 1.15]);  % Extra space for score labels on top
     ylabel(ax2, 'Judge score', 'FontName', CFG.fontName, 'FontSize', CFG.labelFontSize);
@@ -269,7 +279,7 @@ function label = modality_label(m)
     case 'spice_netlist'
       label = "SPICE";
     case 'cascode'
-      label = "ADL";
+      label = "Cascode ADL";
     case 'casir'
       label = "casIR";
     otherwise

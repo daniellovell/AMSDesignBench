@@ -5,16 +5,17 @@ class OTA5T implements Amplifier {
   port in_p vinp, in_n vinn; port out vout; bias vbias_n;
 
   use {
-    // Differential pair with explicit tail node
-    dp = new DiffPairNMOS(vinp, vinn) { gnd=GND; tail=ntail; };
-    tail = new TailCurrentSourcePMOS() { out=ntail; gate=vbias_n; gnd=GND; };
+    dp   = new DiffPairNMOS(vinp, vinn) { gnd=GND; tail=ntail; };
+    tail = new TailCurrentSourcePMOS()   { out=ntail; gate=vbias_n; gnd=GND; };
 
-    // 5T PMOS load: diode on left leg (n1), mirrors to right leg (n2) and to vout
-    attach FiveTLoadPMOS on dp { vdd=VDD; out=vout; ref=left; };
+    // Explicit mirror load: diode at 'sense' (n1), mirror current into vout only.
+    pml = new PMOSMirrorActiveLoad(sense = dp.out_l, vdd = VDD) {
+      taps = { vout:1 };
+    };
 
     C(vout, GND, 1pF);
   }
 
-  // (optional) aliases to preserve SPICE node names
+  // Preserve node names for analysis tasks
   alias n1 = dp.out_l; alias n2 = dp.out_r;
 }

@@ -9,7 +9,7 @@ Required sections (use these exact headers):
 - Answer
 
 Guidance:
-- In Topology: restate the requested OTA style (e.g., telescopic cascode single-ended high swing) in one sentence.
+- In Topology: restate the requested OTA style in one sentence.
 - In Structure: describe device roles and connectivity concisely.
 - In Netlist: emit only the analog description language, following the examples below. Focus on motifs/ports and nets.
   Use a fenced code block with ```text.

@@ -659,8 +659,18 @@ def main():
             # Simple SPICE: MOS line starts with 'M'
             if not s or s[0].upper() != 'M':
                 continue
-            # Tokenize by whitespace
-            parts = s.split()
+            # Respect inline comments: split off any '//' or ';' trailing comment
+            cpos = len(s)
+            p2 = s.find('//')
+            if p2 != -1:
+                cpos = min(cpos, p2)
+            p3 = s.find(';')
+            if p3 != -1:
+                cpos = min(cpos, p3)
+            code = s[:cpos]
+            comment_tail = s[cpos:]
+            # Tokenize code segment only
+            parts = code.split()
             if not parts:
                 continue
             dev_id = parts[0]
@@ -696,8 +706,10 @@ def main():
         else:
             return text, None, None, None
         parts[model_idx] = new
-        # Replace line (preserve original spacing roughly by joining with single spaces)
-        lines[idx] = " ".join(parts)
+        # Rebuild line, preserving any inline comment tail
+        code_new = " ".join(parts)
+        # Preserve newline character at line end via join later
+        lines[idx] = code_new + comment_tail
         return "\n".join(lines) + ("\n" if text.endswith("\n") else ""), dev_id, from_type, to_type
 
     def _strip_json_comments(s: str) -> str:
@@ -1156,6 +1168,14 @@ def main():
                         if isinstance(v, str) and v.strip():
                             conns.append(v.strip())
                     aliases: List[str] = []
+                    # Allow citing port role names (e.g., in, out, mid, bias, gnd)
+                    try:
+                        for pk in ports.keys():
+                            pks = str(pk).strip()
+                            if pks:
+                                aliases.append(pks)
+                    except Exception:
+                        pass
                     if mtype.lower() in ("cap", "capacitor"):
                         cap_ids.append(mid)
                         aliases.extend(["Cload", "CL"])
@@ -1271,15 +1291,28 @@ def main():
                 alias_map = eff_inv.alias_map()
                 allowed = sorted(set(alias_map.keys()))
                 canonical_map = {k: v for k, v in alias_map.items() if k != v}
+                
+                # Always ensure Cload and CL are in allowed IDs
                 if "CL" in alias_map.values():
                     canonical_map.setdefault("Cload", "CL")
-                    if "Cload" not in allowed:
-                        allowed.append("Cload")
+                if "Cload" not in allowed:
+                    allowed.append("Cload")
+                if "CL" not in allowed:
+                    allowed.append("CL")
+                    
                 if any(n.strip().upper() == "0" or n.strip() == "0" for n in eff_inv.nets):
                     for syn in ("GND", "VSS"):
                         canonical_map.setdefault(syn, "0")
                         if syn not in allowed:
                             allowed.append(syn)
+                # Append motif 'type' names for casIR so citing types isn't penalized
+                try:
+                    types = {str(el.type).strip() for el in (eff_inv.elements or {}).values() if getattr(el, "type", None)}
+                except Exception:
+                    types = set()
+                for t in sorted(types):
+                    if t and t not in allowed:
+                        allowed.append(t)
                 summary: Dict[str, Any] = {"allowed_ids": sorted(allowed), "canonical_map": canonical_map}
                 if q.modality == "cascode":
                     summary["grounding_disabled"] = True
