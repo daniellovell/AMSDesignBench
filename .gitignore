@@ -67,3 +67,7 @@ AGENTS.md
 observable/src/data/**
 observable/public/data/**
 observable/src/public/data/**
+
+data/dev/debugging/**/netlist_bug.cas
+data/dev/debugging/**/netlist_bug.cir
+data/dev/debugging/**/netlist_bug.sp
