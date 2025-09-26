@@ -113,7 +113,6 @@ Notes:
 - Plots are written next to the results under a `plots/` folder by default (e.g., `outputs/latest/plots`).
 - Requires matplotlib and numpy: `pip install matplotlib numpy`.
 - By default, windows are opened interactively (show). To suppress and only write files, pass `--silent`.
-    ```
 
 ## Repository Structure
 
