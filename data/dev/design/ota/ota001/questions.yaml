@@ -1,0 +1,11 @@
+questions:
+- id: ota001_design_5t
+  track: design
+  modality: auto
+  rubric_id: design_5t_ota
+  rubric_path: rubrics/design_5t_ota.json
+  prompt_template: design_ota.txt
+  meta:
+    topology: five_transistor_ota
+    bench_version: 0.1.0
+    aspect: structure

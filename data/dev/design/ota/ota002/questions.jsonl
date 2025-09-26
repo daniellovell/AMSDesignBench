@@ -1,2 +1,0 @@
-{"id":"ota002_design_telescopic","track":"design","modality":"auto","artifact_path":"../../../templates/ota/ota002","rubric_id":"design_telescopic_cascode","rubric_path":"rubrics/design_telescopic_cascode.json","prompt_template":"../prompts/design_ota.txt","require_sections":["Topology","Structure","Netlist","Answer"],"answer_format":"markdown","meta":{"topology":"telescopic_cascode_ota","bench_version":"0.1.0","aspect":"structure"}}
-

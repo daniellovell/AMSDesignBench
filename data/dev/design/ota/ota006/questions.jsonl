@@ -1,2 +1,0 @@
-{"id":"ota006_design_telescopic_se_hs","track":"design","modality":"auto","artifact_path":"../../../templates/ota/ota006","rubric_id":"design_telescopic_single_end_high_swing","rubric_path":"rubrics/design_telescopic_single_end_high_swing.json","prompt_template":"../prompts/design_ota.txt","require_sections":["Topology","Structure","Netlist","Answer"],"answer_format":"markdown","meta":{"topology":"telescopic_cascode_single_end_high_swing","bench_version":"0.1.0","aspect":"structure"}}
-

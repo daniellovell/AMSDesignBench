@@ -5,9 +5,11 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 import hashlib
+import math
 import random
+import yaml
 
 from rich import print
 from rich.progress import Progress, BarColumn, TimeElapsedColumn, TimeRemainingColumn, MofNCompleteColumn
@@ -111,7 +113,10 @@ def load_questions(item_dir: Path) -> List[Question]:
     If a question has modality in {"auto","*","all"} or is missing, expand
     into one question per available modality with inferred artifact paths.
     """
-    qfile = item_dir / "questions.jsonl"
+    q_path = item_dir / "questions.yaml"
+    if not q_path.exists():
+        raise FileNotFoundError(f"questions.yaml not found in {item_dir}")
+
     meta_path = item_dir / "meta.json"
     # Map modality -> artifact filename
     artifact_by_modality = {
@@ -125,51 +130,155 @@ def load_questions(item_dir: Path) -> List[Question]:
     canonical_modality = {
         "casir": "casIR",
     }
-    available_modalities: List[str] = []
+
+    template_rel_hint: Optional[str] = None
+    template_abs_hint: Optional[Path] = None
+
+    def _structure_template_abs() -> Optional[Path]:
+        try:
+            split_root = item_dir.parents[2]
+            rel = item_dir.relative_to(split_root)
+            parts = rel.parts
+            if len(parts) >= 2:
+                tail = Path(*parts[1:])
+                return split_root / "templates" / tail
+        except Exception:
+            return None
+        return None
+
+    def _structure_template_rel(abs_path: Path) -> str:
+        rel = os.path.relpath(abs_path, item_dir)
+        return rel.replace("\\", "/")
+
+    meta: Dict[str, Any] = {}
     if meta_path.exists():
         try:
             meta = json.loads(meta_path.read_text())
-            mlist = meta.get("modalities") or []
-            tpl_rel = meta.get("template_path") or meta.get("template")
-            tpl_dir = (item_dir / tpl_rel).resolve() if isinstance(tpl_rel, str) and tpl_rel.strip() else None
-            if isinstance(mlist, list):
-                for m in mlist:
-                    m_str = str(m)
-                    m_canon = canonical_modality.get(m_str, m_str)
-                    if m_canon in artifact_by_modality:
-                        ap_name = artifact_by_modality[m_canon]
-                        exists_local = (item_dir / ap_name).exists()
-                        exists_tpl = bool(tpl_dir and (tpl_dir / ap_name).exists())
-                        if exists_local or exists_tpl:
-                            available_modalities.append(m_canon)
-            # Also auto-detect any additional artifacts present (local or template)
-            for m, fn in artifact_by_modality.items():
-                exists_local = (item_dir / fn).exists()
-                exists_tpl = bool(tpl_dir and (tpl_dir / fn).exists())
-                if exists_local or exists_tpl:
-                    if m not in available_modalities:
-                        available_modalities.append(m)
         except Exception:
-            pass
+            meta = {}
+
+    mlist = meta.get("modalities") or []
+    tpl_rel_val = meta.get("template_path") or meta.get("template")
+    if isinstance(tpl_rel_val, str) and tpl_rel_val.strip():
+        template_rel_hint = Path(tpl_rel_val.strip()).as_posix()
+        try:
+            template_abs_hint = (item_dir / tpl_rel_val).resolve()
+        except Exception:
+            template_abs_hint = None
+
+    if template_abs_hint is None:
+        template_abs_hint = _structure_template_abs()
+    if template_rel_hint is None and template_abs_hint is not None:
+        template_rel_hint = _structure_template_rel(template_abs_hint)
+
+    available_modalities: List[str] = []
+    seen_modalities: set[str] = set()
+
+    def _register_modality(candidate: Any) -> None:
+        mod = canonical_modality.get(str(candidate), str(candidate))
+        if mod not in artifact_by_modality:
+            return
+        if mod in seen_modalities:
+            return
+        ap_name = artifact_by_modality[mod]
+        exists_local = (item_dir / ap_name).exists()
+        exists_tpl = bool(template_abs_hint and (template_abs_hint / ap_name).exists())
+        if exists_local or exists_tpl:
+            seen_modalities.add(mod)
+            available_modalities.append(mod)
+
+    if isinstance(mlist, list):
+        for m in mlist:
+            _register_modality(m)
+
+    for m in artifact_by_modality.keys():
+        _register_modality(m)
+
+    if not available_modalities:
+        default_mod = "spice_netlist"
+        seen_modalities.add(default_mod)
+        available_modalities.append(default_mod)
+
+    default_artifact_root = template_rel_hint
+
+    def _default_artifact_for(filename: str) -> str:
+        if default_artifact_root:
+            return (Path(default_artifact_root) / filename).as_posix()
+        return Path(filename).as_posix()
+
+    prompts_dir = item_dir.parent / "prompts"
+
+    def _extract_sections_from_prompt(prompt_name: str) -> List[str]:
+        ppath = prompts_dir / prompt_name
+        try:
+            lines = ppath.read_text().splitlines()
+        except Exception:
+            return []
+        sections: List[str] = []
+        capture = False
+        for raw in lines:
+            line = raw.strip()
+            if not line:
+                if capture:
+                    break
+                continue
+            if not capture:
+                if line.lower().startswith("required sections"):
+                    capture = True
+                continue
+            if line.startswith("-"):
+                section = line[1:].strip().strip(":")
+                if section:
+                    sections.append(section)
+            else:
+                break
+        return sections
+
+    def _apply_defaults(qdict: Dict[str, Any]) -> Dict[str, Any]:
+        if not qdict.get("prompt_template"):
+            raise SystemExit(
+                f"Question {qdict.get('id')} in {item_dir} must specify prompt_template."
+            )
+        # Supply required sections when omitted by reading prompt header
+        if not qdict.get("require_sections"):
+            sections = _extract_sections_from_prompt(str(qdict["prompt_template"]))
+            if sections:
+                qdict["require_sections"] = sections
+        if not qdict.get("require_sections"):
+            qdict["require_sections"] = ["Answer"]
+        # If rubric path is provided but id missing, read it from file
+        if qdict.get("rubric_path") and not qdict.get("rubric_id"):
+            rpath = (item_dir / str(qdict["rubric_path"]))
+            if rpath.exists():
+                try:
+                    rid = json.loads(rpath.read_text()).get("rubric_id")
+                    if rid:
+                        qdict["rubric_id"] = str(rid)
+                except Exception:
+                    pass
+        # Default answer format to markdown for legacy items
+        if not qdict.get("answer_format"):
+            qdict["answer_format"] = "markdown"
+        return qdict
+
+    raw_questions: List[Dict[str, Any]] = []
+    try:
+        data = yaml.safe_load(q_path.read_text())
+    except Exception as exc:
+        raise SystemExit(f"Failed to load {q_path}: {exc}")
+    if isinstance(data, dict):
+        entries = data.get("questions") if "questions" in data else [data]
+    elif isinstance(data, list):
+        entries = data
     else:
-        # Infer by existing artifacts (no meta)
-        for m, fn in artifact_by_modality.items():
-            if (item_dir / fn).exists():
-                available_modalities.append(m)
+        raise SystemExit(f"questions.yaml must contain a list or mapping of questions: {q_path}")
+    for entry in entries:
+        if isinstance(entry, dict):
+            raw_questions.append(entry)
 
     out: List[Question] = []
-    for line in qfile.read_text().splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            raw = json.loads(line)
-        except Exception:
-            # As a last resort, try pydantic parse
-            try:
-                out.append(Question.model_validate_json(line))
-            except Exception:
-                continue
+    for raw in raw_questions:
+        if not isinstance(raw, dict):
             continue
         # Normalize modality and track
         mod = raw.get("modality")
@@ -196,25 +305,35 @@ def load_questions(item_dir: Path) -> List[Question]:
                         rel = (item_dir / orig_ap)
                         if rel.exists() and rel.is_dir():
                             # Treat as a directory base; append canonical filename
-                            new_ap = str(Path(orig_ap) / ap)
+                            new_ap = (Path(orig_ap) / ap).as_posix()
                         else:
                             base = Path(orig_ap)
-                            # Preserve directory when present; otherwise fall back to the filename
                             parent = base.parent
-                            new_ap = str(parent / ap) if str(parent) not in ("", ".") else ap
+                            if str(parent) not in ("", "."):
+                                new_ap = (parent / ap).as_posix()
+                            else:
+                                new_ap = _default_artifact_for(ap)
                     except Exception:
-                        new_ap = ap
+                        new_ap = _default_artifact_for(ap)
                     qdict["artifact_path"] = new_ap
                 else:
                     # No explicit path provided; use canonical filename for modality
-                    qdict["artifact_path"] = ap
-                # Keep the original prompt_template; at runtime we can swap it based on modality
+                    qdict["artifact_path"] = _default_artifact_for(ap)
+                qdict = _apply_defaults(qdict)
+                if not qdict.get("rubric_id"):
+                    raise SystemExit(
+                        f"Question {qdict.get('id')} in {item_dir} is missing rubric_id."
+                    )
+                if not qdict.get("rubric_path"):
+                    raise SystemExit(
+                        f"Question {qdict.get('id')} in {item_dir} is missing rubric_path."
+                    )
                 out.append(Question.model_validate(qdict))
         else:
             # Normalize modality and artifact path if missing
             m = canonical_modality.get(str(mod), str(mod))
-            if "artifact_path" not in raw and m in artifact_by_modality:
-                raw["artifact_path"] = artifact_by_modality[m]
+            if not raw.get("artifact_path") and m in artifact_by_modality:
+                raw["artifact_path"] = _default_artifact_for(artifact_by_modality[m])
             else:
                 # If an artifact_path is provided and points to a directory, append
                 # the canonical filename for the modality (supports dir-style inputs).
@@ -223,10 +342,19 @@ def load_questions(item_dir: Path) -> List[Question]:
                     if isinstance(ap_in, str) and ap_in.strip() and m in artifact_by_modality:
                         rel = (item_dir / ap_in)
                         if rel.exists() and rel.is_dir():
-                            raw["artifact_path"] = str(Path(ap_in) / artifact_by_modality[m])
+                            raw["artifact_path"] = (Path(ap_in) / artifact_by_modality[m]).as_posix()
                 except Exception:
                     pass
             raw["modality"] = m
+            raw = _apply_defaults(raw)
+            if not raw.get("rubric_id"):
+                raise SystemExit(
+                    f"Question {raw.get('id')} in {item_dir} is missing rubric_id."
+                )
+            if not raw.get("rubric_path"):
+                raise SystemExit(
+                    f"Question {raw.get('id')} in {item_dir} is missing rubric_path."
+                )
             out.append(Question.model_validate(raw))
             # Special-case: For debugging items authored as spice_netlist only,
             # auto-add parallel questions for any additional available modalities
@@ -242,23 +370,23 @@ def load_questions(item_dir: Path) -> List[Question]:
                         # Rewrite artifact_path to bugged file if original used bugged SPICE
                         ap_in = str(raw.get("artifact_path", "")).strip()
                         canonical = artifact_by_modality[m2]
-                        new_ap = canonical
+                        new_ap = _default_artifact_for(canonical)
                         if ap_in:
                             try:
                                 rel = (item_dir / ap_in)
                                 if rel.exists() and rel.is_dir():
-                                    new_ap = str(Path(ap_in) / canonical)
+                                    new_ap = (Path(ap_in) / canonical).as_posix()
                                 else:
                                     # If using bugged SPICE artifact, mirror to bugged filename for modality
                                     if ap_in.endswith("netlist_bug.sp"):
                                         if m2 == "casIR":
-                                            new_ap = "netlist_bug.cir"
+                                            new_ap = Path("netlist_bug.cir").as_posix()
                                         elif m2 == "cascode":
-                                            new_ap = "netlist_bug.cas"
+                                            new_ap = Path("netlist_bug.cas").as_posix()
                                     else:
-                                        new_ap = canonical
+                                        new_ap = _default_artifact_for(canonical)
                             except Exception:
-                                new_ap = canonical
+                                new_ap = _default_artifact_for(canonical)
                         qdict["artifact_path"] = new_ap
                         out.append(Question.model_validate(qdict))
             except Exception:
@@ -299,7 +427,7 @@ def iter_items(split_dir: Path) -> List[EvalItem]:
     items: List[EvalItem] = []
     # Recursively discover item directories that contain questions, with inventory either local or via template
     for item_dir in sorted([p for p in split_dir.rglob("*") if p.is_dir()]):
-        q_path = item_dir / "questions.jsonl"
+        q_path = item_dir / "questions.yaml"
         if not q_path.exists():
             continue
         try:
@@ -362,7 +490,6 @@ def main():
         os.environ["OPENAI_JUDGE_CONCURRENCY"] = str(args.judge_concurrency)
 
     # Load bench config (YAML)
-    import yaml
     cfg = yaml.safe_load(Path("bench_config.yaml").read_text()) or {}
     data_root = Path(cfg.get("paths", {}).get("data_root", "data"))
     # Prompts are referenced per-item: resolved as (item_dir/../prompts/<prompt_template>)

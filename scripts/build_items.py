@@ -15,7 +15,7 @@ def main():
     print("- Author inventory.json as the source of truth (elements, nets, blocks).")
     print("- Derive artifacts in-place: netlist.sp (and optionally veriloga.va, netlist.cas, netlist.cir).")
     print("- Set meta.json.modalities to include modalities you provide (e.g., spice_netlist, veriloga, cascode, casIR). Or leave auto and rely on file detection.")
-    print("- Keep questions.jsonl minimal (use modality=\"auto\"; the harness expands per modality).")
+    print("- Author questions.yaml with minimal fields (use modality=\"auto\"; the harness expands per modality).")
 
 
 if __name__ == "__main__":

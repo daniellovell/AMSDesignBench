@@ -1,84 +1,40 @@
 from __future__ import annotations
-import json
 from pathlib import Path
 from rich import print
 
-
-ARTIFACT_BY_MODALITY = {
-    "spice_netlist": "netlist.sp",
-    "veriloga": "veriloga.va",
-    "cascode": "netlist.cas",
-    "casIR": "netlist.cir",
-}
-
-CANONICAL = {"casir": "casIR"}
-
-
-def available_modalities(item_dir: Path) -> list[str]:
-    metas = item_dir / "meta.json"
-    mods: list[str] = []
-    if metas.exists():
-        try:
-            meta = json.loads(metas.read_text())
-            for m in meta.get("modalities", []) or []:
-                m = CANONICAL.get(str(m), str(m))
-                fn = ARTIFACT_BY_MODALITY.get(m)
-                if fn and (item_dir / fn).exists():
-                    mods.append(m)
-        except Exception:
-            pass
-    if not mods:
-        for m, fn in ARTIFACT_BY_MODALITY.items():
-            if (item_dir / fn).exists():
-                mods.append(m)
-    return mods
+try:
+    from harness.run_eval import load_questions  # type: ignore
+except Exception:
+    import sys
+    sys.path.append(str(Path(__file__).resolve().parents[1]))
+    from harness.run_eval import load_questions  # type: ignore
 
 
 def audit_item(item_dir: Path) -> bool:
     ok = True
-    qfile = item_dir / "questions.jsonl"
+    qfile = item_dir / "questions.yaml"
     if not qfile.exists():
-        print(f"[red]Missing questions.jsonl[/red] in {item_dir}")
+        print(f"[red]Missing questions.yaml[/red] in {item_dir}")
         return False
-    # Prompt template(s)
-    for line in qfile.read_text().splitlines():
-        if not line.strip():
-            continue
-        try:
-            q = json.loads(line)
-        except Exception:
-            print(f"[red]Malformed question JSON[/red] in {qfile}")
-            ok = False
-            continue
-        pt_name = q.get("prompt_template")
-        if not pt_name:
-            print(f"[red]Missing prompt_template[/red] in question for {item_dir}")
-            ok = False
-        else:
-            pt = (item_dir.parent / "prompts" / pt_name)
-            if not pt.exists():
-                print(f"[red]Missing prompt template[/red] {pt}")
-                ok = False
-        # Rubric check
-        rrel = q.get("rubric_path")
-        if not rrel or not (item_dir / rrel).exists():
-            print(f"[red]Missing rubric file[/red] for {item_dir}: {rrel}")
-            ok = False
-        # Artifact check (skip if auto modality)
-        mod = q.get("modality")
-        if mod and mod not in ("auto", "*", "all"):
-            m = CANONICAL.get(str(mod), str(mod))
-            ap = q.get("artifact_path") or ARTIFACT_BY_MODALITY.get(m)
-            if ap and not (item_dir / ap).exists():
-                print(f"[red]Missing artifact[/red] {(item_dir / ap)}")
-                ok = False
+    try:
+        questions = load_questions(item_dir)
+    except Exception as exc:
+        print(f"[red]Failed to load questions for {item_dir}[/red]: {exc}")
+        return False
 
-    # For auto expansion, verify artifacts for available modalities exist
-    mods = available_modalities(item_dir)
-    for m in mods:
-        ap = ARTIFACT_BY_MODALITY.get(m)
-        if ap and not (item_dir / ap).exists():
-            print(f"[red]Expected artifact for modality {m} missing[/red]: {(item_dir / ap)}")
+    prompts_dir = item_dir.parent / "prompts"
+    for q in questions:
+        pt = prompts_dir / q.prompt_template
+        if not pt.exists():
+            print(f"[red]Missing prompt template[/red] {pt}")
+            ok = False
+        rpath = item_dir / q.rubric_path
+        if not rpath.exists():
+            print(f"[red]Missing rubric file[/red] {rpath}")
+            ok = False
+        apath = item_dir / q.artifact_path
+        if not apath.exists():
+            print(f"[red]Missing artifact[/red] {apath}")
             ok = False
     return ok
 
