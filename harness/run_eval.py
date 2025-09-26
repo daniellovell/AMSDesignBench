@@ -488,14 +488,16 @@ def main():
                 return 0.0
         return 0.0
 
-    def _float_to_unit(val: float, like: str) -> str:
-        # Render with the same unit suffix as 'like' if present
+    def _float_to_unit(val: float, like: str, sig_digits: Optional[int] = None) -> str:
+        # Render with the same unit suffix as 'like' if present. sig_digits limits precision.
+        fmt = (lambda x: f"{x:g}") if sig_digits is None else (lambda x: f"{x:.{sig_digits}g}")
         s = like.strip()
         if not s:
-            return f"{val:g}"
-        suf = s[-1].lower()
-        if s.lower().endswith('meg'):
-            return f"{val/1e6:g}meg"
+            return fmt(val)
+        suf = s[-1]
+        lower = s.lower()
+        if lower.endswith('meg'):
+            return f"{fmt(val/1e6)}{s[-3:]}"
         muls = {
             't': 1e12,
             'g': 1e9,
@@ -506,9 +508,11 @@ def main():
             'p': 1e-12,
             'f': 1e-15,
         }
-        if suf in muls:
-            return f"{val/muls[suf]:g}{suf}"
-        return f"{val:g}"
+        suf_lower = suf.lower()
+        if suf_lower in muls:
+            scaled = val / muls[suf_lower]
+            return f"{fmt(scaled)}{suf}"
+        return fmt(val)
 
     def randomize_spice(text: str, seed: int) -> str:
         rnd = random.Random(seed)
@@ -575,6 +579,17 @@ def main():
             devices.append(current_stmt)
 
         # Jitter sizes on MOS and C devices
+        def _quantize_like(value: float, reference: float, rel_step: float, min_step: float) -> float:
+            if reference <= 0.0:
+                return value
+            step = max(abs(reference) * rel_step, min_step)
+            if step <= 0:
+                return value
+            quanta = int(round(value / step))
+            if quanta < 1:
+                quanta = 1
+            return quanta * step
+
         def jitter_device(dev_lines: List[str]) -> List[str]:
             line0 = dev_lines[0]
             s = line0.strip()
@@ -593,28 +608,34 @@ def main():
                         w_like = tok.split('=',1)[1]
                     if tok.upper().startswith('L='):
                         l_like = tok.split('=',1)[1]
-                w_scale_n = 1.0
-                l_scale = 1.0
                 # Heuristic: NMOS vs PMOS by model token (5th token typical)
                 # Fallback: if contains 'pch' treat as PMOS
                 is_p = ' pch ' in f' {s.lower()} '
-                if is_p:
-                    w_scale_n = rnd.uniform(0.85, 1.15)
-                else:
-                    w_scale_n = rnd.uniform(0.85, 1.15)
-                l_scale = rnd.uniform(0.95, 1.05)
+                base_w = _unit_scale_to_float(w_like) if w_like else 0.0
+                base_l = _unit_scale_to_float(l_like) if l_like else 0.0
+                w_new: Optional[float] = None
+                if base_w > 0.0:
+                    heavy_tail = rnd.random() < 0.18  # Occasionally sample much larger analog devices
+                    low = max(base_w * 0.5, 0.2e-6)
+                    high = 100e-6  # Allow widths up to ~100 µm
+                    if heavy_tail and high > low:
+                        w_candidate = math.exp(rnd.uniform(math.log(low), math.log(high)))
+                    else:
+                        heavy_tail = False
+                        w_candidate = base_w * rnd.triangular(0.6, 1.9, 1.1 if is_p else 0.95)
+                    w_candidate = min(max(w_candidate, 0.12e-6), 100e-6)
+                    ref = w_candidate if heavy_tail else base_w
+                    w_new = _quantize_like(w_candidate, ref, 0.005, 5e-9)
+                l_new: Optional[float] = None
+                if base_l > 0.0:
+                    l_candidate = max(base_l * rnd.triangular(0.9, 1.2, 1.03), 1e-9)
+                    l_new = _quantize_like(l_candidate, base_l, 0.002, 2e-9)
                 for tok in parts:
                     up = tok.upper()
-                    if up.startswith('W=') and w_like:
-                        base = _unit_scale_to_float(w_like)
-                        if base > 0.0:
-                            newv = max(base * w_scale_n, 1e-12)
-                            tok = f"W={_float_to_unit(newv, w_like)}"
-                    elif up.startswith('L=') and l_like:
-                        base = _unit_scale_to_float(l_like)
-                        if base > 0.0:
-                            newv = max(base * l_scale, 1e-12)
-                            tok = f"L={_float_to_unit(newv, l_like)}"
+                    if up.startswith('W=') and w_like and w_new is not None:
+                        tok = f"W={_float_to_unit(w_new, w_like, sig_digits=3)}"
+                    elif up.startswith('L=') and l_like and l_new is not None:
+                        tok = f"L={_float_to_unit(l_new, l_like, sig_digits=3)}"
                     new_parts.append(tok)
                 dev_lines[0] = ' '.join(new_parts)
                 return dev_lines
@@ -627,7 +648,7 @@ def main():
                     if base > 0.0:
                         scale = rnd.uniform(0.7, 1.3)
                         newv = max(base * scale, 1e-18)
-                        parts[3] = _float_to_unit(newv, like)
+                        parts[3] = _float_to_unit(newv, like, sig_digits=3)
                 dev_lines[0] = ' '.join(parts)
                 return dev_lines
             return dev_lines
