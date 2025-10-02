@@ -1,0 +1,11 @@
+questions:
+- id: ota004_design_two_stage
+  track: design
+  modality: auto
+  rubric_id: design_two_stage
+  rubric_path: rubrics/design_two_stage.json
+  prompt_template: ../prompts/design_ota.txt
+  meta:
+    topology: two_stage
+    bench_version: 0.1.0
+    aspect: structure

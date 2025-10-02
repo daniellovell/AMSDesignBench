@@ -1,0 +1,15 @@
+You are an expert analog IC designer.
+From the {modality} artifact, determine the small-signal output resistance (r_out) for the given circuit at vout.
+
+Required sections (use these exact headers):
+- Topology
+- Key relation
+- Grounded evidence
+- Answer
+
+Guidance:
+- In Topology: explicitly name the topology and justify in 1 sentence using observed elements. Identify single-ended vs differential OTA.
+- In Key relation: state r_out symbolically for this topology and the conditions for validity (matching, high ro, small-signal, etc.).
+- In Grounded evidence: cite real element IDs/nets that set r_out at `vout` (e.g., devices tied to the output node).
+
+Return markdown only. NEVER use LaTeX or MathJax formatting in your response.

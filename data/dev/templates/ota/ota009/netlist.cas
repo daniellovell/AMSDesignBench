@@ -1,0 +1,33 @@
+package analog.ota; import lib.motifs.*;
+
+class OTATelescopic_SE_GainBoost_Bound implements Amplifier {
+  supply VDD=1.8V; ground GND;
+  port in vin; port out vout;
+  // vb1: PMOS current source for NMOS-side gain-boost amp
+  // vb2: NMOS current source for PMOS-side gain-boost amp
+  // vb3: PMOS top current source over main PMOS cascode node (N001)
+  bias vb1, vb2, vb3;
+
+  use {
+    // ---- NMOS input & NMOS cascode (main signal path)
+    n_in   = new CSStageNMOS(in=vin, out=N005) { gnd=GND; };                   // M1: D=N005, G=vin, S=GND
+    n_cas  = new NMOSCascode(in=N005, out=vout) { bias=N004; gnd=GND; };       // M2: D=vout, G=N004, S=N005
+
+    // ---- PMOS load with PMOS cascode (top side of main path)
+    p_top  = new PMOSGateBiasedLoad(node=N001) { gate=vb3; vdd=VDD; };         // M4: D=VDD, G=vb3, S=N001
+    p_cas  = new PMOSCascodeElement(out=N001, gate=N002, src=vout);            // M3: D=N001, G=N002, S=vout
+
+    // ---- PMOS-side gain-boost (bias N002)
+    // NMOS sink from N002 and PMOS device tied to N001 provide a boosted bias at N002
+    n_gb_p = new TailCurrentSourceNMOS() { out=N002; gate=vb2; gnd=GND; };     // M6: D=N002, G=vb2, S=GND
+    p_gb_p = new PMOSMirror(from=N001, to=N002, vdd=VDD);                       // M7: D=VDD, G=N001, S=N002
+
+    // ---- NMOS-side gain-boost (bias N004)
+    // Small amplifier senses N005 and drives N004 (cascode gate) against VDD current source
+    p_gb_n = new PMOSGateBiasedLoad(node=N004) { gate=vb1; vdd=VDD; };         // M8: D=VDD, G=vb1, S=N004
+    n_gb_n = new CSStageNMOS(in=N005, out=N004) { gnd=GND; };                   // M5: D=N004, G=N005, S=GND
+
+    // ---- Load capacitance
+    C(vout, GND, 1pF);                                                          // Cload
+  }
+}

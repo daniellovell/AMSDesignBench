@@ -1,0 +1,45 @@
+{
+  "nets": ["0", "N001", "N002", "VDD", "vin", "vout", "vb1", "vb2", "vb3"],
+  "motifs": [
+    {
+      "id": "M1",
+      "type": "nmos",
+      "model": "NMOS",
+      "params": { "l": "0.18u", "w": "2u" },
+      "ports": { "d": "N002", "g": "vin", "s": "0", "b": "0" }
+    },
+    {
+      "id": "M2",
+      "type": "nmos",
+      "model": "NMOS",
+      "params": { "l": "0.18u", "w": "2u" },
+      "ports": { "d": "vout", "g": "vb1", "s": "N002", "b": "0" }
+    },
+    {
+      "id": "M3",
+      "type": "pmos",
+      "model": "PMOS",
+      "params": { "l": "0.18u", "w": "4u" },
+      "ports": { "d": "N001", "g": "vb2", "s": "vout", "b": "VDD" }
+    },
+    {
+      "id": "M4",
+      "type": "pmos",
+      "model": "PMOS",
+      "params": { "l": "0.18u", "w": "4u" },
+      "ports": { "d": "VDD", "g": "vb3", "s": "N001", "b": "VDD" }
+    },
+    {
+      "id": "VDD",
+      "type": "vsource",
+      "value": "1.8",
+      "ports": { "p": "VDD", "n": "0" }
+    },
+    {
+      "id": "Cload",
+      "type": "capacitor",
+      "value": "1p",
+      "ports": { "p": "vout", "n": "0" }
+    }
+  ]
+}

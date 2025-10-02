@@ -1,0 +1,11 @@
+questions:
+- id: ota003_design_high_swing
+  track: design
+  modality: auto
+  rubric_id: design_high_swing_single_stage
+  rubric_path: rubrics/design_high_swing_single_stage.json
+  prompt_template: ../prompts/design_ota.txt
+  meta:
+    topology: one_stage_ota
+    bench_version: 0.1.0
+    aspect: structure

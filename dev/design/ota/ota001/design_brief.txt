@@ -1,0 +1,3 @@
+Design a classic five-transistor (5T) OTA with NMOS differential input pair.
+Include the supply (VDD) and a small load capacitor
+

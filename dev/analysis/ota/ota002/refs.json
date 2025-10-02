@@ -1,0 +1,7 @@
+{
+  "gbw_one_stage": [
+    "GBW ≈ gm/CL for single-pole one-stage OTA",
+    "Assumes unity-gain use, β≈1; cite CL and input gm"
+  ]
+}
+

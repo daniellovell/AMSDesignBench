@@ -1,0 +1,17 @@
+{
+  "elements": {
+    "M3": {"type": "mos", "role": "diff_pair_left",   "nets": ["N004", "vip", "N006"], "aliases": ["input left"]},
+    "M4": {"type": "mos", "role": "diff_pair_right",  "nets": ["N005", "vin", "N006"], "aliases": ["input right"]},
+    "M1": {"type": "mos", "role": "nmos_cascode_out", "nets": ["vop", "vb3", "N005"], "aliases": ["ncas out"]},
+    "M2": {"type": "mos", "role": "nmos_cascode_int", "nets": ["N003", "vb3", "N004"], "aliases": ["ncas int"]},
+    "M5": {"type": "mos", "role": "tail_source",      "nets": ["N006", "0"],        "aliases": ["tail"]},
+    "M6": {"type": "mos", "role": "pmos_diode_bias",  "nets": ["N003", "N003", "N001"], "aliases": ["p-bias diode"]},
+    "M7": {"type": "mos", "role": "pmos_output",      "nets": ["vop", "N003", "N002"],   "aliases": ["p-out"]},
+    "M8": {"type": "mos", "role": "pmos_ref_top",     "nets": ["N001", "N001", "VDD"],  "aliases": ["p-ref-top"]},
+    "M9": {"type": "mos", "role": "pmos_ref_branch",  "nets": ["N002", "N001", "VDD"],  "aliases": ["p-ref-branch"]},
+    "C1": {"type": "cap", "role": "load",             "nets": ["vop", "0"]}
+  },
+  "nets": ["vip", "vin", "vb3", "vtail", "vop", "N001", "N002", "N003", "N004", "N005", "N006", "VDD", "0"],
+  "blocks": {}
+}
+

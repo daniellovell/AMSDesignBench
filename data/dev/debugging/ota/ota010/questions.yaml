@@ -1,0 +1,12 @@
+questions:
+- id: ota010_debug_swap
+  track: debugging
+  modality: spice_netlist
+  artifact_path: netlist_bug.sp
+  rubric_id: debug_device_swap
+  rubric_path: ../../rubrics/debug_device_swap.json
+  prompt_template: debug_device_swap.txt
+  meta:
+    topology: folded_cascode_fully_diff_pmos_in
+    bench_version: 0.1.0
+    aspect: device_swap

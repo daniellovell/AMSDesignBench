@@ -1,0 +1,11 @@
+questions:
+- id: ota006_design_telescopic_se_hs
+  track: design
+  modality: auto
+  rubric_id: design_telescopic_single_end_high_swing
+  rubric_path: rubrics/design_telescopic_single_end_high_swing.json
+  prompt_template: ../prompts/design_ota.txt
+  meta:
+    topology: telescopic_cascode_single_end_high_swing
+    bench_version: 0.1.0
+    aspect: structure

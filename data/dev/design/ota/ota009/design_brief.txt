@@ -1,0 +1,1 @@
+Design a single-ended gain‑boosted cascode OTA with NMOS input cascode and PMOS active load cascode on top with gain‑boost loops on both NMOS and PMOS sides. Include the supply (VDD) and load capacitance.

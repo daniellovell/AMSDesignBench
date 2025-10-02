@@ -1,0 +1,31 @@
+package analog.ota; import lib.motifs::*;
+
+class OTATelescopic_SE_WS implements Amplifier {
+  supply VDD = 1.8V; ground GND;
+  port in_p vip, in_n vin; port out vop;
+  bias vb1, vb2, vtail;
+
+  use {
+    // Input differential pair with explicit tail node (N006)
+    dp   = new DiffPairNMOS(vip, vin) { gnd=GND; tail=N006; };
+    tail = new TailCurrentSourceNMOS() { out=N006; gate=vtail; gnd=GND; };
+
+    // NMOS cascodes (vb2): right branch to output, left branch to reference node N001
+    ncas_out = new NMOSCascode(in=N005, out=vop) { bias=vb2; gnd=GND; };   // M1
+    ncas_ref = new NMOSCascode(in=N004, out=N001){ bias=vb2; gnd=GND; };   // M2
+
+    // PMOS wide-swing active load:
+    // - Mirror pair with common gate at N001 (M8,M9)
+    // - Cascode devices with gate=vb1 to extend swing (M6 on out branch, M7 on ref branch)
+    p_m8 = new PMOSMirror(from=N001, to=N003, vdd=VDD);                    // M8
+    p_m9 = new PMOSMirror(from=N001, to=N002, vdd=VDD);                    // M9
+    p_cas_out = new PMOSCascodeElement(out=vop, gate=vb1, src=N003);       // M6
+    p_cas_ref = new PMOSCascodeElement(out=N001, gate=vb1, src=N002);      // M7
+
+    // Load capacitor
+    C(vop, GND, 1pF);
+  }
+
+  // Preserve SPICE node names (from the diff pair drains)
+  alias N004 = dp.out_l; alias N005 = dp.out_r;
+}

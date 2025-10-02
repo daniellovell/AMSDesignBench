@@ -1,0 +1,2 @@
+Design a fully differential telescopic cascode one‑stage OTA with NMOS differential input pair
+Include the supply (VDD) and load capacitance.
