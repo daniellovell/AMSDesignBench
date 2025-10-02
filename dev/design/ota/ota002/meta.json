@@ -1,0 +1,8 @@
+{
+  "topology": "telescopic_cascode_ota",
+  "gen_seed": 302,
+  "modalities": ["spice_netlist", "casIR", "cascode"],
+  "bench_version": "0.1.0",
+  "template_path": "../../../templates/ota/ota002"
+}
+

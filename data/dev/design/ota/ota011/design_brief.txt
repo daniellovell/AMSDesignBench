@@ -1,0 +1,1 @@
+Design a single‑ended PMOS‑input folded cascode OTA with a high‑swing PMOS connection. Include the supply (VDD) and load capacitance.

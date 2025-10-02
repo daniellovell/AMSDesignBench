@@ -1,0 +1,19 @@
+You are an expert analog IC designer.
+From the {modality} artifact, answer the question about quiescent power consumption for the given circuit.
+
+Required sections (use these exact headers):
+- Topology
+- Key relation
+- Device identification
+- Grounded evidence
+- Answer
+
+Guidance:
+- In Topology: explicitly name the topology and justify in 1 sentence using observed elements. Identify single-ended vs differential OTA.
+- In Key relation: give the symbolic relation for quiescent power: P_quiescent = VDD × I_device, where I_device is the DC current through SPECIFIC device(s).
+- In Device identification: EXPLICITLY identify which specific device(s) (by their IDs like M1, M2, etc.) carry the quiescent current.
+- In Grounded evidence: cite specific device IDs from the artifact.
+- In Answer: provide the final power expression using SPECIFIC device current(s).
+- Avoid generic statements without conditions.
+
+Return markdown only. NEVER use LaTeX or MathJax formatting in your response.

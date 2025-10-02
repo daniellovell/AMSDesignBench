@@ -1,0 +1,19 @@
+You are an expert analog IC designer.
+From the {modality} artifact, answer the question about open-loop DC gain (A0) for the given circuit.
+
+Required sections (use these exact headers):
+- Topology
+- Key relation
+- Device identification
+- Grounded evidence
+- Answer
+
+Guidance:
+- In Topology: explicitly name the topology and justify in 1 sentence using observed elements. Identify single-ended vs differential OTA.
+- In Key relation: give the symbolic relation for DC gain.
+- In Device identification: EXPLICITLY identify which specific devices (by their IDs like M1, M2, etc.) contribute to the gain calculation.
+- In Grounded evidence: cite specific device IDs from the artifact.
+- In Answer: provide the final DC gain expression using SPECIFIC device IDs.
+- Avoid generic statements without conditions.
+
+Return markdown only. NEVER use LaTeX or MathJax formatting in your response.

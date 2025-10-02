@@ -1,0 +1,3 @@
+Design a single‑ended telescopic cascode OTA with high‑swing features. It should have an NMOS differential input pair.
+
+Include the supply (VDD) and load capacitance.

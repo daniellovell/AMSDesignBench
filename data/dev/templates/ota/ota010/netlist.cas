@@ -1,0 +1,34 @@
+package analog.ota; import lib.motifs.*;
+
+class OTAFoldedDiff_PMOSIn_Bound implements Amplifier {
+  supply VDD=1.8V; ground GND;
+  port in_p vinp, in_n vinn; diff out(voutp, voutn);
+  // vb1: PMOS tail bias; vb2: NMOS source bias; vb3: NMOS cascode bias;
+  // vb4: PMOS cascode bias; vb5: PMOS top current-source bias
+  bias vb1, vb2, vb3, vb4, vb5;
+
+  use {
+    // PMOS input differential pair with PMOS tail into N001 (M3)
+    ptail = new TailCurrentSourcePMOS() { out=N001; gate=vb1; vdd=VDD; };          // M3
+    dp    = new DiffPairPMOS(vinp, vinn) { tail=N001; vdd=VDD; };                  // M1/M2 (abstracted)
+
+    // PMOS top current sources per side (M4/M5) and PMOS cascodes (M6/M7)
+    p_src_p = new PMOSGateBiasedLoad(node=N002) { gate=vb5; vdd=VDD; };            // M4 → N002
+    p_src_n = new PMOSGateBiasedLoad(node=N003) { gate=vb5; vdd=VDD; };            // M5 → N003
+    p_cas_p = new PMOSCascodeElement(out=voutp, gate=vb4, src=N002);               // M6 (D=N002, S=voutp)
+    p_cas_n = new PMOSCascodeElement(out=voutn, gate=vb4, src=N003);               // M7 (D=N003, S=voutn)
+
+    // NMOS folded branches, each: current source (vb2) + cascode (vb3)
+    // Positive side (voutp): N005 → cascode(vb3) → voutp; current source at N005 (vb2)
+    n_src_p  = new TailCurrentSourceNMOS() { out=N005; gate=vb2; gnd=GND; };       // M11
+    n_cas_p  = new NMOSCascode(in=N005, out=voutp) { bias=vb3; gnd=GND; };         // M10
+
+    // Negative side (voutn): N004 → cascode(vb3) → voutn; current source at N004 (vb2)
+    n_src_n  = new TailCurrentSourceNMOS() { out=N004; gate=vb2; gnd=GND; };       // M9
+    n_cas_n  = new NMOSCascode(in=N004, out=voutn) { bias=vb3; gnd=GND; };         // M8
+
+    // Load capacitors (match Cload/Cload1)
+    C(voutp, GND, 1pF);
+    C(voutn, GND, 1pF);
+  }
+}

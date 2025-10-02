@@ -1,0 +1,13 @@
+{
+  "elements": {
+    "M1": {"type": "mos", "role": "diff_pair_left", "nets": ["vinp", "n1", "ntail"], "aliases": ["input pair left"]},
+    "M2": {"type": "mos", "role": "diff_pair_right", "nets": ["vinn", "n2", "ntail"], "aliases": ["input pair right"]},
+    "Mtail": {"type": "mos", "role": "tail_source", "nets": ["ntail", "0"], "aliases": ["tail"]},
+    "Mp2": {"type": "mos", "role": "pmos_mirror_ref", "nets": ["n1", "n1", "VDD"], "aliases": ["mirror ref"]},
+    "Mp1": {"type": "mos", "role": "pmos_mirror_out", "nets": ["n1", "vout", "VDD"], "aliases": ["mirror out"]},
+    "CL": {"type": "cap", "role": "load", "nets": ["vout", "0"]}
+  },
+  "nets": ["vinp", "vinn", "n1", "n2", "vout", "ntail", "VDD", "vbias_n", "0"],
+  "blocks": {}
+}
+

@@ -1,0 +1,31 @@
+{
+  "nets": ["0", "VDD", "vin", "vout", "vb1"],
+  "motifs": [
+    {
+      "id": "M2",
+      "type": "nmos",
+      "model": "NMOS",
+      "params": { "l": "0.18u", "w": "2u" },
+      "ports": { "d": "vout", "g": "vin", "s": "0", "b": "0" }
+    },
+    {
+      "id": "M1",
+      "type": "pmos",
+      "model": "PMOS",
+      "params": { "l": "0.18u", "w": "4u" },
+      "ports": { "d": "VDD", "g": "vb1", "s": "vout", "b": "VDD" }
+    },
+    {
+      "id": "VDD",
+      "type": "vsource",
+      "value": "1.8",
+      "ports": { "p": "VDD", "n": "0" }
+    },
+    {
+      "id": "Cload",
+      "type": "capacitor",
+      "value": "1p",
+      "ports": { "p": "vout", "n": "0" }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "topology": "one_stage_common_source_single_end",
+  "gen_seed": 107,
+  "modalities": ["spice_netlist"],
+  "bench_version": "0.1.0",
+  "template_path": "../../../templates/ota/ota007"
+}

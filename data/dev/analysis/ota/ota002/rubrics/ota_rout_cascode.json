@@ -1,38 +1,79 @@
 {
   "rubric_id": "ota_rout_cascode",
   "version": "0.1.0",
-  "weights": { "correctness": 0.45, "completeness": 0.25, "groundedness": 0.20, "safety": 0.10 },
+  "weights": {
+    "correctness": 0.45,
+    "completeness": 0.25,
+    "groundedness": 0.2,
+    "safety": 0.1
+  },
   "criteria": [
     {
       "id": "topology",
       "desc": "Identifies fully differential cascoded (telescopic/folded) one-stage OTA in the Topology section.",
       "required": true,
       "section": "Topology",
-      "patterns_any": ["cascode", "cascoded", "telescopic", "folded cascode", "differential", "fully differential"],
+      "patterns_any": [
+        "cascode",
+        "cascoded",
+        "telescopic",
+        "folded cascode",
+        "differential",
+        "fully differential"
+      ],
       "min_any": 2,
-      "anti_patterns": ["single-ended"],
-      "weight": 0.10
+      "anti_patterns": [
+        "single-ended"
+      ],
+      "weight": 0.1
     },
     {
       "id": "key_relation",
-      "desc": "States some general formulation of the telescopic cascoded e.g. mathematical equivalent to r_out: (gm·ro^2)_p ∥ (gm·ro^2)_n ≈ (gm·ro^2)/2 at vop.",
+      "desc": "States some general formulation of the telescopic cascoded e.g. mathematical equivalent to r_out: (gm\u00b7ro^2)_p \u2225 (gm\u00b7ro^2)_n \u2248 (gm\u00b7ro^2)/2 at vop.",
       "required": true,
-      "patterns_any": ["gm*ro^2/2", "g_m*r_o^2/2", "g_m ro^2 / 2", "gm ro^2 / 2"],
-      "anti_patterns": ["ro/2", "r_o/2"],
+      "patterns_any": [
+        "gm*ro^2/2",
+        "g_m*r_o^2/2",
+        "g_m ro^2 / 2",
+        "gm ro^2 / 2"
+      ],
+      "anti_patterns": [
+        "ro/2",
+        "r_o/2"
+      ],
       "weight": 0.25
+    },
+    {
+      "id": "device_identification",
+      "desc": "Identifies which devices contribute ro to output impedance.",
+      "patterns_any": [
+        "ro_M",
+        "M2",
+        "M3",
+        "M4",
+        "M5",
+        "M6",
+        "parallel",
+        "||"
+      ],
+      "min_any": 2,
+      "weight": 0.05
     },
     {
       "id": "grounding",
       "desc": "References real elements from inventory (e.g., M1/M2, cascode devices if present, vout).",
       "requires_grounding": true,
       "min_refs": 2,
-      "weight": 0.20
+      "weight": 0.2
     },
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.10
+      "weight": 0.1
     }
   ],
-  "scoring": { "hallucination_penalty": 0.25, "min_pass": 0.70 }
+  "scoring": {
+    "hallucination_penalty": 0.25,
+    "min_pass": 0.7
+  }
 }

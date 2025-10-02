@@ -1,0 +1,19 @@
+package analog.ota; import lib.motifs.*;
+
+class OTAOneStage_SE_NMOSIn_ActivePMOS_Bound implements Amplifier {
+  supply VDD=1.8V; ground GND;
+  port in vin; port out vout;
+  // vb1: PMOS active-load gate bias
+  bias vb1;
+
+  use {
+    // NMOS input common-source to vout
+    n_in  = new CSStageNMOS(in=vin, out=vout) { gnd=GND; };           // M2
+
+    // PMOS active load from VDD into vout (gate at vb1)
+    p_ld  = new PMOSGateBiasedLoad(node=vout) { gate=vb1; vdd=VDD; }; // M1
+
+    // Load capacitor
+    C(vout, GND, 1pF);                                                // Cload
+  }
+}

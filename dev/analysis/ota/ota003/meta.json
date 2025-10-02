@@ -1,0 +1,9 @@
+{
+  "topology": "one_stage_ota",
+  "gen_seed": 103,
+  "modalities": ["spice_netlist"],
+  "bench_version": "0.1.0",
+  "template_path": "../../../templates/ota/ota003"
+}
+
+

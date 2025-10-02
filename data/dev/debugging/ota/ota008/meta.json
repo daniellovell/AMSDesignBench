@@ -1,0 +1,7 @@
+{
+  "topology": "nmos_cascode_single_end",
+  "gen_seed": 208,
+  "modalities": ["spice_netlist"],
+  "bench_version": "0.1.0",
+  "template_path": "../../../templates/ota/ota008"
+}

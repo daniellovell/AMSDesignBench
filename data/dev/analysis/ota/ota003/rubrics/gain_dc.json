@@ -1,0 +1,101 @@
+{
+  "rubric_id": "gain_dc",
+  "version": "0.1.0",
+  "weights": {
+    "correctness": 0.4,
+    "completeness": 0.2,
+    "groundedness": 0.2,
+    "device_specificity": 0.1,
+    "safety": 0.1
+  },
+  "criteria": [
+    {
+      "id": "topology",
+      "desc": "Explicitly identifies topology in a Topology section",
+      "required": true,
+      "section": "Topology",
+      "patterns_any": [
+        "high swing",
+        "single-stage",
+        "one-stage",
+        "single stage",
+        "differential pair",
+        "current mirror"
+      ],
+      "min_any": 2,
+      "anti_patterns": [
+        "two-stage",
+        "miller compensation",
+        "second stage",
+        "folded cascode"
+      ],
+      "weight": 0.1
+    },
+    {
+      "id": "key_relation",
+      "desc": "States DC Gain \u2248 gm * ro for high-swing one-stage OTA.",
+      "required": true,
+      "patterns_any": [
+        "gm * ro",
+        "gm*ro",
+        "Av0 = gm * ro",
+        "gm_in * r_out"
+      ],
+      "weight": 0.25
+    },
+    {
+      "id": "device_identification",
+      "desc": "Explicitly identifies which devices contribute gm and ro with specific device IDs.",
+      "required": true,
+      "section": "Device identification",
+      "patterns_any": [
+        "gm_M",
+        "ro_M",
+        "M1",
+        "M2",
+        "M3",
+        "M4",
+        "M5",
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "min_any": 3,
+      "weight": 0.1
+    },
+    {
+      "id": "device_specificity",
+      "desc": "Uses device-specific expressions in final answer.",
+      "required": true,
+      "section": "Answer",
+      "patterns_any": [
+        "gm_M",
+        "ro_M",
+        "_M1",
+        "_M2",
+        "_M3",
+        "_M4",
+        "_M5",
+        "_M6"
+      ],
+      "min_any": 2,
+      "weight": 0.1
+    },
+    {
+      "id": "grounding",
+      "desc": "References real elements from inventory.",
+      "requires_grounding": true,
+      "min_refs": 3,
+      "weight": 0.2
+    },
+    {
+      "id": "safety",
+      "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
+      "weight": 0.1
+    }
+  ],
+  "scoring": {
+    "hallucination_penalty": 0.25,
+    "min_pass": 0.7
+  }
+}

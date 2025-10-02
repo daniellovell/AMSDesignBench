@@ -1,0 +1,48 @@
+{
+  "rubric_id": "ota_swing_high_swing",
+  "version": "0.1.0",
+  "weights": { "correctness": 0.45, "completeness": 0.25, "groundedness": 0.20, "safety": 0.10 },
+  "criteria": [
+    {
+      "id": "topology",
+      "desc": "Explicitly identifies single-stage single-ended current-mirror OTA with high-swing output path.",
+      "required": true,
+      "section": "Topology",
+      "patterns_any": ["current mirror", "high-swing", "single-stage", "single-ended"],
+      "min_any": 2,
+      "anti_patterns": ["cascode", "two-stage", "telescopic", "folded cascode"],
+      "weight": 0.10
+    },
+    {
+      "id": "high_limit",
+      "desc": "High-side swing: vout_max ≈ VDD - Vov of the PMOS device tied directly to vout.",
+      "required": true,
+      "section": "Key relation",
+      "patterns_any": ["VDD - Vov", "VDD - Vov", "PMOS overdrive", "PMOS at vout", "VDD - Vov_p"],
+      "min_any": 1,
+      "weight": 0.20
+    },
+    {
+      "id": "low_limit",
+      "desc": "Low-side swing: vout_min ≈ Vov of the NMOS mirror device tied directly to vout (ground side).",
+      "required": true,
+      "section": "Key relation",
+      "patterns_any": ["Vov_n", "NMOS overdrive", "NMOS at vout", "mirror out"],
+      "min_any": 1,
+      "weight": 0.20
+    },
+    {
+      "id": "grounding",
+      "desc": "References real elements from inventory (e.g., M6 PMOS at vout, M8 NMOS mirror at vout, CL, vout, VDD).",
+      "requires_grounding": true,
+      "min_refs": 2,
+      "weight": 0.20
+    },
+    {
+      "id": "safety",
+      "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
+      "weight": 0.10
+    }
+  ],
+  "scoring": { "hallucination_penalty": 0.25, "min_pass": 0.70 }
+}

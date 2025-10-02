@@ -2,8 +2,8 @@ questions:
 - id: ota003_gbw
   track: analysis
   modality: auto
-  rubric_id: gbw_one_stage_mirror
-  rubric_path: rubrics/gbw_one_stage_mirror.json
+  rubric_id: gbw_one_stage
+  rubric_path: rubrics/gbw_one_stage.json
   prompt_template: gbw_one_stage.txt
   meta:
     topology: one_stage_ota
@@ -29,3 +29,43 @@ questions:
     topology: one_stage_ota
     bench_version: 0.1.0
     aspect: swing
+- id: ota003_gain_dc
+  track: analysis
+  modality: auto
+  rubric_id: gain_dc
+  rubric_path: rubrics/gain_dc.json
+  prompt_template: ota_dc_gain.txt
+  meta:
+    topology: one_stage_ota
+    bench_version: 0.1.0
+    aspect: gain_dc
+- id: ota003_psrr
+  track: analysis
+  modality: auto
+  rubric_id: psrr
+  rubric_path: rubrics/psrr.json
+  prompt_template: ota_psrr.txt
+  meta:
+    topology: one_stage_ota
+    bench_version: 0.1.0
+    aspect: psrr
+- id: ota003_noise_white
+  track: analysis
+  modality: auto
+  rubric_id: noise_white
+  rubric_path: rubrics/noise_white.json
+  prompt_template: ota_noise_white.txt
+  meta:
+    topology: one_stage_ota
+    bench_version: 0.1.0
+    aspect: noise_white
+- id: ota003_power_quiescent
+  track: analysis
+  modality: auto
+  rubric_id: power_quiescent
+  rubric_path: rubrics/power_quiescent.json
+  prompt_template: ota_power_quiescent.txt
+  meta:
+    topology: one_stage_ota
+    bench_version: 0.1.0
+    aspect: power_quiescent

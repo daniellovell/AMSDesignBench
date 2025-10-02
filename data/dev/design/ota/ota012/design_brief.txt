@@ -1,0 +1,1 @@
+Design a single‑ended PMOS‑input folded cascode OTA with two‑diode PMOS connection and a cascoded PMOS tail current source. Include the supply (VDD) and load capacitance.

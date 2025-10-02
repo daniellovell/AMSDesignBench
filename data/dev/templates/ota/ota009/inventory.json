@@ -1,0 +1,21 @@
+{
+  "elements": {
+    "M1": { "type": "mos", "role": "nmos_input",         "nets": ["N005", "vin", "0"],      "aliases": ["NMOS input CS"] },
+
+    "M2": { "type": "mos", "role": "nmos_cascode",       "nets": ["vout", "N004", "N005"],  "aliases": ["NMOS cascode to vout"] },
+
+    "M4": { "type": "mos", "role": "pmos_top_source",    "nets": ["N001", "vb3", "VDD"],    "aliases": ["PMOS I-source to N001"] },
+    "M3": { "type": "mos", "role": "pmos_cascode",       "nets": ["N001", "N002", "vout"],  "aliases": ["PMOS cascode over vout"] },
+
+    "M6": { "type": "mos", "role": "gb_p_tail_nmos",     "nets": ["N002", "vb2", "0"],      "aliases": ["GB-P NMOS tail (to GND)"] },
+    "M7": { "type": "mos", "role": "gb_p_pmos_buf",      "nets": ["N002", "N001", "VDD"],   "aliases": ["GB-P PMOS follower/mirror"] },
+
+    "M8": { "type": "mos", "role": "gb_n_pmos_source",   "nets": ["N004", "vb1", "VDD"],    "aliases": ["GB-N PMOS I-source"] },
+    "M5": { "type": "mos", "role": "gb_n_nmos_amp",      "nets": ["N004", "N005", "0"],     "aliases": ["GB-N NMOS amp (sense N005)"] },
+
+    "Cload": { "type": "cap", "role": "load",            "nets": ["vout", "0"] },
+    "VDD":   { "type": "vsource", "role": "supply",      "nets": ["VDD", "0"], "value": "1.8" }
+  },
+  "nets": ["vin", "vout", "vb1", "vb2", "vb3", "N001", "N002", "N003", "N004", "N005", "VDD", "0"],
+  "blocks": {}
+}

@@ -1,0 +1,15 @@
+{
+  "gbw_one_stage": [
+    "GBW ≈ gm/CL under single-pole unity-gain assumptions",
+    "Cite CL (C1) and input gm devices (M3/M4)"
+  ],
+  "ota_rout_cascode": [
+    "r_out dominated by cascoded path; symbolic ≈ (gm·ro^2)/2 per side",
+    "Cite devices tied to vop (e.g., M1, M6, M7)"
+  ],
+  "ota_swing_cascode": [
+    "High-side: VDD minus PMOS headrooms at vop; Low-side: sum of NMOS headrooms (tail+input+cascode)",
+    "Single-ended output at vop; ensure all stacked devices stay in saturation"
+  ]
+}
+

@@ -1,0 +1,8 @@
+{
+  "gbw_two_stage": [
+    "For two-stage without Miller comp, the dominant dynamics before compensation can show GBW ∝ gm(first)*gm(second)*(ro_load_first)/CL when β≈1 and second stage is voltage-controlled current source.",
+    "Rout at vout dominated by ro of second-stage devices in parallel: ro6 || ro7."
+  ]
+}
+
+

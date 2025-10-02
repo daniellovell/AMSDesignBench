@@ -1,0 +1,21 @@
+You are an expert analog IC designer.
+From the {modality} artifact, answer the question about the output-referred white thermal noise CURRENT for the given circuit.
+
+Required sections (use these exact headers):
+- Topology
+- Key relation
+- Device identification
+- Grounded evidence
+- Answer
+
+Guidance:
+- In Topology: explicitly name the topology and justify in 1 sentence using observed elements. Identify single-ended vs differential OTA.
+- In Key relation: give the formula for output-referred thermal noise CURRENT.
+- In Device identification: EXPLICITLY identify which specific devices (by their IDs like M1, M2, etc.) contribute to the output noise current. List their transconductances.
+- In Grounded evidence: cite specific device IDs from the artifact and explain why each contributes.
+- In Answer: provide the final output-referred noise CURRENT using SPECIFIC device transconductances.
+- Consider only white thermal noise sources (channel thermal noise), NOT flicker noise.
+- Output should be in A²/Hz (amperes squared per hertz).
+- Avoid generic statements without conditions.
+
+Return markdown only. NEVER use LaTeX or MathJax formatting in your response.

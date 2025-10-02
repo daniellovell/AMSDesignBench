@@ -1,0 +1,38 @@
+{
+  "rubric_id": "ota_swing_folded_two_diode",
+  "version": "0.1.0",
+  "weights": { "correctness": 0.45, "completeness": 0.25, "groundedness": 0.20, "safety": 0.10 },
+  "criteria": [
+    {
+      "id": "topology",
+      "desc": "Identifies folded cascode with two diode connections OTA.",
+      "required": true,
+      "section": "Topology",
+      "patterns_any": ["folded cascode", "folded", "PMOS input", "diode", "single-ended"],
+      "min_any": 2,
+      "anti_patterns": ["telescopic", "fully differential"],
+      "weight": 0.10
+    },
+    {
+      "id": "key_relation",
+      "desc": "States output swing limits for folded cascode with diode topology.",
+      "required": true,
+      "patterns_any": ["output swing", "headroom", "VDS(sat)", "Vov", "saturation", "diode"],
+      "min_any": 2,
+      "weight": 0.25
+    },
+    {
+      "id": "grounding",
+      "desc": "References real elements from inventory.",
+      "requires_grounding": true,
+      "min_refs": 2,
+      "weight": 0.20
+    },
+    {
+      "id": "safety",
+      "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
+      "weight": 0.10
+    }
+  ],
+  "scoring": { "hallucination_penalty": 0.25, "min_pass": 0.70 }
+}
