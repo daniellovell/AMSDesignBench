@@ -1436,31 +1436,24 @@ def main():
             except Exception:
                 from harness.scoring.judge_anchored import judge_answer as judge_call  # type: ignore
             def _inventory_summary() -> Dict[str, Any]:
+                """Build a conservative inventory for groundedness/judging.
+
+                Only include actual IDs and nets from the item/template inventory.
+                Do NOT inject extra aliases/types (e.g., CL/Cload, cap/res/elem) or
+                ground synonyms into allowed_ids to avoid leaking hints or irrelevant tokens.
+                Provide common ground synonyms via canonical_map only, so judges can
+                accept them if models use them, without encouraging their use.
+                """
                 alias_map = eff_inv.alias_map()
+                # Only keys explicitly present in elements/blocks/nets
                 allowed = sorted(set(alias_map.keys()))
                 canonical_map = {k: v for k, v in alias_map.items() if k != v}
-                
-                # Always ensure Cload and CL are in allowed IDs
-                if "CL" in alias_map.values():
-                    canonical_map.setdefault("Cload", "CL")
-                if "Cload" not in allowed:
-                    allowed.append("Cload")
-                if "CL" not in allowed:
-                    allowed.append("CL")
-                    
+
+                # Ground synonyms: offer mapping but do not add to allowed_ids
                 if any(n.strip().upper() == "0" or n.strip() == "0" for n in eff_inv.nets):
                     for syn in ("GND", "VSS"):
                         canonical_map.setdefault(syn, "0")
-                        if syn not in allowed:
-                            allowed.append(syn)
-                # Append motif 'type' names for casIR so citing types isn't penalized
-                try:
-                    types = {str(el.type).strip() for el in (eff_inv.elements or {}).values() if getattr(el, "type", None)}
-                except Exception:
-                    types = set()
-                for t in sorted(types):
-                    if t and t not in allowed:
-                        allowed.append(t)
+
                 summary: Dict[str, Any] = {"allowed_ids": sorted(allowed), "canonical_map": canonical_map}
                 if q.modality == "cascode":
                     summary["grounding_disabled"] = True

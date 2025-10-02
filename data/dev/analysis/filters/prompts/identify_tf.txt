@@ -1,0 +1,17 @@
+You are an expert in analog filters.
+From the {modality} artifact, identify the circuit topology and derive the symbolic transfer function H(s) = Vout(s)/Vin(s).
+
+Required sections (use these exact headers):
+- Topology
+- Transfer function
+- Grounded evidence
+- Answer
+
+Guidance:
+- In Topology: explicitly name the topology (e.g., low-pass RC, high-pass, notch, band-pass, biquad, state-variable) and justify in one sentence using observed connections and element IDs.
+- In Transfer function: provide a symbolic H(s) in simplest canonical form, indicating poles/zeros structure (e.g., first-order 1/(1+sRC), second-order normalized form with ω0 and Q, or product of sections if cascaded). Do not plug numeric values.
+- In Grounded evidence: cite element IDs and nets from the artifact (e.g., `R1`, `C1`, `L1`, `XU1`, `vout`, `vin`).
+- Keep variables symbolic (R, C, L, ω0, Q); avoid numeric substitution. 
+
+Return markdown only. NEVER use LaTeX or MathJax formatting in your response.
+

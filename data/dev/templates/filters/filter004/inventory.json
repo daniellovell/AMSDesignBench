@@ -1,0 +1,43 @@
+{
+  "elements": {
+    "Vin": {
+      "type": "elem",
+      "nets": [
+        "vin"
+      ]
+    },
+    "R1": {
+      "type": "res",
+      "nets": [
+        "vin",
+        "n1"
+      ]
+    },
+    "L1": {
+      "type": "ind",
+      "nets": [
+        "n1",
+        "vout"
+      ]
+    },
+    "C1": {
+      "type": "cap",
+      "nets": [
+        "vout"
+      ]
+    },
+    "Rload": {
+      "type": "res",
+      "nets": [
+        "vout"
+      ]
+    }
+  },
+  "nets": [
+    "0",
+    "n1",
+    "vin",
+    "vout"
+  ],
+  "blocks": {}
+}
