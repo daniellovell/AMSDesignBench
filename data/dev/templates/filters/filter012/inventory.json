@@ -1,0 +1,98 @@
+{
+  "elements": {
+    "Vin": {
+      "type": "elem",
+      "nets": [
+        "vin"
+      ]
+    },
+    "Rin": {
+      "type": "res",
+      "nets": [
+        "vin",
+        "nsum"
+      ]
+    },
+    "Rfb1": {
+      "type": "res",
+      "nets": [
+        "z",
+        "nsum"
+      ]
+    },
+    "Rfb2": {
+      "type": "res",
+      "nets": [
+        "y",
+        "nsum"
+      ]
+    },
+    "XU1": {
+      "type": "subckt",
+      "nets": [
+        "u",
+        "nsum"
+      ]
+    },
+    "Rint1": {
+      "type": "res",
+      "nets": [
+        "u",
+        "n2"
+      ]
+    },
+    "Cint1": {
+      "type": "cap",
+      "nets": [
+        "y",
+        "n2"
+      ]
+    },
+    "XU2": {
+      "type": "subckt",
+      "nets": [
+        "y",
+        "n2"
+      ]
+    },
+    "Rint2": {
+      "type": "res",
+      "nets": [
+        "y",
+        "n3"
+      ]
+    },
+    "Cint2": {
+      "type": "cap",
+      "nets": [
+        "z",
+        "n3"
+      ]
+    },
+    "XU3": {
+      "type": "subckt",
+      "nets": [
+        "z",
+        "n3"
+      ]
+    },
+    "Rload": {
+      "type": "res",
+      "nets": [
+        "y"
+      ]
+    }
+  },
+  "nets": [
+    "0",
+    "n2",
+    "n3",
+    "nsum",
+    "u",
+    "vin",
+    "vout",
+    "y",
+    "z"
+  ],
+  "blocks": {}
+}
