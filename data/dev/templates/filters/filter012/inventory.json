@@ -23,7 +23,7 @@
     "Rfb2": {
       "type": "res",
       "nets": [
-        "y",
+        "vout",
         "nsum"
       ]
     },
@@ -44,21 +44,21 @@
     "Cint1": {
       "type": "cap",
       "nets": [
-        "y",
+        "vout",
         "n2"
       ]
     },
     "XU2": {
       "type": "subckt",
       "nets": [
-        "y",
+        "vout",
         "n2"
       ]
     },
     "Rint2": {
       "type": "res",
       "nets": [
-        "y",
+        "vout",
         "n3"
       ]
     },
@@ -79,7 +79,7 @@
     "Rload": {
       "type": "res",
       "nets": [
-        "y"
+        "vout"
       ]
     }
   },
@@ -91,7 +91,6 @@
     "u",
     "vin",
     "vout",
-    "y",
     "z"
   ],
   "blocks": {}
