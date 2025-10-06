@@ -1537,10 +1537,8 @@ def main():
                 for _ in futures:
                     _.result()
 
-    # Create/overwrite latest pointer
-    latest = Path("outputs/latest")
-    try:
-        # Remove existing symlink/file/directory if it exists
+    def _force_remove(path: Path) -> None:
+        """Forcefully remove a file, directory, or symlink, handling broken symlinks and Windows quirks."""
         import os
         import shutil
         import subprocess
@@ -1549,11 +1547,11 @@ def main():
         # Try multiple methods to remove the existing item
         removed = False
         try:
-            if latest.exists():
-                if latest.is_dir() and not latest.is_symlink():
-                    shutil.rmtree(latest)
+            if path.exists():
+                if path.is_dir() and not path.is_symlink():
+                    shutil.rmtree(path)
                 else:
-                    latest.unlink()
+                    path.unlink()
                 removed = True
         except OSError:
             # Broken symlink or access issue
@@ -1562,8 +1560,8 @@ def main():
         if not removed:
             try:
                 # Try is_symlink without exists check
-                if latest.is_symlink():
-                    latest.unlink(missing_ok=True)
+                if path.is_symlink():
+                    path.unlink(missing_ok=True)
                     removed = True
             except OSError:
                 pass
@@ -1572,41 +1570,26 @@ def main():
             # Last resort: Windows-specific rmdir command for broken symlinks
             if sys.platform == 'win32':
                 try:
-                    subprocess.run(['rmdir', str(latest)], shell=True, check=False, capture_output=True)
+                    subprocess.run(['rmdir', str(path)], shell=True, check=False, capture_output=True)
                     removed = True
                 except:
                     pass
             else:
                 try:
-                    os.unlink(latest)
+                    os.unlink(path)
                 except (FileNotFoundError, OSError):
                     pass
-        
+
+    # Create/overwrite latest pointer
+    latest = Path("outputs/latest")
+    try:
+        _force_remove(latest)
         # Use relative target to avoid nested 'outputs/outputs' paths
         latest.symlink_to(out_dir.name, target_is_directory=True)
     except Exception:
         # Windows without symlink perms or other issues: copy results
         import shutil
-        import subprocess
-        import sys
-        # Clean up any remnants with aggressive approach
-        if sys.platform == 'win32':
-            try:
-                subprocess.run(['rmdir', str(latest)], shell=True, check=False, capture_output=True)
-            except:
-                pass
-        try:
-            import os
-            os.unlink(latest)
-        except:
-            try:
-                if latest.exists():
-                    if latest.is_dir():
-                        shutil.rmtree(latest)
-                    else:
-                        latest.unlink()
-            except:
-                pass
+        _force_remove(latest)
         latest.mkdir(parents=True, exist_ok=True)
         shutil.copy2(results_path, latest / "results.jsonl")
         (outputs_root / "latest_run.txt").write_text(str(out_dir), encoding='utf-8')
