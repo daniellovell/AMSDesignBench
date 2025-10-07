@@ -1,0 +1,126 @@
+{
+  "elements": {
+    "Vin": {
+      "type": "elem",
+      "nets": [
+        "vin"
+      ]
+    },
+    "R1A": {
+      "type": "res",
+      "nets": [
+        "vin",
+        "n1"
+      ]
+    },
+    "R2A": {
+      "type": "res",
+      "nets": [
+        "n1",
+        "v1"
+      ]
+    },
+    "C1A": {
+      "type": "cap",
+      "nets": [
+        "n1"
+      ]
+    },
+    "C2A": {
+      "type": "cap",
+      "nets": [
+        "v1",
+        "n1"
+      ]
+    },
+    "XU1": {
+      "type": "subckt",
+      "nets": [
+        "v1",
+        "n1i",
+        "v1",
+        "OPAMP"
+      ]
+    },
+    "RG1": {
+      "type": "res",
+      "nets": [
+        "n1i"
+      ]
+    },
+    "RF1": {
+      "type": "res",
+      "nets": [
+        "v1",
+        "n1i"
+      ]
+    },
+    "R1B": {
+      "type": "res",
+      "nets": [
+        "v1",
+        "n2"
+      ]
+    },
+    "R2B": {
+      "type": "res",
+      "nets": [
+        "n2",
+        "vout"
+      ]
+    },
+    "C1B": {
+      "type": "cap",
+      "nets": [
+        "n2"
+      ]
+    },
+    "C2B": {
+      "type": "cap",
+      "nets": [
+        "vout",
+        "n2"
+      ]
+    },
+    "XU2": {
+      "type": "subckt",
+      "nets": [
+        "vout",
+        "n2i",
+        "vout",
+        "OPAMP"
+      ]
+    },
+    "RG2": {
+      "type": "res",
+      "nets": [
+        "n2i"
+      ]
+    },
+    "RF2": {
+      "type": "res",
+      "nets": [
+        "vout",
+        "n2i"
+      ]
+    },
+    "Rload": {
+      "type": "res",
+      "nets": [
+        "vout"
+      ]
+    }
+  },
+  "nets": [
+    "0",
+    "OPAMP",
+    "n1",
+    "n1i",
+    "n2",
+    "n2i",
+    "v1",
+    "vin",
+    "vout"
+  ],
+  "blocks": {}
+}

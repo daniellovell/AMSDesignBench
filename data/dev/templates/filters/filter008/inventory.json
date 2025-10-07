@@ -1,0 +1,60 @@
+{
+  "elements": {
+    "Vin": {
+      "type": "elem",
+      "nets": [
+        "vin"
+      ]
+    },
+    "R1": {
+      "type": "res",
+      "nets": [
+        "vin",
+        "npos"
+      ]
+    },
+    "C1": {
+      "type": "cap",
+      "nets": [
+        "npos",
+        "0"
+      ]
+    },
+    "R2": {
+      "type": "res",
+      "nets": [
+        "vin",
+        "nneg"
+      ]
+    },
+    "R3": {
+      "type": "res",
+      "nets": [
+        "vout",
+        "nneg"
+      ]
+    },
+    "XU1": {
+      "type": "subckt",
+      "nets": [
+        "vout",
+        "nneg",
+        "npos"
+      ]
+    },
+    "Rload": {
+      "type": "res",
+      "nets": [
+        "vout"
+      ]
+    }
+  },
+  "nets": [
+    "0",
+    "nneg",
+    "npos",
+    "vin",
+    "vout"
+  ],
+  "blocks": {}
+}

@@ -153,7 +153,7 @@ def load_questions(item_dir: Path) -> List[Question]:
     meta: Dict[str, Any] = {}
     if meta_path.exists():
         try:
-            meta = json.loads(meta_path.read_text())
+            meta = json.loads(meta_path.read_text(encoding='utf-8'))
         except Exception:
             meta = {}
 
@@ -211,7 +211,7 @@ def load_questions(item_dir: Path) -> List[Question]:
     def _extract_sections_from_prompt(prompt_name: str) -> List[str]:
         ppath = prompts_dir / prompt_name
         try:
-            lines = ppath.read_text().splitlines()
+            lines = ppath.read_text(encoding='utf-8').splitlines()
         except Exception:
             return []
         sections: List[str] = []
@@ -251,7 +251,7 @@ def load_questions(item_dir: Path) -> List[Question]:
             rpath = (item_dir / str(qdict["rubric_path"]))
             if rpath.exists():
                 try:
-                    rid = json.loads(rpath.read_text()).get("rubric_id")
+                    rid = json.loads(rpath.read_text(encoding='utf-8')).get("rubric_id")
                     if rid:
                         qdict["rubric_id"] = str(rid)
                 except Exception:
@@ -263,7 +263,7 @@ def load_questions(item_dir: Path) -> List[Question]:
 
     raw_questions: List[Dict[str, Any]] = []
     try:
-        data = yaml.safe_load(q_path.read_text())
+        data = yaml.safe_load(q_path.read_text(encoding='utf-8'))
     except Exception as exc:
         raise SystemExit(f"Failed to load {q_path}: {exc}")
     if isinstance(data, dict):
@@ -405,20 +405,20 @@ def load_inventory(item_dir: Path) -> Inventory:
     meta_path = item_dir / "meta.json"
     if meta_path.exists():
         try:
-            meta = json.loads(meta_path.read_text())
+            meta = json.loads(meta_path.read_text(encoding='utf-8'))
             tpath = meta.get("template_path") or meta.get("template") or None
             if isinstance(tpath, str) and tpath.strip():
                 tpl_dir = (item_dir / tpath).resolve()
                 inv_file = tpl_dir / "inventory.json"
                 if inv_file.exists():
-                    inv = json.loads(inv_file.read_text())
+                    inv = json.loads(inv_file.read_text(encoding='utf-8'))
                     return Inventory.model_validate(inv)
         except Exception:
             pass
     # Fallback to local inventory.json
     local = item_dir / "inventory.json"
     if local.exists():
-        inv = json.loads(local.read_text())
+        inv = json.loads(local.read_text(encoding='utf-8'))
         return Inventory.model_validate(inv)
     raise FileNotFoundError(f"inventory.json not found for item {item_dir}")
 
@@ -490,7 +490,7 @@ def main():
         os.environ["OPENAI_JUDGE_CONCURRENCY"] = str(args.judge_concurrency)
 
     # Load bench config (YAML)
-    cfg = yaml.safe_load(Path("bench_config.yaml").read_text()) or {}
+    cfg = yaml.safe_load(Path("bench_config.yaml").read_text(encoding='utf-8')) or {}
     data_root = Path(cfg.get("paths", {}).get("data_root", "data"))
     # Prompts are referenced per-item: resolved as (item_dir/../prompts/<prompt_template>)
     outputs_root = Path(cfg.get("paths", {}).get("outputs_root", "outputs"))
@@ -1050,7 +1050,7 @@ def main():
                     ppath = (item_dir.parent / "prompts" / "design_ota_casir.txt")
                 elif q.modality == "cascode":
                     ppath = (item_dir.parent / "prompts" / "design_ota_cas.txt")
-            prompt_tmpl = ppath.read_text()
+            prompt_tmpl = ppath.read_text(encoding='utf-8')
             # Build example blocks for casIR/cascode modalities
             examples = ""
             # Build or load a plain-language design brief to tell the model exactly what to design
@@ -1059,7 +1059,7 @@ def main():
                 try:
                     db_path = item_dir / "design_brief.txt"
                     if db_path.exists():
-                        txt = db_path.read_text().strip()
+                        txt = db_path.read_text(encoding='utf-8').strip()
                         if txt:
                             return txt
                 except Exception:
@@ -1077,16 +1077,16 @@ def main():
                     base003 = Path("data/dev/templates/ota/ota003")
                     base006 = Path("data/dev/templates/ota/ota006")
                     if q.modality == "casIR":
-                        ex1 = (base003 / "netlist.cir").read_text()
-                        ex2 = (base006 / "netlist.cir").read_text()
+                        ex1 = (base003 / "netlist.cir").read_text(encoding='utf-8')
+                        ex2 = (base006 / "netlist.cir").read_text(encoding='utf-8')
                         examples = (
                             "Example 1 (ota003):\n```json\n" + ex1.strip() + "\n```\n\n" +
                             "Example 2 (ota006):\n```json\n" + ex2.strip() + "\n```\n"
                         )
                     else:
                         # cascode (analog description language)
-                        ex1 = (base003 / "netlist.cas").read_text()
-                        ex2 = (base006 / "netlist.cas").read_text()
+                        ex1 = (base003 / "netlist.cas").read_text(encoding='utf-8')
+                        ex2 = (base006 / "netlist.cas").read_text(encoding='utf-8')
                         examples = (
                             "Example 1 (ota003):\n```text\n" + ex1.strip() + "\n```\n\n" +
                             "Example 2 (ota006):\n```text\n" + ex2.strip() + "\n```\n"
@@ -1107,7 +1107,7 @@ def main():
             artifact_text = ""
             if art_path.exists():
                 try:
-                    artifact_text = art_path.read_text()
+                    artifact_text = art_path.read_text(encoding='utf-8')
                 except Exception:
                     artifact_text = ""
             artifact_used = artifact_text
@@ -1123,13 +1123,13 @@ def main():
                     tpl_net = None
                     if meta_path.exists():
                         try:
-                            m = json.loads(meta_path.read_text())
+                            m = json.loads(meta_path.read_text(encoding='utf-8'))
                             tpath = m.get("template_path") or m.get("template")
                             if isinstance(tpath, str) and tpath.strip():
                                 tdir = (item_dir / tpath).resolve()
                                 tnet = tdir / "netlist.sp"
                                 if tnet.exists():
-                                    tpl_net = tnet.read_text()
+                                    tpl_net = tnet.read_text(encoding='utf-8')
                         except Exception:
                             tpl_net = None
                     base_text = tpl_net or artifact_text
@@ -1137,7 +1137,7 @@ def main():
                     mpath = item_dir / "meta.json"
                     if mpath.exists():
                         try:
-                            mm = json.loads(mpath.read_text())
+                            mm = json.loads(mpath.read_text(encoding='utf-8'))
                             ms = mm.get("gen_seed")
                             if isinstance(ms, int):
                                 meta_seed = ms
@@ -1154,7 +1154,7 @@ def main():
                         artifact_used = base_text
                     try:
                         bug_path = item_dir / "netlist_bug.sp"
-                        bug_path.write_text(artifact_used)
+                        bug_path.write_text(artifact_used, encoding='utf-8')
                         art_path = bug_path
                     except Exception:
                         pass
@@ -1163,13 +1163,13 @@ def main():
                     tpl_cir = None
                     if meta_path.exists():
                         try:
-                            m = json.loads(meta_path.read_text())
+                            m = json.loads(meta_path.read_text(encoding='utf-8'))
                             tpath = m.get("template_path") or m.get("template")
                             if isinstance(tpath, str) and tpath.strip():
                                 tdir = (item_dir / tpath).resolve()
                                 tcir = tdir / "netlist.cir"
                                 if tcir.exists():
-                                    tpl_cir = tcir.read_text()
+                                    tpl_cir = tcir.read_text(encoding='utf-8')
                         except Exception:
                             tpl_cir = None
                     base_text = tpl_cir or artifact_text
@@ -1177,7 +1177,7 @@ def main():
                     mpath = item_dir / "meta.json"
                     if mpath.exists():
                         try:
-                            mm = json.loads(mpath.read_text())
+                            mm = json.loads(mpath.read_text(encoding='utf-8'))
                             ms = mm.get("gen_seed")
                             if isinstance(ms, int):
                                 meta_seed = ms
@@ -1194,7 +1194,7 @@ def main():
                         artifact_used = base_text
                     try:
                         bug_path = item_dir / "netlist_bug.cir"
-                        bug_path.write_text(artifact_used)
+                        bug_path.write_text(artifact_used, encoding='utf-8')
                         art_path = bug_path
                     except Exception:
                         pass
@@ -1203,13 +1203,13 @@ def main():
                     tpl_cas = None
                     if meta_path.exists():
                         try:
-                            m = json.loads(meta_path.read_text())
+                            m = json.loads(meta_path.read_text(encoding='utf-8'))
                             tpath = m.get("template_path") or m.get("template")
                             if isinstance(tpath, str) and tpath.strip():
                                 tdir = (item_dir / tpath).resolve()
                                 tcas = tdir / "netlist.cas"
                                 if tcas.exists():
-                                    tpl_cas = tcas.read_text()
+                                    tpl_cas = tcas.read_text(encoding='utf-8')
                         except Exception:
                             tpl_cas = None
                     base_text = tpl_cas or artifact_text
@@ -1217,7 +1217,7 @@ def main():
                     mpath = item_dir / "meta.json"
                     if mpath.exists():
                         try:
-                            mm = json.loads(mpath.read_text())
+                            mm = json.loads(mpath.read_text(encoding='utf-8'))
                             ms = mm.get("gen_seed")
                             if isinstance(ms, int):
                                 meta_seed = ms
@@ -1234,7 +1234,7 @@ def main():
                         artifact_used = base_text
                     try:
                         bug_path = item_dir / "netlist_bug.cas"
-                        bug_path.write_text(artifact_used)
+                        bug_path.write_text(artifact_used, encoding='utf-8')
                         art_path = bug_path
                     except Exception:
                         pass
@@ -1244,7 +1244,7 @@ def main():
                 mpath = item_dir / "meta.json"
                 if mpath.exists():
                     try:
-                        m = json.loads(mpath.read_text())
+                        m = json.loads(mpath.read_text(encoding='utf-8'))
                         ms = m.get("gen_seed")
                         if isinstance(ms, int):
                             meta_seed = ms
@@ -1346,13 +1346,13 @@ def main():
                     try:
                         mpath = item_dir / "meta.json"
                         if mpath.exists():
-                            mm = json.loads(mpath.read_text())
+                            mm = json.loads(mpath.read_text(encoding='utf-8'))
                             tpath = mm.get("template_path") or mm.get("template")
                             if isinstance(tpath, str) and tpath.strip():
                                 tdir = (item_dir / tpath).resolve()
                                 keyp = tdir / "netlist.cir"
                                 if keyp.exists():
-                                    src_text_for_inv = keyp.read_text()
+                                    src_text_for_inv = keyp.read_text(encoding='utf-8')
                     except Exception:
                         src_text_for_inv = None
                 if src_text_for_inv:
@@ -1387,18 +1387,18 @@ def main():
             kpath = Path("knowledge") / f"{q.rubric_id}.md"
             if not kpath.exists():
                 alt = Path("knowledge") / "const_gm_currents.md"
-                ktext = alt.read_text() if alt.exists() else ""
+                ktext = alt.read_text(encoding='utf-8') if alt.exists() else ""
             else:
                 with knowledge_lock:
                     ktext = knowledge_cache.get(q.rubric_id)
                     if ktext is None:
-                        ktext = kpath.read_text()
+                        ktext = kpath.read_text(encoding='utf-8')
                         knowledge_cache[q.rubric_id] = ktext
             refs_path = item_dir / "refs.json"
             refs: Dict[str, Any] = {}
             if refs_path.exists():
                 try:
-                    refs = json.loads(refs_path.read_text())
+                    refs = json.loads(refs_path.read_text(encoding='utf-8'))
                 except Exception:
                     refs = {}
             if bug_info:
@@ -1408,22 +1408,22 @@ def main():
                 try:
                     mpath = item_dir / "meta.json"
                     if mpath.exists():
-                        m = json.loads(mpath.read_text())
+                        m = json.loads(mpath.read_text(encoding='utf-8'))
                         tpath = m.get("template_path") or m.get("template")
                         if isinstance(tpath, str) and tpath.strip():
                             tdir = (item_dir / tpath).resolve()
                             if q.modality == "spice_netlist":
                                 ak = tdir / "netlist.sp"
                                 if ak.exists():
-                                    refs = {**(refs or {}), "answer_key_spice": ak.read_text()}
+                                    refs = {**(refs or {}), "answer_key_spice": ak.read_text(encoding='utf-8')}
                             if q.modality == "casIR":
                                 ak = tdir / "netlist.cir"
                                 if ak.exists():
-                                    refs = {**(refs or {}), "answer_key_casir": ak.read_text()}
+                                    refs = {**(refs or {}), "answer_key_casir": ak.read_text(encoding='utf-8')}
                             elif q.modality == "cascode":
                                 ak = tdir / "netlist.cas"
                                 if ak.exists():
-                                    refs = {**(refs or {}), "answer_key_cas": ak.read_text()}
+                                    refs = {**(refs or {}), "answer_key_cas": ak.read_text(encoding='utf-8')}
                 except Exception:
                     pass
             # Always include minimal context for judge
@@ -1436,31 +1436,24 @@ def main():
             except Exception:
                 from harness.scoring.judge_anchored import judge_answer as judge_call  # type: ignore
             def _inventory_summary() -> Dict[str, Any]:
+                """Build a conservative inventory for groundedness/judging.
+
+                Only include actual IDs and nets from the item/template inventory.
+                Do NOT inject extra aliases/types (e.g., CL/Cload, cap/res/elem) or
+                ground synonyms into allowed_ids to avoid leaking hints or irrelevant tokens.
+                Provide common ground synonyms via canonical_map only, so judges can
+                accept them if models use them, without encouraging their use.
+                """
                 alias_map = eff_inv.alias_map()
+                # Only keys explicitly present in elements/blocks/nets
                 allowed = sorted(set(alias_map.keys()))
                 canonical_map = {k: v for k, v in alias_map.items() if k != v}
-                
-                # Always ensure Cload and CL are in allowed IDs
-                if "CL" in alias_map.values():
-                    canonical_map.setdefault("Cload", "CL")
-                if "Cload" not in allowed:
-                    allowed.append("Cload")
-                if "CL" not in allowed:
-                    allowed.append("CL")
-                    
+
+                # Ground synonyms: offer mapping but do not add to allowed_ids
                 if any(n.strip().upper() == "0" or n.strip() == "0" for n in eff_inv.nets):
                     for syn in ("GND", "VSS"):
                         canonical_map.setdefault(syn, "0")
-                        if syn not in allowed:
-                            allowed.append(syn)
-                # Append motif 'type' names for casIR so citing types isn't penalized
-                try:
-                    types = {str(el.type).strip() for el in (eff_inv.elements or {}).values() if getattr(el, "type", None)}
-                except Exception:
-                    types = set()
-                for t in sorted(types):
-                    if t and t not in allowed:
-                        allowed.append(t)
+
                 summary: Dict[str, Any] = {"allowed_ids": sorted(allowed), "canonical_map": canonical_map}
                 if q.modality == "cascode":
                     summary["grounding_disabled"] = True
@@ -1544,23 +1537,62 @@ def main():
                 for _ in futures:
                     _.result()
 
+    def _force_remove(path: Path) -> None:
+        """Forcefully remove a file, directory, or symlink, handling broken symlinks and Windows quirks."""
+        import os
+        import shutil
+        import subprocess
+        import sys
+        
+        # Try multiple methods to remove the existing item
+        removed = False
+        try:
+            if path.exists():
+                if path.is_dir() and not path.is_symlink():
+                    shutil.rmtree(path)
+                else:
+                    path.unlink()
+                removed = True
+        except OSError:
+            # Broken symlink or access issue
+            pass
+        
+        if not removed:
+            try:
+                # Try is_symlink without exists check
+                if path.is_symlink():
+                    path.unlink(missing_ok=True)
+                    removed = True
+            except OSError:
+                pass
+        
+        if not removed:
+            # Last resort: Windows-specific rmdir command for broken symlinks
+            if sys.platform == 'win32':
+                try:
+                    subprocess.run(['rmdir', str(path)], shell=True, check=False, capture_output=True)
+                    removed = True
+                except:
+                    pass
+            else:
+                try:
+                    os.unlink(path)
+                except (FileNotFoundError, OSError):
+                    pass
+
     # Create/overwrite latest pointer
     latest = Path("outputs/latest")
     try:
-        if latest.exists() or latest.is_symlink():
-            if latest.is_symlink() or latest.is_file():
-                latest.unlink()
-            else:
-                # directory
-                pass
+        _force_remove(latest)
         # Use relative target to avoid nested 'outputs/outputs' paths
-        latest.symlink_to(out_dir.name)
+        latest.symlink_to(out_dir.name, target_is_directory=True)
     except Exception:
-        # Windows without symlink perms: copy results
+        # Windows without symlink perms or other issues: copy results
         import shutil
+        _force_remove(latest)
         latest.mkdir(parents=True, exist_ok=True)
         shutil.copy2(results_path, latest / "results.jsonl")
-        (outputs_root / "latest_run.txt").write_text(str(out_dir))
+        (outputs_root / "latest_run.txt").write_text(str(out_dir), encoding='utf-8')
     # Ensure latest/results.jsonl is accessible; if not, copy it
     try:
         test_path = latest / "results.jsonl"
