@@ -4,30 +4,20 @@ This folder contains SPICE templates for the `filters` family used as artifacts 
 
 Summary
 
-- filter001 — First‑order RC network
-  - Example form: H(s) = 1 / (1 + s R C)
-- filter002 — First‑order CR network
-  - Example form: H(s) = s R C / (1 + s R C)
-- filter003 — Series RL feeding a shunt R (output across R)
-  - Example form: H(s) = R / (R + s L)
-- filter004 — Passive R–L–C network with a single resonant pole pair
-  - Normalized band‑pass form: H(s) = (s/ω0) / ((s/ω0)^2 + (s/(Q ω0)) + 1)
-- filter005 — Two cascaded active biquads (op‑amp based)
-  - Section form (generic low‑pass biquad): H(s) = 1 / (s^2/(ω1^2) + s/(Q1 ω1) + 1) · 1 / (s^2/(ω2^2) + s/(Q2 ω2) + 1)
-- filter006 — Two cascaded active biquads (op‑amp based) with independent section tunings
-  - Same general product form as above with (ωk, Qk) chosen per design.
-- filter007 — RL low‑pass (series L, shunt R; Vout across R)
-  - H(s) = R / (R + s L)
-- filter008 — First‑order all‑pass (op‑amp implementation)
-  - H(s) = (1 − s R C) / (1 + s R C)
-- filter009 — Passive twin‑T notch (band‑stop)
-  - H(s) = (s^2 + ω0^2) / (s^2 + (ω0/Q) s + ω0^2)
-- filter010 — Second‑order high‑pass (two‑pole)
-  - H(s) = K s^2 / (s^2 + (ω0/Q) s + ω0^2)
-- filter011 — Active band‑pass (one‑op‑amp, multiple‑feedback form)
-  - H(s) = H0 (s/ω0) / ((s/ω0)^2 + (s/ω0)/Q + 1)
-- filter012 — State‑variable biquad (BP output)
-  - H(s) = ( (ω0/Q) s ) / ( s^2 + (ω0/Q) s + ω0^2 )
+| Filter ID | Filter Type | Transfer Function |
+|-----------|-------------|-------------------|
+| filter001 | First‑order RC network | $H(s) = \frac{1}{1 + sRC}$ |
+| filter002 | First‑order CR network | $H(s) = \frac{sRC}{1 + sRC}$ |
+| filter003 | Series RL feeding a shunt R (output across R) | $H(s) = \frac{R}{R + sL}$ |
+| filter004 | Passive R–L–C network (band‑pass) | $H(s) = \frac{s/\omega_0}{(s/\omega_0)^2 + s/(Q\omega_0) + 1}$ |
+| filter005 | Two cascaded active biquads (generic low‑pass) | $H(s) = \frac{1}{s^2/\omega_1^2 + s/(Q_1\omega_1) + 1} \cdot \frac{1}{s^2/\omega_2^2 + s/(Q_2\omega_2) + 1}$ |
+| filter006 | Two cascaded active biquads (independent tunings) | Same product form as filter005 with $(\omega_k, Q_k)$ per design |
+| filter007 | RL low‑pass (series L, shunt R; Vout across R) | $H(s) = \frac{R}{R + sL}$ |
+| filter008 | First‑order all‑pass (op‑amp) | $H(s) = \frac{1 - sRC}{1 + sRC}$ |
+| filter009 | Passive twin‑T notch (band‑stop) | $H(s) = \frac{s^2 + \omega_0^2}{s^2 + (\omega_0/Q)s + \omega_0^2}$ |
+| filter010 | Second‑order high‑pass (two‑pole) | $H(s) = \frac{Ks^2}{s^2 + (\omega_0/Q)s + \omega_0^2}$ |
+| filter011 | Active band‑pass (one‑op‑amp, MFB) | $H(s) = \frac{H_0(s/\omega_0)}{(s/\omega_0)^2 + (s/\omega_0)/Q + 1}$ |
+| filter012 | State‑variable biquad (BP output) | $H(s) = \frac{(\omega_0/Q)s}{s^2 + (\omega_0/Q)s + \omega_0^2}$ |
 
 Notes
 
