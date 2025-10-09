@@ -10,11 +10,11 @@ class OTATelescopic_SE_GainBoost_Bound implements Amplifier {
 
   use {
     // ---- NMOS input & NMOS cascode (main signal path)
-    n_in   = new CSStageNMOS(in=vin, out=N005) { gnd=GND; };                   // M1: D=N005, G=vin, S=GND
+    M_in   = new NMOS() { gate<-vin; drain<-N005; source<-GND; bulk<-GND; };   // M1: D=N005, G=vin, S=GND
     n_cas  = new NMOSCascode(in=N005, out=vout) { bias=N004; gnd=GND; };       // M2: D=vout, G=N004, S=N005
 
     // ---- PMOS load with PMOS cascode (top side of main path)
-    p_top  = new PMOSGateBiasedLoad(node=N001) { gate=vb3; vdd=VDD; };         // M4: D=VDD, G=vb3, S=N001
+    load_top = new ActiveLoad(polarity=PMOS) { node<-N001; bias<-vb3; vref<-VDD; };  // M4: D=VDD, G=vb3, S=N001
     p_cas  = new PMOSCascodeElement(out=N001, gate=N002, src=vout);            // M3: D=N001, G=N002, S=vout
 
     // ---- PMOS-side gain-boost (bias N002)
@@ -24,8 +24,8 @@ class OTATelescopic_SE_GainBoost_Bound implements Amplifier {
 
     // ---- NMOS-side gain-boost (bias N004)
     // Small amplifier senses N005 and drives N004 (cascode gate) against VDD current source
-    p_gb_n = new PMOSGateBiasedLoad(node=N004) { gate=vb1; vdd=VDD; };         // M8: D=VDD, G=vb1, S=N004
-    n_gb_n = new CSStageNMOS(in=N005, out=N004) { gnd=GND; };                   // M5: D=N004, G=N005, S=GND
+    load_gb = new ActiveLoad(polarity=PMOS) { node<-N004; bias<-vb1; vref<-VDD; };  // M8: D=VDD, G=vb1, S=N004
+    M_gb   = new NMOS() { gate<-N005; drain<-N004; source<-GND; bulk<-GND; };  // M5: D=N004, G=N005, S=GND
 
     // ---- Load capacitance
     C(vout, GND, 1pF);                                                          // Cload

@@ -24,23 +24,23 @@
         "fully differential",
         "folded"
       ],
-      "weight": 0.1
+      "weight": 0.14
     },
     {
       "id": "key_relation",
-      "desc": "States r_out \u2248 (gm\u00b7ro^2)_p \u2225 (gm\u00b7ro^2)_n \u2248 (gm\u00b7ro^2)/2 at vout.",
+      "desc": "States r_out ≈ (gm*ro²)_p ∥ (gm*ro²)_n ≈ (gm*ro²)/2 at vout.",
       "required": true,
       "patterns_any": [
-        "gm*ro^2/2",
-        "g_m*r_o^2/2",
-        "g_m ro^2 / 2",
-        "gm ro^2 / 2"
+        "gm*ro²/2",
+        "g_m*r_o²/2",
+        "g_m ro² / 2",
+        "gm ro² / 2"
       ],
       "anti_patterns": [
         "ro/2",
         "r_o/2"
       ],
-      "weight": 0.25
+      "weight": 0.36
     },
     {
       "id": "device_identification",
@@ -53,22 +53,22 @@
         "M5",
         "M6",
         "parallel",
-        "||"
+        "∥"
       ],
       "min_any": 2,
-      "weight": 0.05
+      "weight": 0.07
     },
     {
       "id": "grounding",
       "desc": "References real elements from inventory.",
       "requires_grounding": true,
       "min_refs": 2,
-      "weight": 0.2
+      "weight": 0.29
     },
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.1
+      "weight": 0.14
     }
   ],
   "scoring": {

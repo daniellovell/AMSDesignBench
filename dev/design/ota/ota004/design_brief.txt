@@ -1,5 +1,0 @@
-Design the standard workhorse two‑stage OTA:
-- Stage 1: a five‑transistor mirror OTA (NMOS input pair) producing an internal node.
-- Stage 2: an NMOS common‑source gain stage.
-- Provide a single‑ended output (vout) and include a small load capacitor.
-

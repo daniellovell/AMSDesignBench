@@ -10,7 +10,7 @@ class OTAFolded_SE_PMOSIn_2DiodeTailCas implements Amplifier {
     p_d1  = new PMOSDiode(node=Np1, vdd=VDD);
     p_d2  = new PMOSDiode(node=Np2, vdd=VDD);
     p_cas = new PMOSCascodeElement(out=vout, gate=vb4, src=Np2);
-    p_src = new PMOSGateBiasedLoad(node=NpBias) { gate=vb5; vdd=VDD; };
+    load_top = new ActiveLoad(polarity=PMOS) { node<-NpBias; bias<-vb5; vref<-VDD; };
     n_up  = new NMOSCascode(in=Nn, out=vout) { bias=vb2; gnd=GND; };
     n_src = new TailCurrentSourceNMOS() { out=Nn; gate=vb2; gnd=GND; };
     C(vout, GND, 1pF);

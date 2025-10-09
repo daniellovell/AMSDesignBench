@@ -16,24 +16,31 @@
       "section": "Topology",
       "patterns_any": [
         "cascode",
-        "NMOS input",
-        "PMOS cascode",
-        "differential"
+        "NMOS",
+        "single-ended",
+        "single ended"
       ],
       "min_any": 2,
-      "weight": 0.1
+      "weight": 0.09,
+      "anti_patterns": [
+        "telescoπc",
+        "folded",
+        "two-stage",
+        "differential",
+        "5T"
+      ]
     },
     {
       "id": "key_relation",
-      "desc": "States exact PSRR+ expression: PSRR \u2248 (gm*ro)\u00b2.",
+      "desc": "States exact PSRR+ expression: PSRR ≈ (gm*ro)².",
       "required": true,
       "patterns_any": [
-        "(gm * ro)\u00b2",
-        "(gm*ro)\u00b2",
-        "PSRR = (gm*ro)\u00b2"
+        "(gm × ro)²",
+        "(gm*ro)²",
+        "PSRR ≈ (gm*ro)²"
       ],
       "min_any": 1,
-      "weight": 0.3
+      "weight": 0.28
     },
     {
       "id": "device_identification",
@@ -51,7 +58,7 @@
         "VDD path"
       ],
       "min_any": 2,
-      "weight": 0.1
+      "weight": 0.09
     },
     {
       "id": "device_specificity",
@@ -67,32 +74,32 @@
         "_M6"
       ],
       "min_any": 1,
-      "weight": 0.1
+      "weight": 0.09
     },
     {
       "id": "psrr_formula_db",
-      "desc": "Provides PSRR in dB: PSRR_dB = 20log10((gm*ro)\u00b2/2).",
+      "desc": "Provides PSRR in dB: PSRR_dB ≈ 20log10((gm*ro)²/2).",
       "required": true,
       "patterns_any": [
         "20*log10",
-        "20 * log10",
+        "20 × log10",
         "PSRR_dB =",
         "dB"
       ],
       "min_any": 1,
-      "weight": 0.2
+      "weight": 0.18
     },
     {
       "id": "grounding",
       "desc": "References real elements from inventory.",
       "requires_grounding": true,
       "min_refs": 3,
-      "weight": 0.2
+      "weight": 0.18
     },
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.1
+      "weight": 0.09
     }
   ],
   "scoring": {

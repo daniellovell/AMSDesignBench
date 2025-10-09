@@ -13,8 +13,8 @@ class OTAFoldedDiff_PMOSIn_Bound implements Amplifier {
     dp    = new DiffPairPMOS(vinp, vinn) { tail=N001; vdd=VDD; };                  // M1/M2 (abstracted)
 
     // PMOS top current sources per side (M4/M5) and PMOS cascodes (M6/M7)
-    p_src_p = new PMOSGateBiasedLoad(node=N002) { gate=vb5; vdd=VDD; };            // M4 → N002
-    p_src_n = new PMOSGateBiasedLoad(node=N003) { gate=vb5; vdd=VDD; };            // M5 → N003
+    load_p = new ActiveLoad(polarity=PMOS) { node<-N002; bias<-vb5; vref<-VDD; };  // M4 → N002
+    load_n = new ActiveLoad(polarity=PMOS) { node<-N003; bias<-vb5; vref<-VDD; };  // M5 → N003
     p_cas_p = new PMOSCascodeElement(out=voutp, gate=vb4, src=N002);               // M6 (D=N002, S=voutp)
     p_cas_n = new PMOSCascodeElement(out=voutn, gate=vb4, src=N003);               // M7 (D=N003, S=voutn)
 

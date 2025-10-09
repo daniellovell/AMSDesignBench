@@ -1,5 +1,0 @@
-Design a single‑stage current‑mirror OTA with a high‑swing output path with NMOS differential input pair.
-The design should have gain bandwidth equal to gm/CL times the current mirror ratio.
-Output swing should be from V* of the NMOS on the low side to VDD - V* of the PMOS on the high side.
-Include the supply (VDD) and load capacitance.
-

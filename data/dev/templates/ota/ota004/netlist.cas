@@ -15,9 +15,9 @@ class OTA2Stage_Uncomp implements Amplifier {
     };
     alias n1 = dp.out_l; alias vint = dp.out_r;   // preserve names
 
-    // Stage 2: NMOS CS with PMOS gate-biased load
-    cs2 = new CSStageNMOS(in=vint, out=vout) { gnd=GND; };
-    pld = new PMOSGateBiasedLoad(node=vout)  { gate=vbp; vdd=vdd; };
+    // Stage 2: NMOS primitive input with ActiveLoad
+    M_cs2 = new NMOS() { gate<-vint; drain<-vout; source<-GND; bulk<-GND; };
+    load2 = new ActiveLoad(polarity=PMOS) { node<-vout; bias<-vbp; vref<-vdd; };
 
     C(vout, GND, 1pF);
   }

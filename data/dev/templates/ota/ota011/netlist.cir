@@ -1,94 +1,125 @@
 {
-  "nets": ["0", "N001", "N002", "N003", "N004", "N005", "N006", "VDD", "vinp", "vinn", "vout", "vb1", "vb2", "vb3", "vb4"],
+  "ir_version": 1,
+  "format": "casir-json-1",
+  "level": "EL",
+  "meta": {"tool": "cascode-0.2.0", "when": "2025-10-09T00:00:00Z"},
+
+  "nets": [
+    {"id": "VDD",  "domain": "supply",    "rail": "VDD"},
+    {"id": "GND",  "domain": "ground",    "rail": "GND"},
+    {"id": "vinp", "domain": "electrical"},
+    {"id": "vinn", "domain": "electrical"},
+    {"id": "vout", "domain": "electrical"},
+    {"id": "N001", "domain": "electrical"},
+    {"id": "N002", "domain": "electrical"},
+    {"id": "N003", "domain": "electrical"},
+    {"id": "N004", "domain": "electrical"},
+    {"id": "N005", "domain": "electrical"},
+    {"id": "N006", "domain": "electrical"},
+    {"id": "vb1",  "domain": "bias"},
+    {"id": "vb2",  "domain": "bias"},
+    {"id": "vb3",  "domain": "bias"},
+    {"id": "vb4",  "domain": "bias"}
+  ],
+
+  "bundles": [
+    {"id": "IN", "type": "Diff", "fields": {"p": "vinp", "n": "vinn"}}
+  ],
+
   "motifs": [
     {
-      "id": "M1",
-      "type": "pmos",
-      "model": "PMOS",
-      "params": { "l": "0.18u", "w": "4u" },
-      "ports": { "d": "N002", "g": "vinn", "s": "N006", "b": "VDD" }
+      "id": "ptail",
+      "type": "TailCurrentSourcePMOS",
+      "ports": {"out": "N002", "gate": "vb1", "vdd": "VDD"},
+      "impl": {"char_ref": "lib.motifs/tail_pmos@1.0"}
     },
     {
-      "id": "M2",
-      "type": "pmos",
-      "model": "PMOS",
-      "params": { "l": "0.18u", "w": "4u" },
-      "ports": { "d": "N002", "g": "vinp", "s": "N005", "b": "VDD" }
+      "id": "dp",
+      "type": "DiffPairPMOS",
+      "traits": ["AmplifierStage"],
+      "ports": {"in_p": "vinp", "in_n": "vinn", "tail": "N002", "vdd": "VDD"},
+      "impl": {"char_ref": "lib.motifs/diff_pair_pmos@1.0"}
     },
     {
-      "id": "M3",
-      "type": "pmos",
-      "model": "PMOS",
-      "params": { "l": "0.18u", "w": "4u" },
-      "ports": { "d": "VDD", "g": "vb1", "s": "N002", "b": "VDD" }
+      "id": "load_p",
+      "type": "ActiveLoad",
+      "traits": ["LoadDevice"],
+      "ports": {"node": "N003", "bias": "N001", "vref": "VDD"},
+      "params": {"polarity": "PMOS"},
+      "impl": {"char_ref": "lib.motifs/active_load@1.0"}
     },
     {
-      "id": "M4",
-      "type": "pmos",
-      "model": "PMOS",
-      "params": { "l": "0.18u", "w": "4u" },
-      "ports": { "d": "VDD", "g": "N001", "s": "N003", "b": "VDD" }
+      "id": "load_n",
+      "type": "ActiveLoad",
+      "traits": ["LoadDevice"],
+      "ports": {"node": "N004", "bias": "N001", "vref": "VDD"},
+      "params": {"polarity": "PMOS"},
+      "impl": {"char_ref": "lib.motifs/active_load@1.0"}
     },
     {
-      "id": "M5",
-      "type": "pmos",
-      "model": "PMOS",
-      "params": { "l": "0.18u", "w": "4u" },
-      "ports": { "d": "VDD", "g": "N001", "s": "N004", "b": "VDD" }
+      "id": "p_diode",
+      "type": "PMOSDiode",
+      "ports": {"node": "N001", "vdd": "VDD"},
+      "impl": {"char_ref": "lib.motifs/pmos_diode@1.0"}
     },
     {
-      "id": "M6",
-      "type": "pmos",
-      "model": "PMOS",
-      "params": { "l": "0.18u", "w": "4u" },
-      "ports": { "d": "N003", "g": "vb4", "s": "N001", "b": "VDD" }
+      "id": "p_cas_p",
+      "type": "PMOSCascodeElement",
+      "ports": {"out": "N003", "gate": "vb4", "src": "N001"},
+      "impl": {"char_ref": "lib.motifs/pmos_cascode_element@1.0"}
     },
     {
-      "id": "M7",
-      "type": "pmos",
-      "model": "PMOS",
-      "params": { "l": "0.18u", "w": "4u" },
-      "ports": { "d": "N004", "g": "vb4", "s": "vout", "b": "VDD" }
+      "id": "p_cas_n",
+      "type": "PMOSCascodeElement",
+      "ports": {"out": "N004", "gate": "vb4", "src": "vout"},
+      "impl": {"char_ref": "lib.motifs/pmos_cascode_element@1.0"}
     },
     {
-      "id": "M8",
-      "type": "nmos",
-      "model": "NMOS",
-      "params": { "l": "0.18u", "w": "2u" },
-      "ports": { "d": "vout", "g": "vb3", "s": "N005", "b": "0" }
+      "id": "n_cas_p",
+      "type": "NMOSCascode",
+      "ports": {"in": "N006", "out": "N001", "bias": "vb3", "gnd": "GND"},
+      "impl": {"char_ref": "lib.motifs/nmos_cascode@1.0"}
     },
     {
-      "id": "M9",
-      "type": "nmos",
-      "model": "NMOS",
-      "params": { "l": "0.18u", "w": "2u" },
-      "ports": { "d": "N005", "g": "vb2", "s": "0", "b": "0" }
+      "id": "n_src_p",
+      "type": "TailCurrentSourceNMOS",
+      "ports": {"out": "N006", "gate": "vb2", "gnd": "GND"},
+      "impl": {"char_ref": "lib.motifs/tail_nmos@1.0"}
     },
     {
-      "id": "M10",
-      "type": "nmos",
-      "model": "NMOS",
-      "params": { "l": "0.18u", "w": "2u" },
-      "ports": { "d": "N001", "g": "vb3", "s": "N006", "b": "0" }
+      "id": "n_cas_n",
+      "type": "NMOSCascode",
+      "ports": {"in": "N005", "out": "vout", "bias": "vb3", "gnd": "GND"},
+      "impl": {"char_ref": "lib.motifs/nmos_cascode@1.0"}
     },
     {
-      "id": "M11",
-      "type": "nmos",
-      "model": "NMOS",
-      "params": { "l": "0.18u", "w": "2u" },
-      "ports": { "d": "N006", "g": "vb2", "s": "0", "b": "0" }
-    },
-    {
-      "id": "VDD",
-      "type": "vsource",
-      "value": "1.8",
-      "ports": { "p": "VDD", "n": "0" }
+      "id": "n_src_n",
+      "type": "TailCurrentSourceNMOS",
+      "ports": {"out": "N005", "gate": "vb2", "gnd": "GND"},
+      "impl": {"char_ref": "lib.motifs/tail_nmos@1.0"}
     },
     {
       "id": "Cload",
-      "type": "capacitor",
-      "value": "1p",
-      "ports": { "p": "vout", "n": "0" }
+      "type": "Cap",
+      "ports": {"p": "vout", "n": "GND"},
+      "params": {"C": {"value": 1.0e-12, "unit": "F"}}
     }
-  ]
+  ],
+
+  "constraints": {
+    "numeric": [
+      {"id": "c_gain", "kind": "ineq", "lhs": {"metric": "gain_db"}, "op": ">=", "rhs": {"value": 60, "unit": "dB"}, "scope": {"node": "vout"}}
+    ],
+    "tech": [{"id": "t_lmin", "kind": "limit", "on": "*", "rule": "L>=", "value": 1.8e-7, "unit": "m"}]
+  },
+
+  "harness": {
+    "supplies": [{"net": "VDD", "value": 1.8, "unit": "V"}],
+    "loads": [{"node": "vout", "C": 1.0e-12, "unit": "F"}],
+    "sources": [{"bundle": "IN", "Z": 50.0, "unit": "Ohm"}],
+    "pvt": {"corners": ["TT@27C"]}
+  },
+
+  "benches": ["AC_OpenLoop"],
+  "provenance": {"sources": [{"file": "templates/ota/ota011/netlist.cas", "span": {"from": 1, "to": 95}}]}
 }

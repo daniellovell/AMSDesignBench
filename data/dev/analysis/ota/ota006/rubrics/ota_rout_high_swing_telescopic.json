@@ -1,5 +1,5 @@
 {
-  "rubric_id": "ota_rout_high_swing_telescopic",
+  "rubric_id": "ota_rout_high_swing_telescoπc",
   "version": "0.1.0",
   "weights": {
     "correctness": 0.45,
@@ -10,11 +10,11 @@
   "criteria": [
     {
       "id": "topology",
-      "desc": "Identifies a single-ended telescopic/folded cascode one-stage OTA (high-swing variant acceptable).",
+      "desc": "Identifies a single-ended telescoπc/folded cascode one-stage OTA (high-swing variant acceptable).",
       "required": true,
       "section": "Topology",
       "patterns_any": [
-        "telescopic",
+        "telescoπc",
         "folded cascode",
         "single-ended",
         "single ended",
@@ -27,22 +27,22 @@
         "second stage",
         "fully differential"
       ],
-      "weight": 0.1
+      "weight": 0.14
     },
     {
       "id": "key_relation",
-      "desc": "States some general formulation of the telescopic cascoded e.g. mathematical equivalent to r_out: (gm\u00b7ro^2)_p \u2225 (gm\u00b7ro^2)_n \u2248 (gm\u00b7ro^2)/2 at vop.",
+      "desc": "States some general formulation of the telescoπc cascoded e.g. mathematical equivalent to r_out: (gm*ro²)_p ∥ (gm*ro²)_n ≈ (gm*ro²)/2 at vop.",
       "required": true,
       "patterns_any": [
-        "gm*ro^2/2",
-        "g_m*r_o^2/2",
-        "gm ro^2 / 2",
-        "g_m ro^2 / 2"
+        "gm*ro²/2",
+        "g_m*r_o²/2",
+        "gm ro² / 2",
+        "g_m ro² / 2"
       ],
       "anti_patterns": [
         "ro/2"
       ],
-      "weight": 0.25
+      "weight": 0.36
     },
     {
       "id": "device_identification",
@@ -55,22 +55,22 @@
         "M5",
         "M6",
         "parallel",
-        "||"
+        "∥"
       ],
       "min_any": 2,
-      "weight": 0.05
+      "weight": 0.07
     },
     {
       "id": "grounding",
       "desc": "References real elements from inventory (e.g., M6 at vop and M1 NMOS cascode to vop).",
       "requires_grounding": true,
       "min_refs": 2,
-      "weight": 0.2
+      "weight": 0.29
     },
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.1
+      "weight": 0.14
     }
   ],
   "scoring": {

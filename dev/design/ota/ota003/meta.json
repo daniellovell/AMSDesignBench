@@ -1,8 +1,0 @@
-{
-  "topology": "one_stage_ota",
-  "gen_seed": 303,
-  "modalities": ["spice_netlist", "casIR", "cascode"],
-  "bench_version": "0.1.0",
-  "template_path": "../../../templates/ota/ota003"
-}
-

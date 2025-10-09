@@ -10,10 +10,10 @@ Required sections (use these exact headers):
 
 Guidance:
 - In Topology: explicitly name the topology and justify in 1 sentence using observed elements. Identify single-ended vs differential OTA.
-- In Key relation: give the formula for output-referred thermal noise CURRENT.
+- In Key relation: give the formula for output-referred thermal noise CURRENT. KEEP ALL PROCESS PARAMETERS SYMBOLIC (e.g., use γ, not 2/3).
 - In Device identification: EXPLICITLY identify which specific devices (by their IDs like M1, M2, etc.) contribute to the output noise current. List their transconductances.
 - In Grounded evidence: cite specific device IDs from the artifact and explain why each contributes.
-- In Answer: provide the final output-referred noise CURRENT using SPECIFIC device transconductances.
+- In Answer: provide the final output-referred noise CURRENT using SPECIFIC device transconductances and SYMBOLIC process parameters.
 - Consider only white thermal noise sources (channel thermal noise), NOT flicker noise.
 - Output should be in A²/Hz (amperes squared per hertz).
 - Avoid generic statements without conditions.

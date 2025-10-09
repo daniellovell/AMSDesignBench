@@ -24,19 +24,19 @@
         "fully differential",
         "folded"
       ],
-      "weight": 0.1
+      "weight": 0.14
     },
     {
       "id": "key_relation",
-      "desc": "States r_out with gain-boosting effect, approximately (gm*ro)^2 * ro.",
+      "desc": "States r_out with gain-boosting effect, approximately (gm*ro)² × ro.",
       "required": true,
       "patterns_any": [
-        "gm*ro^3",
-        "(gm*ro)^2*ro",
+        "gm*ro³",
+        "(gm*ro)²*ro",
         "gain-boosted",
         "boosted impedance"
       ],
-      "weight": 0.25
+      "weight": 0.36
     },
     {
       "id": "device_identification",
@@ -49,22 +49,22 @@
         "M5",
         "M6",
         "parallel",
-        "||"
+        "∥"
       ],
       "min_any": 2,
-      "weight": 0.05
+      "weight": 0.07
     },
     {
       "id": "grounding",
       "desc": "References real elements from inventory.",
       "requires_grounding": true,
       "min_refs": 2,
-      "weight": 0.2
+      "weight": 0.29
     },
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.1
+      "weight": 0.14
     }
   ],
   "scoring": {

@@ -23,19 +23,19 @@
       "anti_patterns": [
         "cascode",
         "two-stage",
-        "telescopic",
+        "telescoπc",
         "folded cascode"
       ],
-      "weight": 0.1
+      "weight": 0.12
     },
     {
       "id": "key_relation",
-      "desc": "States GBW \u2248 (gm/CL) multiplied by the mirror ratio k from the inner 5T core to the output devices: GBW \u2248 (gm/CL)\u00b7k.",
+      "desc": "States GBW ≈ (gm/CL) multiplied by the mirror ratio k from the inner 5T core to the output devices: GBW ≈ (gm/CL)*k.",
       "required": true,
       "patterns_any": [
         "k*gm/CL",
         "(gm/CL)*k",
-        "gm/CL * k"
+        "gm/CL × k"
       ],
       "anti_patterns": [
         "ro*C_L sets GBW",
@@ -43,7 +43,7 @@
         "gm*CL",
         "gm/C_L"
       ],
-      "weight": 0.25
+      "weight": 0.33
     },
     {
       "id": "device_identification",
@@ -56,7 +56,7 @@
         "gm of M"
       ],
       "min_any": 1,
-      "weight": 0.05
+      "weight": 0.06
     },
     {
       "id": "mirror_definition",
@@ -66,19 +66,19 @@
         "current gain",
         "current mirror"
       ],
-      "weight": 0.1
+      "weight": 0.12
     },
     {
       "id": "grounding",
       "desc": "Cites real elements (e.g., M1/M2 for gm, CL, M5/M6/M8 for mirror path).",
       "requires_grounding": true,
       "min_refs": 2,
-      "weight": 0.2
+      "weight": 0.25
     },
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.1
+      "weight": 0.12
     }
   ],
   "scoring": {

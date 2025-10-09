@@ -1,8 +1,0 @@
-{
-  "topology": "telescopic_cascode_ota",
-  "gen_seed": 202,
-  "modalities": ["spice_netlist"],
-  "bench_version": "0.1.0",
-  "template_path": "../../../templates/ota/ota002"
-}
-

@@ -7,13 +7,13 @@ class OTAOneStage_SE_NMOSIn_ActivePMOS_Bound implements Amplifier {
   bias vb1;
 
   use {
-    // NMOS input common-source to vout
-    n_in  = new CSStageNMOS(in=vin, out=vout) { gnd=GND; };           // M2
+    // Primitive NMOS input transistor (synthesis sizes W/L from specs)
+    M_in = new NMOS() { gate<-vin; drain<-vout; source<-GND; bulk<-GND; };  // M1
 
-    // PMOS active load from VDD into vout (gate at vb1)
-    p_ld  = new PMOSGateBiasedLoad(node=vout) { gate=vb1; vdd=VDD; }; // M1
+    // Generic active load motif with polarity
+    load = new ActiveLoad(polarity=PMOS) { node<-vout; bias<-vb1; vref<-VDD; };  // M2
 
     // Load capacitor
-    C(vout, GND, 1pF);                                                // Cload
+    C(vout, GND, 1pF);                                                           // Cload
   }
 }
