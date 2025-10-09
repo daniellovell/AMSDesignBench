@@ -2,9 +2,9 @@ questions:
 - id: ota004_gbw
   track: analysis
   modality: auto
-  rubric_id: gbw_one_stage
-  rubric_path: rubrics/gbw_one_stage.json
-  prompt_template: gbw_one_stage.txt
+  rubric_id: gbw_two_stage
+  rubric_path: rubrics/gbw_two_stage.json
+  prompt_template: gbw_two_stage.txt
   meta:
     topology: two_stage
     bench_version: 0.1.0
