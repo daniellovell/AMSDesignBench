@@ -1,0 +1,7 @@
+{
+  "bug_type": "device_polarity_swap",
+  "swapped_id": "M1",
+  "expected_type": "NMOS",
+  "actual_type": "PMOS",
+  "notes": "ota008: telescopic_cascode_single_end"
+}

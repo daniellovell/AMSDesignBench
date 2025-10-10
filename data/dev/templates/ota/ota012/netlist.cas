@@ -1,0 +1,18 @@
+package analog.ota; import lib.motifs.*;
+class OTAFolded_SE_PMOSIn_2DiodeTailCas implements Amplifier {
+  supply VDD=1.8V; ground GND;
+  port in_p vinp, in_n vinn; port out vout;
+  bias vb1, vb2, vb3, vb4, vb5;
+  use {
+    ptail    = new TailCurrentSourcePMOS() { out=Nt0; gate=vb1; vdd=VDD; };
+    ptailcas = new PMOSCascode(in=Nt0, out=Nt1) { bias=vb3; vdd=VDD; };
+    dp       = new DiffPairPMOS(vinp, vinn) { tail=Nt1; vdd=VDD; };
+    p_d1  = new PMOSDiode(node=Np1, vdd=VDD);
+    p_d2  = new PMOSDiode(node=Np2, vdd=VDD);
+    p_cas = new PMOSCascodeElement(out=vout, gate=vb4, src=Np2);
+    load_top = new ActiveLoad(polarity=PMOS) { node<-NpBias; bias<-vb5; vref<-VDD; };
+    n_up  = new NMOSCascode(in=Nn, out=vout) { bias=vb2; gnd=GND; };
+    n_src = new TailCurrentSourceNMOS() { out=Nn; gate=vb2; gnd=GND; };
+    C(vout, GND, 1pF);
+  }
+}

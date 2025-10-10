@@ -1,0 +1,14 @@
+{
+  "elements": {
+    "M1": { "type": "mos", "role": "nmos_input",       "nets": ["N002", "vin", "0"],     "aliases": ["NMOS input CS"] },
+    "M2": { "type": "mos", "role": "nmos_cascode",     "nets": ["vout", "vb1", "N002"],  "aliases": ["NMOS cascode to vout"] },
+
+    "M3": { "type": "mos", "role": "pmos_cascode",     "nets": ["N001", "vb2", "vout"],  "aliases": ["PMOS cascode above vout"] },
+    "M4": { "type": "mos", "role": "pmos_top_source",  "nets": ["N001", "vb3", "VDD"],   "aliases": ["PMOS I-source from VDD"] },
+
+    "Cload": { "type": "cap", "role": "load",          "nets": ["vout", "0"] },
+    "VDD":   { "type": "vsource", "role": "supply",    "nets": ["VDD", "0"], "value": "1.8" }
+  },
+  "nets": ["vin", "vout", "vb1", "vb2", "vb3", "N001", "N002", "VDD", "0"],
+  "blocks": {}
+}

@@ -1,0 +1,11 @@
+{
+  "elements": {
+    "M2": { "type": "mos", "role": "nmos_input",       "nets": ["vout", "vin", "0"],   "aliases": ["NMOS input CS"] },
+    "M1": { "type": "mos", "role": "pmos_active_load", "nets": ["vout", "vb1", "VDD"], "aliases": ["PMOS current source from VDD"] },
+
+    "Cload": { "type": "cap", "role": "load",          "nets": ["vout", "0"] },
+    "VDD":   { "type": "vsource", "role": "supply",    "nets": ["VDD", "0"], "value": "1.8" }
+  },
+  "nets": ["vin", "vout", "vb1", "VDD", "0"],
+  "blocks": {}
+}

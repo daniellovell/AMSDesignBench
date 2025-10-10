@@ -1,0 +1,63 @@
+{
+  "ir_version": 1,
+  "format": "casir-json-1",
+  "level": "EL",
+  "meta": {"tool": "cascode-0.2.0", "when": "2025-10-09T00:00:00Z"},
+
+  "nets": [
+    {"id": "VDD",  "domain": "supply",    "rail": "VDD"},
+    {"id": "GND",  "domain": "ground",    "rail": "GND"},
+    {"id": "vin",  "domain": "electrical"},
+    {"id": "vout", "domain": "electrical"},
+    {"id": "vb1",  "domain": "bias"}
+  ],
+
+  "motifs": [
+    {
+      "id": "M_in",
+      "type": "NMOS",
+      "ports": {"gate": "vin", "drain": "vout", "source": "GND", "bulk": "GND"},
+      "params": {
+        "W": {"value": 2.0e-6, "unit": "m"},
+        "L": {"value": 1.8e-7, "unit": "m"},
+        "m": {"value": 1}
+      },
+      "impl": { "primitive": true, "pdk_device": "nfet_01v8" }
+    },
+    {
+      "id": "load",
+      "type": "ActiveLoad",
+      "traits": ["LoadDevice"],
+      "ports": {"node": "vout", "bias": "vb1", "vref": "VDD"},
+      "params": {"polarity": "PMOS"},
+      "impl": { "char_ref": "lib.motifs/active_load@1.0" }
+    },
+    {
+      "id": "Cload",
+      "type": "Cap",
+      "ports": {"p": "vout", "n": "GND"},
+      "params": {"C": {"value": 1.0e-12, "unit": "F"}}
+    }
+  ],
+
+  "constraints": {
+    "numeric": [
+      {"id": "c_gbw",  "kind": "ineq", "lhs": {"metric": "gbw"},     "op": ">=", "rhs": {"value": 5.0e7, "unit": "Hz"}, "scope": {"node": "vout"}},
+      {"id": "c_gain", "kind": "ineq", "lhs": {"metric": "gain_db"}, "op": ">=", "rhs": {"value": 40,    "unit": "dB"}, "scope": {"node": "vout"}},
+      {"id": "c_pm",   "kind": "ineq", "lhs": {"metric": "pm_deg"},  "op": ">=", "rhs": {"value": 60,    "unit": "deg"}, "scope": {"node": "vout"}},
+      {"id": "c_pwr",  "kind": "ineq", "lhs": {"metric": "power"},   "op": "<=", "rhs": {"value": 5.0e-3, "unit": "W"}}
+    ],
+    "tech": [ {"id": "t_lmin", "kind": "limit", "on": "*", "rule": "L>=", "value": 1.8e-7, "unit": "m"} ],
+    "measure": [ {"id": "m_gbw", "bench": "AC_OpenLoop", "metric": "gbw", "node": "vout"} ]
+  },
+
+  "harness": {
+    "supplies": [ {"net": "VDD", "value": 1.8, "unit": "V"} ],
+    "loads":    [ {"node": "vout", "C": 1.0e-12, "unit": "F"} ],
+    "sources":  [ {"node": "vin", "Z": 50.0, "unit": "Ohm"} ],
+    "pvt":      {"corners": ["TT@27C"]}
+  },
+
+  "benches": ["AC_OpenLoop", "Step"],
+  "provenance": {"sources": [ {"file": "templates/ota/ota007/netlist.cas", "span": {"from": 1, "to": 20}} ]}
+}

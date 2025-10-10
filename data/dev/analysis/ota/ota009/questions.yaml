@@ -1,0 +1,71 @@
+questions:
+- id: ota009_gbw
+  track: analysis
+  modality: auto
+  rubric_id: gbw_one_stage
+  rubric_path: rubrics/gbw_one_stage.json
+  prompt_template: gbw_one_stage.txt
+  meta:
+    topology: gainboosted_cascode_single_end
+    bench_version: 0.1.0
+    aspect: gbw
+- id: ota009_rout
+  track: analysis
+  modality: auto
+  rubric_id: ota_rout_gainboost
+  rubric_path: rubrics/ota_rout_gainboost.json
+  prompt_template: ota_rout.txt
+  meta:
+    topology: gainboosted_cascode_single_end
+    bench_version: 0.1.0
+    aspect: rout
+- id: ota009_swing
+  track: analysis
+  modality: auto
+  rubric_id: ota_swing_gainboost
+  rubric_path: rubrics/ota_swing_gainboost.json
+  prompt_template: ota_swing.txt
+  meta:
+    topology: gainboosted_cascode_single_end
+    bench_version: 0.1.0
+    aspect: swing
+- id: ota009_gain_dc
+  track: analysis
+  modality: auto
+  rubric_id: gain_dc
+  rubric_path: rubrics/gain_dc.json
+  prompt_template: ota_dc_gain.txt
+  meta:
+    topology: gainboosted_cascode_single_end
+    bench_version: 0.1.0
+    aspect: gain_dc
+- id: ota009_psrr
+  track: analysis
+  modality: auto
+  rubric_id: psrr
+  rubric_path: rubrics/psrr.json
+  prompt_template: ota_psrr.txt
+  meta:
+    topology: gainboosted_cascode_single_end
+    bench_version: 0.1.0
+    aspect: psrr
+- id: ota009_noise_white
+  track: analysis
+  modality: auto
+  rubric_id: noise_white
+  rubric_path: rubrics/noise_white.json
+  prompt_template: ota_noise_white.txt
+  meta:
+    topology: gainboosted_cascode_single_end
+    bench_version: 0.1.0
+    aspect: noise_white
+- id: ota009_power_quiescent
+  track: analysis
+  modality: auto
+  rubric_id: power_quiescent
+  rubric_path: rubrics/power_quiescent.json
+  prompt_template: ota_power_quiescent.txt
+  meta:
+    topology: gainboosted_cascode_single_end
+    bench_version: 0.1.0
+    aspect: power_quiescent

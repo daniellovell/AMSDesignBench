@@ -1,0 +1,7 @@
+{
+  "bug_type": "device_polarity_swap",
+  "swapped_id": "M1",
+  "expected_type": "NMOS",
+  "actual_type": "PMOS",
+  "notes": "ota010: folded_cascode_fully_diff_pmos_in"
+}

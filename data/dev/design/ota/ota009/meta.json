@@ -1,0 +1,7 @@
+{
+  "topology": "cascode_gainboost_single_end",
+  "gen_seed": 309,
+  "modalities": ["spice_netlist", "casIR", "cascode"],
+  "bench_version": "0.1.0",
+  "template_path": "../../../templates/ota/ota009"
+}

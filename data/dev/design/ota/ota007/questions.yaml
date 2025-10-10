@@ -1,0 +1,11 @@
+questions:
+- id: ota007_design_one_stage_single_end_active_load
+  track: design
+  modality: auto
+  rubric_id: design_one_stage_single_end_active_load
+  rubric_path: rubrics/design_one_stage_single_end_active_load.json
+  prompt_template: ../prompts/design_ota.txt
+  meta:
+    topology: one_stage_common_source_single_end
+    bench_version: 0.1.0
+    aspect: structure

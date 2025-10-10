@@ -1,0 +1,24 @@
+{
+  "elements": {
+    "M1":  { "type": "mos", "role": "diff_pair_left",   "nets": ["N002", "vinn", "N006"], "aliases": ["pmos in −"] },
+    "M2":  { "type": "mos", "role": "diff_pair_right",  "nets": ["N002", "vinp", "N005"], "aliases": ["pmos in +"] },
+
+    "M3":  { "type": "mos", "role": "pmos_tail_source", "nets": ["N002", "vb1", "VDD"],   "aliases": ["PMOS tail from VDD"] },
+
+    "M4":  { "type": "mos", "role": "pmos_hs_pre_ref",  "nets": ["N003", "N001", "VDD"],  "aliases": ["high-swing pre (ref)"] },
+    "M5":  { "type": "mos", "role": "pmos_hs_pre_out",  "nets": ["N004", "N001", "VDD"],  "aliases": ["high-swing pre (out)"] },
+    "M6":  { "type": "mos", "role": "pmos_hs_cas_ref",  "nets": ["N003", "vb4", "N001"],  "aliases": ["high-swing cascode (ref)"] },
+    "M7":  { "type": "mos", "role": "pmos_hs_cas_out",  "nets": ["vout", "vb4", "N004"],  "aliases": ["high-swing cascode (out)"] },
+
+    "M8":  { "type": "mos", "role": "nmos_cascode_out", "nets": ["vout", "vb3", "N005"],  "aliases": ["NMOS cascode to vout"] },
+    "M9":  { "type": "mos", "role": "nmos_source_out",  "nets": ["N005", "vb2", "0"],     "aliases": ["NMOS current source (out)"] },
+
+    "M10": { "type": "mos", "role": "nmos_cascode_ref", "nets": ["N001", "vb3", "N006"],  "aliases": ["NMOS cascode to N001"] },
+    "M11": { "type": "mos", "role": "nmos_source_ref",  "nets": ["N006", "vb2", "0"],     "aliases": ["NMOS current source (ref)"] },
+
+    "Cload": { "type": "cap", "role": "load",   "nets": ["vout", "0"] },
+    "VDD":   { "type": "vsource", "role": "supply", "nets": ["VDD", "0"], "value": "1.8" }
+  },
+  "nets": ["vinp", "vinn", "vout", "vb1", "vb2", "vb3", "vb4", "N001", "N002", "N003", "N004", "N005", "N006", "VDD", "0"],
+  "blocks": {}
+}
