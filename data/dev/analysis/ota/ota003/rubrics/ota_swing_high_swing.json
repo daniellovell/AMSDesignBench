@@ -23,10 +23,10 @@
       "anti_patterns": [
         "cascode",
         "two-stage",
-        "telescoπc",
+        "telescopic",
         "folded cascode"
       ],
-      "weight": 0.12
+      "weight": 0.1
     },
     {
       "id": "high_limit",
@@ -41,7 +41,7 @@
         "VDD - Vov_p"
       ],
       "min_any": 1,
-      "weight": 0.26
+      "weight": 0.3
     },
     {
       "id": "low_limit",
@@ -67,7 +67,7 @@
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.12
+      "weight": 0.1
     }
   ],
   "scoring": {

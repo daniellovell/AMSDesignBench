@@ -10,13 +10,13 @@
   "criteria": [
     {
       "id": "topology",
-      "desc": "Identifies fully differential cascoded/telescoπc one-stage OTA and the stacked devices tied to the outputs.",
+      "desc": "Identifies fully differential cascoded/telescopic one-stage OTA and the stacked devices tied to the outputs.",
       "required": true,
       "section": "Topology",
       "patterns_any": [
         "cascode",
         "cascoded",
-        "telescoπc",
+        "telescopic",
         "folded cascode",
         "differential",
         "fully differential"
@@ -25,7 +25,7 @@
       "anti_patterns": [
         "single-ended"
       ],
-      "weight": 0.12
+      "weight": 0.1
     },
     {
       "id": "high_limit",
@@ -47,7 +47,7 @@
         "rail-to-rail",
         "no headroom"
       ],
-      "weight": 0.26
+      "weight": 0.3
     },
     {
       "id": "low_limit",
@@ -78,7 +78,7 @@
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.12
+      "weight": 0.1
     }
   ],
   "scoring": {

@@ -23,9 +23,9 @@
         "diode"
       ],
       "min_any": 2,
-      "weight": 0.09,
+      "weight": 0.1,
       "anti_patterns": [
-        "telescoπc",
+        "telescopic",
         "two-stage",
         "differential",
         "5T",
@@ -43,7 +43,7 @@
         "gm1 + gm2 + gm3 + gm4 + gm5 + gm6"
       ],
       "min_any": 1,
-      "weight": 0.28,
+      "weight": 0.2,
       "anti_patterns": [
         "gm_M5",
         "gm_M7",
@@ -87,7 +87,7 @@
         "current mirror"
       ],
       "min_any": 2,
-      "weight": 0.09,
+      "weight": 0.1,
       "anti_patterns": [
         "M5",
         "M7",
@@ -126,7 +126,7 @@
         "_M6"
       ],
       "min_any": 1,
-      "weight": 0.09,
+      "weight": 0.1,
       "anti_patterns": [
         "gm_M5",
         "gm_M7",
@@ -181,19 +181,19 @@
         "ptail",
         "ntail"
       ],
-      "weight": 0.18
+      "weight": 0.2
     },
     {
       "id": "grounding",
       "desc": "References real elements from inventory.",
       "requires_grounding": true,
       "min_refs": 3,
-      "weight": 0.18
+      "weight": 0.2
     },
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.09
+      "weight": 0.1
     }
   ],
   "scoring": {

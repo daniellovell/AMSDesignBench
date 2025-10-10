@@ -10,13 +10,13 @@
   "criteria": [
     {
       "id": "topology",
-      "desc": "Identifies single-ended cascoded/telescoπc one-stage OTA and the stacked devices tied to the output vop.",
+      "desc": "Identifies single-ended cascoded/telescopic one-stage OTA and the stacked devices tied to the output vop.",
       "required": true,
       "section": "Topology",
       "patterns_any": [
         "cascode",
         "cascoded",
-        "telescoπc",
+        "telescopic",
         "folded cascode",
         "single-ended",
         "single ended"
@@ -26,7 +26,7 @@
         "high-swing",
         "fully differential"
       ],
-      "weight": 0.12
+      "weight": 0.1
     },
     {
       "id": "high_limit",
@@ -41,7 +41,7 @@
         "stacked PMOS"
       ],
       "min_any": 2,
-      "weight": 0.26
+      "weight": 0.3
     },
     {
       "id": "low_limit",
@@ -68,7 +68,7 @@
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.12
+      "weight": 0.1
     }
   ],
   "scoring": {

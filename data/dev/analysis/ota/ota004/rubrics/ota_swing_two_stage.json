@@ -21,10 +21,10 @@
       "min_any": 1,
       "anti_patterns": [
         "single-stage",
-        "telescoπc",
+        "telescopic",
         "cascode"
       ],
-      "weight": 0.12
+      "weight": 0.1
     },
     {
       "id": "high_limit",
@@ -38,7 +38,7 @@
         "M7"
       ],
       "min_any": 2,
-      "weight": 0.26
+      "weight": 0.3
     },
     {
       "id": "low_limit",
@@ -64,7 +64,7 @@
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.12
+      "weight": 0.1
     }
   ],
   "scoring": {

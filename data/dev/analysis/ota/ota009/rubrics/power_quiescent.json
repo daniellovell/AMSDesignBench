@@ -21,9 +21,9 @@
         "single-ended"
       ],
       "min_any": 1,
-      "weight": 0.09,
+      "weight": 0.1,
       "anti_patterns": [
-        "telescoπc",
+        "telescopic",
         "folded",
         "two-stage",
         "differential",
@@ -35,8 +35,8 @@
       "desc": "Gain-boosted cascode: THREE branches (main signal + NMOS boost bias + PMOS boost bias). Must sum ALL.",
       "required": true,
       "patterns_any": [
-        "P ≈ VDD × (I_",
-        "+ I_",
+        "P ≈ VDD * (I_**",
+        "+ I_**",
         "sum",
         "three",
         "main",
@@ -44,14 +44,14 @@
         "boost"
       ],
       "min_any": 2,
-      "weight": 0.46,
+      "weight": 0.4,
       "anti_patterns": [
         "I_M6 ≈ I_M7",
         "I_M7 ≈ I_M6",
-        "P ≈ VDD  ×  I_M6",
-        "P ≈ VDD  ×  I_M7",
-        "= VDD  ×  I_M6",
-        "= VDD  ×  I_M7",
+        "P ≈ VDD  *  I_M6",
+        "P ≈ VDD  *  I_M7",
+        "= VDD  *  I_M6",
+        "= VDD  *  I_M7",
         "I_device ≈ I_M6",
         "only bias",
         "dedicated bias path",
@@ -76,7 +76,7 @@
         "three"
       ],
       "min_any": 3,
-      "weight": 0.09,
+      "weight": 0.1,
       "anti_patterns": [
         "I_M6 ≈ I_M7",
         "only bias",
@@ -89,21 +89,21 @@
       "required": true,
       "section": "Answer",
       "patterns_any": [
-        "+ I_",
+        "+  I_**",
         "sum",
-        "(I_",
+        "(I_**",
         "three"
       ],
       "min_any": 1,
-      "weight": 0.09,
+      "weight": 0.1,
       "anti_patterns": [
         "I_total",
         "I =",
         "current I",
-        "P_quiescent ≈ VDD  ×  I_M6",
-        "P_quiescent ≈ VDD  ×  I_M7",
-        "= VDD  ×  I_M6",
-        "= 1.8 V  ×  I_M6",
+        "P_quiescent ≈ VDD  *  I_M6",
+        "P_quiescent ≈ VDD  *  I_M7",
+        "= VDD  *  I_M6",
+        "= 1.8 V  *  I_M6",
         "I_M6 ≈ I_M7"
       ]
     },
@@ -112,12 +112,12 @@
       "desc": "References real elements from inventory.",
       "requires_grounding": true,
       "min_refs": 3,
-      "weight": 0.18
+      "weight": 0.2
     },
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.09
+      "weight": 0.1
     }
   ],
   "scoring": {

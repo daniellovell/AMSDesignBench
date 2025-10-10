@@ -25,22 +25,27 @@
       "anti_patterns": [
         "two-stage",
         "cascode",
-        "telescoπc",
+        "telescopic",
         "folded"
       ],
-      "weight": 0.12
+      "weight": 0.1
     },
     {
       "id": "key_relation",
-      "desc": "States DC Gain ≈ gm × ro / 2 or gm × (ro_n ∥ ro_p) for common source with active load.",
+      "desc": "States DC Gain ≈ gm × ro / 2 or gm × (ro_n ∥ ro_p) for common source with active load. Constant multiplicative factors are acceptable.",
       "required": true,
       "patterns_any": [
-        "gm × ro / 2",
+        "2 * gm * ro",
+        "Av0 ≈ gm * ro / 2",
+        "gm * (ro_n ∥ ro_p)",
+        "gm * ro",
+        "gm * ro / 2",
+        "gm * rout",
+        "gm*ro",
         "gm*ro/2",
-        "Av0 ≈ gm × ro / 2",
-        "gm × (ro_n ∥ ro_p)"
+        "gm_in * r_out"
       ],
-      "weight": 0.28
+      "weight": 0.35
     },
     {
       "id": "device_identification",
@@ -60,7 +65,7 @@
         "M8"
       ],
       "min_any": 3,
-      "weight": 0.12
+      "weight": 0.1
     },
     {
       "id": "device_specificity",
@@ -78,19 +83,19 @@
         "_M6"
       ],
       "min_any": 2,
-      "weight": 0.12
+      "weight": 0.1
     },
     {
       "id": "grounding",
       "desc": "References real elements from inventory.",
       "requires_grounding": true,
       "min_refs": 3,
-      "weight": 0.24
+      "weight": 0.25
     },
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.12
+      "weight": 0.1
     }
   ],
   "scoring": {

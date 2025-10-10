@@ -26,24 +26,28 @@
         "folded",
         "fully differential"
       ],
-      "weight": 0.12
+      "weight": 0.1
     },
     {
       "id": "key_relation",
-      "desc": "States DC Gain ≈ (gm*ro)³/2 for gain-boosted cascode.",
+      "desc": "States DC Gain ≈ (gm*ro)³/2 for gain-boosted cascode. Constant multiplicative factors are acceptable.",
       "required": true,
       "patterns_any": [
+        "(gm * ro)³",
+        "(gm*ro)^3",
         "(gm*ro)³",
-        "gm*ro³",
+        "gain boosted",
         "gain-boosted",
-        "gain boosted"
+        "gm*ro³",
+        "gm^3 * ro^3",
+        "gm³ * ro³"
       ],
-      "weight": 0.28,
+      "weight": 0.35,
       "anti_patterns": [
-        "gm × rout",
-        "gm_in × r_out",
-        "gm × ro",
-        "(gm × ro)²",
+        "gm * rout",
+        "gm_in * r_out",
+        "gm * ro",
+        "(gm * ro)²",
         "(gm*ro)²",
         "^2"
       ]
@@ -66,7 +70,7 @@
         "M8"
       ],
       "min_any": 3,
-      "weight": 0.12
+      "weight": 0.1
     },
     {
       "id": "device_specificity",
@@ -84,19 +88,19 @@
         "_M6"
       ],
       "min_any": 2,
-      "weight": 0.12
+      "weight": 0.1
     },
     {
       "id": "grounding",
       "desc": "References real elements from inventory.",
       "requires_grounding": true,
       "min_refs": 3,
-      "weight": 0.24
+      "weight": 0.25
     },
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.12
+      "weight": 0.1
     }
   ],
   "scoring": {

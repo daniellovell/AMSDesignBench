@@ -21,7 +21,7 @@
         "differential"
       ],
       "min_any": 2,
-      "weight": 0.08
+      "weight": 0.1
     },
     {
       "id": "key_relation",
@@ -29,22 +29,22 @@
       "required": true,
       "patterns_any": [
         "gm*ro",
-        "gm × ro",
-        "gm  ×  ro",
+        "gm * ro",
+        "gm  *  ro",
         "PSRR ≈ gm*ro",
-        "gm_tail × ro",
+        "gm_tail * ro",
         "first order"
       ],
       "min_any": 1,
-      "weight": 0.34,
+      "weight": 0.3,
       "anti_patterns": [
         "(gm*ro)²",
         "(gm*ro)²",
         "squared",
         "²",
         "²",
-        "(gm × ro)²",
-        "(gm  ×  ro)²"
+        "(gm * ro)²",
+        "(gm  *  ro)²"
       ]
     },
     {
@@ -63,7 +63,7 @@
         "VDD path"
       ],
       "min_any": 2,
-      "weight": 0.08
+      "weight": 0.1
     },
     {
       "id": "device_specificity",
@@ -79,7 +79,7 @@
         "_M6"
       ],
       "min_any": 1,
-      "weight": 0.08
+      "weight": 0.1
     },
     {
       "id": "psrr_formula_db",
@@ -87,15 +87,15 @@
       "required": true,
       "patterns_any": [
         "20*log10",
-        "20 × log10",
+        "20 * log10",
         "PSRR",
         "dB"
       ],
       "min_any": 1,
-      "weight": 0.17,
+      "weight": 0.15,
       "anti_patterns": [
         "40*log10",
-        "40 × log10"
+        "40 * log10"
       ]
     },
     {
@@ -103,12 +103,12 @@
       "desc": "References real elements from inventory.",
       "requires_grounding": true,
       "min_refs": 3,
-      "weight": 0.17
+      "weight": 0.15
     },
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.08
+      "weight": 0.1
     }
   ],
   "scoring": {

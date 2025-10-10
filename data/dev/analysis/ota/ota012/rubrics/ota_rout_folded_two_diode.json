@@ -22,10 +22,10 @@
       ],
       "min_any": 2,
       "anti_patterns": [
-        "telescoπc",
+        "telescopic",
         "fully differential"
       ],
-      "weight": 0.14
+      "weight": 0.15
     },
     {
       "id": "key_relation",
@@ -37,7 +37,7 @@
         "diode",
         "ro"
       ],
-      "weight": 0.36
+      "weight": 0.35
     },
     {
       "id": "device_identification",
@@ -53,19 +53,19 @@
         "∥"
       ],
       "min_any": 2,
-      "weight": 0.07
+      "weight": 0.05
     },
     {
       "id": "grounding",
       "desc": "References real elements from inventory.",
       "requires_grounding": true,
       "min_refs": 2,
-      "weight": 0.29
+      "weight": 0.3
     },
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.14
+      "weight": 0.15
     }
   ],
   "scoring": {

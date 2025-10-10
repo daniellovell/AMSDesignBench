@@ -25,10 +25,10 @@
       "anti_patterns": [
         "two-stage",
         "cascode",
-        "telescoπc",
+        "telescopic",
         "folded"
       ],
-      "weight": 0.11
+      "weight": 0.1
     },
     {
       "id": "key_relation",
@@ -36,7 +36,7 @@
       "required": true,
       "patterns_any": [
         "PSRR",
-        "gm_load × ro_load",
+        "gm_load * ro_load",
         "gm*ro",
         "active load",
         "supply injection",
@@ -45,7 +45,7 @@
         "ro_p"
       ],
       "min_any": 2,
-      "weight": 0.24
+      "weight": 0.3
     },
     {
       "id": "device_identification",
@@ -63,7 +63,7 @@
         "VDD path"
       ],
       "min_any": 2,
-      "weight": 0.11
+      "weight": 0.1
     },
     {
       "id": "device_specificity",
@@ -79,7 +79,7 @@
         "_M6"
       ],
       "min_any": 1,
-      "weight": 0.11
+      "weight": 0.1
     },
     {
       "id": "psrr_formula",
@@ -93,19 +93,19 @@
         "linear PSRR"
       ],
       "min_any": 1,
-      "weight": 0.11
+      "weight": 0.1
     },
     {
       "id": "grounding",
       "desc": "References real elements from inventory.",
       "requires_grounding": true,
       "min_refs": 3,
-      "weight": 0.21
+      "weight": 0.2
     },
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.11
+      "weight": 0.1
     }
   ],
   "scoring": {

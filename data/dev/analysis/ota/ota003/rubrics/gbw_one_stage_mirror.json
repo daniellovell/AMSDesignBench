@@ -23,10 +23,10 @@
       "anti_patterns": [
         "cascode",
         "two-stage",
-        "telescoπc",
+        "telescopic",
         "folded cascode"
       ],
-      "weight": 0.12
+      "weight": 0.1
     },
     {
       "id": "key_relation",
@@ -35,7 +35,7 @@
       "patterns_any": [
         "k*gm/CL",
         "(gm/CL)*k",
-        "gm/CL × k"
+        "gm/CL * k"
       ],
       "anti_patterns": [
         "ro*C_L sets GBW",
@@ -43,7 +43,7 @@
         "gm*CL",
         "gm/C_L"
       ],
-      "weight": 0.33
+      "weight": 0.4
     },
     {
       "id": "device_identification",
@@ -56,7 +56,7 @@
         "gm of M"
       ],
       "min_any": 1,
-      "weight": 0.06
+      "weight": 0.05
     },
     {
       "id": "mirror_definition",
@@ -66,7 +66,7 @@
         "current gain",
         "current mirror"
       ],
-      "weight": 0.12
+      "weight": 0.1
     },
     {
       "id": "grounding",
@@ -78,7 +78,7 @@
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.12
+      "weight": 0.1
     }
   ],
   "scoring": {

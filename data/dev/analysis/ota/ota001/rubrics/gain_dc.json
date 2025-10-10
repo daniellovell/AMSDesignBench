@@ -29,23 +29,28 @@
         "miller compensation",
         "second stage",
         "folded cascode",
-        "telescoπc"
+        "telescopic"
       ],
-      "weight": 0.12
+      "weight": 0.1
     },
     {
       "id": "key_relation",
-      "desc": "States exact DC Gain: A0 ≈ gm  ×  ro / 2 or gm  ×  (ro_n ∥ ro_p).",
+      "desc": "States exact DC Gain: A0 ≈ gm  ×  ro / 2 or gm  ×  (ro_n ∥ ro_p). Constant multiplicative factors are acceptable.",
       "required": true,
       "patterns_any": [
-        "gm × ro / 2",
+        "2 * gm * ro",
+        "Av0 ≈ gm * ro / 2",
+        "gm * (ro_n ∥ ro_p)",
+        "gm * ro",
+        "gm * ro / 2",
+        "gm * rout",
+        "gm*(ro_n ∥ ro_p)",
+        "gm*ro",
         "gm*ro/2",
-        "Av0 ≈ gm × ro / 2",
-        "gm × (ro_n ∥ ro_p)",
-        "gm*(ro_n ∥ ro_p)"
+        "gm_in * r_out"
       ],
       "min_any": 1,
-      "weight": 0.27
+      "weight": 0.35
     },
     {
       "id": "device_identification",
@@ -63,7 +68,7 @@
         "M5"
       ],
       "min_any": 3,
-      "weight": 0.12
+      "weight": 0.1
     },
     {
       "id": "device_specificity",
@@ -79,7 +84,7 @@
         "_M4"
       ],
       "min_any": 2,
-      "weight": 0.12
+      "weight": 0.1
     },
     {
       "id": "grounding",
@@ -91,7 +96,7 @@
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.12
+      "weight": 0.1
     }
   ],
   "scoring": {

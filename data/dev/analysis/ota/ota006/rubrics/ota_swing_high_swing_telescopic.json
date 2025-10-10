@@ -1,5 +1,5 @@
 {
-  "rubric_id": "ota_swing_high_swing_telescoπc",
+  "rubric_id": "ota_swing_high_swing_telescopic",
   "version": "0.1.0",
   "weights": {
     "correctness": 0.45,
@@ -10,11 +10,11 @@
   "criteria": [
     {
       "id": "topology",
-      "desc": "Identifies a single-ended telescoπc/folded cascode one-stage OTA (high-swing variant acceptable).",
+      "desc": "Identifies a single-ended telescopic/folded cascode one-stage OTA (high-swing variant acceptable).",
       "required": true,
       "section": "Topology",
       "patterns_any": [
-        "telescoπc",
+        "telescopic",
         "folded cascode",
         "single-ended",
         "single ended",
@@ -27,7 +27,7 @@
         "second stage",
         "fully differential"
       ],
-      "weight": 0.11
+      "weight": 0.1
     },
     {
       "id": "high_limit",
@@ -42,7 +42,7 @@
         "two headroom"
       ],
       "min_any": 1,
-      "weight": 0.23
+      "weight": 0.3
     },
     {
       "id": "low_limit",
@@ -56,7 +56,7 @@
         "Vov_tail + Vov_input + Vov_cascode"
       ],
       "min_any": 1,
-      "weight": 0.22
+      "weight": 0.2
     },
     {
       "id": "wide_swing_note",
@@ -71,19 +71,19 @@
         "0.1"
       ],
       "min_any": 1,
-      "weight": 0.11
+      "weight": 0.1
     },
     {
       "id": "grounding",
       "desc": "References real elements from inventory (e.g., M6 at vop and M1 NMOS cascode to vop).",
       "requires_grounding": true,
       "min_refs": 2,
-      "weight": 0.22
+      "weight": 0.2
     },
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.11
+      "weight": 0.1
     }
   ],
   "scoring": {

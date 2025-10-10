@@ -21,9 +21,9 @@
         "PMOS"
       ],
       "min_any": 1,
-      "weight": 0.09,
+      "weight": 0.1,
       "anti_patterns": [
-        "telescoπc",
+        "telescopic",
         "two-stage",
         "differential",
         "5T"
@@ -34,32 +34,32 @@
       "desc": "Folded cascode: MUST sum ALL branch currents. Valid: I_tail + I_branch1 + I_branch2. NOT individual branches, NOT I_M1 ≈ I_M2.",
       "required": true,
       "patterns_any": [
-        "P ≈ VDD × (I_",
-        "P_quiescent ≈ VDD × (I_",
-        "+ I_",
+        "P ≈ VDD * (I_**",
+        "P_quiescent ≈ VDD * (I_**",
+        "+ I_**",
         "sum of",
         "all three"
       ],
       "min_any": 1,
-      "weight": 0.46,
+      "weight": 0.4,
       "anti_patterns": [
-        "P ≈ VDD × I_M1",
-        "P ≈ VDD × I_M2",
-        "P ≈ VDD × I_tail",
-        "= VDD × I_M1",
-        "= VDD × I_M2",
+        "P ≈ VDD * I_M1",
+        "P ≈ VDD * I_M2",
+        "P ≈ VDD * I_tail",
+        "= VDD * I_M1",
+        "= VDD * I_M2",
         "I_M1 ≈ I_M2",
         "I_M2 ≈ I_M1",
         "I_M1 ≈ I_tail",
         "I_M2 ≈ I_tail",
-        "VDD  ×  I_M1 ≈ VDD  ×  I_M2",
+        "VDD  *  I_M1 ≈ VDD  *  I_M2",
         "I_M1 ≈ I_M2 ≈ I_tail",
         "equivalently",
         "in series",
         "individual branch",
         "I_TailPMOS ≈ I_TailNMOS",
-        "= VDD  ×  I_TailNMOS",
-        "P_quiescent ≈ VDD  ×  I_TailPMOS",
+        "= VDD  *  I_TailNMOS",
+        "P_quiescent ≈ VDD  *  I_TailPMOS",
         "I_device equals",
         "also equals"
       ]
@@ -79,7 +79,7 @@
         "sum"
       ],
       "min_any": 3,
-      "weight": 0.09,
+      "weight": 0.1,
       "anti_patterns": [
         "same current",
         "series",
@@ -98,12 +98,12 @@
       "required": true,
       "section": "Answer",
       "patterns_any": [
-        "+ I_",
+        "+  I_**",
         "sum",
-        "(I_"
+        "(I_**"
       ],
       "min_any": 1,
-      "weight": 0.09,
+      "weight": 0.1,
       "anti_patterns": [
         "I_total",
         "I =",
@@ -114,14 +114,14 @@
         "same as",
         "I_M1 ≈ I_M2",
         "= I_M2",
-        "VDD  ×  I_M1 ≈ VDD  ×  I_M2",
-        "P ≈ VDD × I_M1",
-        "P ≈ VDD × I_M2",
-        "P_quiescent ≈ VDD  ×  I_M1",
-        "P_quiescent ≈ VDD  ×  I_M2",
-        "= 1.8 V  ×  I_M1",
-        "= 1.8 V  ×  I_M2",
-        "P ≈ VDD  ×  I_TailPMOS"
+        "VDD  *  I_M1 ≈ VDD  *  I_M2",
+        "P ≈ VDD * I_M1",
+        "P ≈ VDD * I_M2",
+        "P_quiescent ≈ VDD  *  I_M1",
+        "P_quiescent ≈ VDD  *  I_M2",
+        "= 1.8 V  *  I_M1",
+        "= 1.8 V  *  I_M2",
+        "P ≈ VDD  *  I_TailPMOS"
       ]
     },
     {
@@ -129,12 +129,12 @@
       "desc": "References real elements from inventory.",
       "requires_grounding": true,
       "min_refs": 3,
-      "weight": 0.18
+      "weight": 0.2
     },
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.09
+      "weight": 0.1
     }
   ],
   "scoring": {

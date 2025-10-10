@@ -20,9 +20,9 @@
         "differential pair"
       ],
       "min_any": 1,
-      "weight": 0.11,
+      "weight": 0.1,
       "anti_patterns": [
-        "telescoπc",
+        "telescopic",
         "cascode",
         "folded",
         "two-stage",
@@ -34,16 +34,16 @@
       "desc": "Differential pair: Valid I_M5 (tail) OR (I_M1 + I_M2). NOT individual I_M1 or I_M2.",
       "required": true,
       "patterns_any": [
-        "P ≈ VDD × I_M5",
-        "P_quiescent ≈ VDD × I_M5",
-        "VDD × I_M5",
-        "P ≈ VDD × (I_M1 + I_M2)",
-        "P_quiescent ≈ VDD × (I_M1 + I_M2)",
-        "VDD × (I_M1 + I_M2)",
+        "P ≈ VDD * I_M5",
+        "P_quiescent ≈ VDD * I_M5",
+        "VDD * I_M5",
+        "P ≈ VDD * (I_M1 + I_M2)",
+        "P_quiescent ≈ VDD * (I_M1 + I_M2)",
+        "VDD * (I_M1 + I_M2)",
         "I_M1 + I_M2"
       ],
       "min_any": 1,
-      "weight": 0.34
+      "weight": 0.4
     },
     {
       "id": "device_identification",
@@ -64,7 +64,7 @@
         "bias current"
       ],
       "min_any": 1,
-      "weight": 0.11
+      "weight": 0.1
     },
     {
       "id": "device_specificity",
@@ -79,18 +79,18 @@
         "(I_M1+I_M2)"
       ],
       "min_any": 1,
-      "weight": 0.11,
+      "weight": 0.1,
       "anti_patterns": [
         "I_total",
         "I =",
         "current I",
-        "P ≈ VDD × I_M1",
+        "P ≈ VDD * I_M1",
         "P ≈ VDD*I_M1",
-        "VDD × I_M1)",
+        "VDD * I_M1)",
         "VDD*I_M1)",
-        "P ≈ VDD × I_M2",
+        "P ≈ VDD * I_M2",
         "P ≈ VDD*I_M2",
-        "VDD × I_M2)",
+        "VDD * I_M2)",
         "VDD*I_M2)",
         "= I_M1",
         "= I_M2"
@@ -101,12 +101,12 @@
       "desc": "References real elements from inventory.",
       "requires_grounding": true,
       "min_refs": 3,
-      "weight": 0.22
+      "weight": 0.2
     },
     {
       "id": "safety",
       "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
-      "weight": 0.11
+      "weight": 0.1
     }
   ],
   "scoring": {

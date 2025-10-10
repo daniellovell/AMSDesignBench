@@ -23,7 +23,7 @@
       "min_any": 2,
       "anti_patterns": [
         "cascode",
-        "telescoπc",
+        "telescopic",
         "folded"
       ],
       "weight": 0.15
@@ -40,14 +40,14 @@
         "saturation"
       ],
       "min_any": 2,
-      "weight": 0.39
+      "weight": 0.4
     },
     {
       "id": "grounding",
       "desc": "References real elements from inventory.",
       "requires_grounding": true,
       "min_refs": 2,
-      "weight": 0.31
+      "weight": 0.3
     },
     {
       "id": "safety",
