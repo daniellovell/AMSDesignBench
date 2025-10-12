@@ -1,0 +1,7 @@
+{
+  "bug_type": "device_polarity_swap",
+  "swapped_id": "M1",
+  "expected_type": "NMOS",
+  "actual_type": "PMOS",
+  "notes": "ota007: one_stage_common_source_single_end"
+}

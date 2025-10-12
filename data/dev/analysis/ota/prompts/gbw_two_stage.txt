@@ -1,0 +1,19 @@
+You are an expert analog IC designer.
+From the {modality} artifact, answer the question about unity-gain bandwidth (GBW) for the given two-stage circuit.
+
+Required sections (use these exact headers):
+- Topology
+- Key relation
+- Device identification
+- Grounded evidence
+- Answer
+
+Guidance:
+- In Topology: explicitly name the topology (two-stage amplifier) and justify in 1 sentence using observed elements.
+- In Key relation: give the symbolic relation for two-stage GBW (typically involves transconductance and compensation capacitor).
+- In Device identification: identify the specific devices that determine GBW (input stage transconductance devices, compensation capacitor).
+- In Grounded evidence: cite element IDs and nets from the artifact (e.g., `M1`, `M2`, `Cc`, `vout`).
+- Avoid generic statements without conditions.
+
+Return markdown only. NEVER use LaTeX or MathJax formatting in your response.
+

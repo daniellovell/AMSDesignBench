@@ -1,0 +1,203 @@
+{
+  "rubric_id": "noise_white",
+  "version": "0.1.0",
+  "weights": {
+    "correctness": 0.4,
+    "completeness": 0.2,
+    "groundedness": 0.2,
+    "device_specificity": 0.1,
+    "safety": 0.1
+  },
+  "criteria": [
+    {
+      "id": "topology",
+      "desc": "Explicitly identifies topology in a Topology section",
+      "required": true,
+      "section": "Topology",
+      "patterns_any": [
+        "folded",
+        "cascode",
+        "single-ended",
+        "single ended",
+        "PMOS",
+        "diode"
+      ],
+      "min_any": 2,
+      "weight": 0.1,
+      "anti_patterns": [
+        "telescopic",
+        "two-stage",
+        "differential",
+        "5T",
+        "fully differential"
+      ]
+    },
+    {
+      "id": "key_relation",
+      "desc": "States output-referred thermal noise CURRENT: i²n,out ≈ (4kTγ)(gm_M1 + gm_M2 + gm_M3 + gm_M4 + gm_M5 + gm_M6). Folded cascode with diodes: Input pair (M1, M2) + diode loads (M3, M4) + folding (M5, M6)",
+      "required": true,
+      "patterns_any": [
+        "i²n,out ≈ (4kTγ)(gm_M1 + gm_M2 + gm_M3 + gm_M4 + gm_M5 + gm_M6)",
+        "i²n ≈ 4kTγ(gm_M1 + gm_M2 + gm_M3 + gm_M4 + gm_M5 + gm_M6)",
+        "(gm_M1 + gm_M2 + gm_M3 + gm_M4 + gm_M5 + gm_M6)",
+        "gm1 + gm2 + gm3 + gm4 + gm5 + gm6"
+      ],
+      "min_any": 1,
+      "weight": 0.2,
+      "anti_patterns": [
+        "gm_M5",
+        "gm_M7",
+        "gm_M8",
+        "gm_N001",
+        "+ gm_M5",
+        "+ gm_M7",
+        "+ gm_M8",
+        "+ gm_N001",
+        "all active devices",
+        "sum of all gm",
+        "all devices in the signal path",
+        "all devices",
+        "every device",
+        "each device",
+        "all transistors",
+        "cascode",
+        "cascoded",
+        "gm_cascode",
+        "tail current",
+        "tail source",
+        "gm_tail",
+        "ptail",
+        "ntail"
+      ]
+    },
+    {
+      "id": "device_identification",
+      "desc": "Identifies ONLY contributing devices: M1, M2 (input), M3, M4, M6 (loads), N002 (folding). Explains cascode/tail DON'T contribute.",
+      "required": true,
+      "section": "Device identification",
+      "patterns_any": [
+        "M1",
+        "gm_M1",
+        "M2",
+        "gm_M2",
+        "folding_sources",
+        "gm_folding_sources",
+        "input pair",
+        "current source",
+        "current mirror"
+      ],
+      "min_any": 2,
+      "weight": 0.1,
+      "anti_patterns": [
+        "M5",
+        "M7",
+        "M8",
+        "N001",
+        "all active",
+        "all devices",
+        "all active devices",
+        "sum of all gm",
+        "every device",
+        "each device",
+        "all transistors",
+        "cascode",
+        "cascoded",
+        "gm_cascode",
+        "tail current",
+        "tail source",
+        "gm_tail",
+        "ptail",
+        "ntail"
+      ]
+    },
+    {
+      "id": "device_specificity",
+      "desc": "Uses device-specific gm in final answer (e.g., includes gm_M1, gm_M2, gm_M3, gm_M4, gm_M5, gm_M6).",
+      "required": true,
+      "section": "Answer",
+      "patterns_any": [
+        "gm_M",
+        "gm of M",
+        "_M1",
+        "_M2",
+        "_M3",
+        "_M4",
+        "_M5",
+        "_M6"
+      ],
+      "min_any": 1,
+      "weight": 0.1,
+      "anti_patterns": [
+        "gm_M5",
+        "gm_M7",
+        "gm_M8",
+        "gm_N001",
+        "all active devices",
+        "all devices",
+        "sum of all gm",
+        "every device",
+        "each device",
+        "all transistors",
+        "cascode",
+        "cascoded",
+        "gm_cascode",
+        "tail current",
+        "tail source",
+        "gm_tail",
+        "ptail",
+        "ntail"
+      ]
+    },
+    {
+      "id": "noise_formula",
+      "desc": "Correctly derives output-referred noise CURRENT spectral density (A²/Hz).",
+      "required": true,
+      "patterns_any": [
+        "A²/Hz",
+        "current noise",
+        "i²n",
+        "spectral density",
+        "γ ≈ 2/3",
+        "4kTγ",
+        "4kTγ"
+      ],
+      "min_any": 2,
+      "anti_patterns": [
+        "flicker",
+        "1/f",
+        "all active devices",
+        "all devices",
+        "sum of gm of all",
+        "sum of all gm",
+        "every device",
+        "each device",
+        "all transistors",
+        "cascode",
+        "cascoded",
+        "gm_cascode",
+        "tail current",
+        "tail source",
+        "gm_tail",
+        "ptail",
+        "ntail"
+      ],
+      "weight": 0.2
+    },
+    {
+      "id": "grounding",
+      "desc": "References real elements from inventory.",
+      "requires_grounding": true,
+      "min_refs": 3,
+      "weight": 0.2
+    },
+    {
+      "id": "safety",
+      "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
+      "weight": 0.1
+    }
+  ],
+  "scoring": {
+    "hallucination_penalty": 0.25,
+    "min_pass": 0.7
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "rubric_id": "design_one_stage_single_end_active_load",
+  "version": "0.1.0",
+  "weights": {
+    "structural_correctness": 0.7,
+    "topology_terms": 0.2,
+    "safety": 0.1
+  },
+  "criteria": [
+    {
+      "id": "structural_correctness",
+      "desc": "Netlist structure matches an NMOS common-source with PMOS active load (single transistor gain device to vout, PMOS gate-biased current source from VDD into vout, single-ended output).",
+      "required": true,
+      "weight": 0.7
+    },
+    {
+      "id": "topology_terms",
+      "desc": "Mentions one-stage common-source operation and PMOS active load in a single-ended OTA.",
+      "section": "Topology",
+      "patterns_any": [
+        "common-source",
+        "CS",
+        "active load",
+        "PMOS load",
+        "single-ended",
+        "single end"
+      ],
+      "min_any": 2,
+      "weight": 0.2
+    },
+    {
+      "id": "safety",
+      "desc": "Avoids claims implying other families.",
+      "anti_patterns": [
+        "telescopic",
+        "folded",
+        "gain-boost",
+        "fully differential",
+        "two-stage"
+      ],
+      "weight": 0.1
+    }
+  ],
+  "scoring": {
+    "hallucination_penalty": 0.15,
+    "min_pass": 0.7
+  }
+}

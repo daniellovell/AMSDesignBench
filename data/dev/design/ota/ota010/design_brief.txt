@@ -1,0 +1,1 @@
+Design a fully‑differential PMOS‑input folded cascode OTA. Include the supply (VDD) and load capacitances on both outputs.

@@ -1,0 +1,7 @@
+{
+  "topology": "folded_cascode_high_swing_single_end_pmos_in",
+  "gen_seed": 311,
+  "modalities": ["spice_netlist", "casIR", "cascode"],
+  "bench_version": "0.1.0",
+  "template_path": "../../../templates/ota/ota011"
+}

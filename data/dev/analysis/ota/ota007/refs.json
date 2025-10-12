@@ -1,0 +1,31 @@
+{
+  "notes": "ota007: Single-stage common-source OTA with NMOS input and PMOS active load (2T)",
+  "gbw_one_stage": [
+    "GBW ≈ gm_M_in / CL for single-stage common-source",
+    "Cite CL and input device M_in for gm"
+  ],
+  "ota_rout_one_stage": [
+    "r_out ≈ ro_M_in || ro_load (parallel of NMOS and PMOS output resistances)",
+    "Small-signal; cite M_in (M1) and load device (M2)"
+  ],
+  "ota_swing_one_stage": [
+    "High-side: VDD - Vov_load; Low-side: Vov_M_in",
+    "Single-ended output; PMOS active load headroom and NMOS input saturation"
+  ],
+  "gain_dc": [
+    "A0 ≈ gm_M_in * (ro_M_in || ro_load) ≈ gm_M_in * ro / 2",
+    "Common-source gain with active load"
+  ],
+  "psrr": [
+    "PSRR+ ≈ gm_load * ro_load (load device contribution)",
+    "Single-stage common-source; supply ripple at VDD attenuated by load impedance"
+  ],
+  "noise_white": [
+    "i²n,out ≈ 4kTγ(gm_M_in + gm_load)",
+    "Output-referred noise current; both input and load contribute thermal noise"
+  ],
+  "power_quiescent": [
+    "P_quiescent ≈ VDD * I_M_in",
+    "Single current path through input device and load"
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "ir_version": 1,
+  "format": "casir-json-1",
+  "level": "EL",
+  "meta": {"tool": "cascode-0.2.0", "when": "2025-10-09T00:00:00Z"},
+
+  "nets": [
+    {"id": "VDD",  "domain": "supply",    "rail": "VDD"},
+    {"id": "GND",  "domain": "ground",    "rail": "GND"},
+    {"id": "vin",  "domain": "electrical"},
+    {"id": "vout", "domain": "electrical"},
+    {"id": "N001", "domain": "electrical"},
+    {"id": "N002", "domain": "electrical"},
+    {"id": "N004", "domain": "electrical"},
+    {"id": "N005", "domain": "electrical"},
+    {"id": "vb1",  "domain": "bias"},
+    {"id": "vb2",  "domain": "bias"},
+    {"id": "vb3",  "domain": "bias"}
+  ],
+
+  "motifs": [
+    {
+      "id": "M_in",
+      "type": "NMOS",
+      "ports": {"gate": "vin", "drain": "N005", "source": "GND", "bulk": "GND"},
+      "params": {
+        "W": {"value": 2.0e-6, "unit": "m"},
+        "L": {"value": 1.8e-7, "unit": "m"},
+        "m": {"value": 1}
+      },
+      "impl": {"primitive": true, "pdk_device": "nfet_01v8"}
+    },
+    {
+      "id": "n_cas",
+      "type": "NMOSCascode",
+      "ports": {"in": "N005", "out": "vout", "bias": "N004", "gnd": "GND"},
+      "impl": {"char_ref": "lib.motifs/nmos_cascode@1.0"}
+    },
+    {
+      "id": "load_top",
+      "type": "ActiveLoad",
+      "traits": ["LoadDevice"],
+      "ports": {"node": "N001", "bias": "vb3", "vref": "VDD"},
+      "params": {"polarity": "PMOS"},
+      "impl": {"char_ref": "lib.motifs/active_load@1.0"}
+    },
+    {
+      "id": "p_cas",
+      "type": "PMOSCascodeElement",
+      "ports": {"out": "N001", "gate": "N002", "src": "vout"},
+      "impl": {"char_ref": "lib.motifs/pmos_cascode_element@1.0"}
+    },
+    {
+      "id": "n_gb_p",
+      "type": "TailCurrentSourceNMOS",
+      "ports": {"out": "N002", "gate": "vb2", "gnd": "GND"},
+      "impl": {"char_ref": "lib.motifs/tail_nmos@1.0"}
+    },
+    {
+      "id": "p_gb_p",
+      "type": "PMOSMirror",
+      "ports": {"from": "N001", "to": "N002", "vdd": "VDD"},
+      "impl": {"char_ref": "lib.motifs/pmos_mirror@1.0"}
+    },
+    {
+      "id": "load_gb",
+      "type": "ActiveLoad",
+      "traits": ["LoadDevice"],
+      "ports": {"node": "N004", "bias": "vb1", "vref": "VDD"},
+      "params": {"polarity": "PMOS"},
+      "impl": {"char_ref": "lib.motifs/active_load@1.0"}
+    },
+    {
+      "id": "M_gb",
+      "type": "NMOS",
+      "ports": {"gate": "N005", "drain": "N004", "source": "GND", "bulk": "GND"},
+      "params": {
+        "W": {"value": 2.0e-6, "unit": "m"},
+        "L": {"value": 1.8e-7, "unit": "m"},
+        "m": {"value": 1}
+      },
+      "impl": {"primitive": true, "pdk_device": "nfet_01v8"}
+    },
+    {
+      "id": "Cload",
+      "type": "Cap",
+      "ports": {"p": "vout", "n": "GND"},
+      "params": {"C": {"value": 1.0e-12, "unit": "F"}}
+    }
+  ],
+
+  "constraints": {
+    "numeric": [
+      {"id": "c_gain", "kind": "ineq", "lhs": {"metric": "gain_db"}, "op": ">=", "rhs": {"value": 80, "unit": "dB"}, "scope": {"node": "vout"}}
+    ],
+    "tech": [{"id": "t_lmin", "kind": "limit", "on": "*", "rule": "L>=", "value": 1.8e-7, "unit": "m"}]
+  },
+
+  "harness": {
+    "supplies": [{"net": "VDD", "value": 1.8, "unit": "V"}],
+    "loads": [{"node": "vout", "C": 1.0e-12, "unit": "F"}],
+    "sources": [{"node": "vin", "Z": 50.0, "unit": "Ohm"}],
+    "pvt": {"corners": ["TT@27C"]}
+  },
+
+  "benches": ["AC_OpenLoop"],
+  "provenance": {"sources": [{"file": "templates/ota/ota009/netlist.cas", "span": {"from": 1, "to": 34}}]}
+}

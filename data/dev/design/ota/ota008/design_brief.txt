@@ -1,0 +1,1 @@
+Design a single-ended cascode one‑stage OTA with top PMOS cascode active load. Include the supply (VDD) and load capacitance.

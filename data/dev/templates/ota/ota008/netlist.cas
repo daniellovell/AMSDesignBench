@@ -1,0 +1,25 @@
+package analog.ota; import lib.motifs.*;
+
+class OTATelescopic_SE_Bound implements Amplifier {
+  supply VDD=1.8V; ground GND;
+  port in vin; port out vout;
+  // vb1: NMOS cascode bias; vb2: PMOS cascode bias; vb3: PMOS top current-source bias
+  bias vb1, vb2, vb3;
+
+  use {
+    // NMOS input primitive -> node N002
+    M_in = new NMOS() { gate<-vin; drain<-N002; source<-GND; bulk<-GND; };        // M1
+
+    // NMOS cascode from N002 up to vout (gate at vb1)
+    n_cas = new NMOSCascode(in=N002, out=vout) { bias=vb1; gnd=GND; };            // M2
+
+    // PMOS cascode above vout to N001 (gate at vb2)
+    p_cas = new PMOSCascodeElement(out=N001, gate=vb2, src=vout);                 // M3
+
+    // PMOS current source from VDD into N001
+    load_top = new ActiveLoad(polarity=PMOS) { node<-N001; bias<-vb3; vref<-VDD; };  // M4
+
+    // Load capacitor
+    C(vout, GND, 1pF);                                                            // Cload
+  }
+}

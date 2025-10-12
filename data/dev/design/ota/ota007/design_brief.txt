@@ -1,0 +1,1 @@
+Design a single-ended one‑stage OTA with NMOS input transistor and PMOS active load. Include the supply (VDD) and load capacitance.

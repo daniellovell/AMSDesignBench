@@ -1,29 +1,43 @@
 {
   "rubric_id": "design_telescopic_cascode",
   "version": "0.1.0",
-  "weights": { "structural_correctness": 0.70, "topology_terms": 0.20, "safety": 0.10 },
+  "weights": {
+    "structural_correctness": 0.7,
+    "topology_terms": 0.2,
+    "safety": 0.1
+  },
   "criteria": [
     {
       "id": "structural_correctness",
       "desc": "Netlist structure matches the telescopic cascode reference (diff pair + tail with NMOS/PMOS cascodes, differential outputs).",
       "required": true,
-      "weight": 0.70
+      "weight": 0.7
     },
     {
       "id": "topology_terms",
       "desc": "Mentions telescopic/cascoded and differential operation.",
       "section": "Topology",
-      "patterns_any": ["telescopic", "cascode", "differential", "fully differential"],
+      "patterns_any": [
+        "telescopic",
+        "cascode",
+        "differential",
+        "fully differential"
+      ],
       "min_any": 2,
-      "weight": 0.20
+      "weight": 0.2
     },
     {
       "id": "safety",
       "desc": "Avoids two-stage claims (this is single-stage cascoded).",
-      "anti_patterns": ["two-stage", "second stage"],
-      "weight": 0.10
+      "anti_patterns": [
+        "two-stage",
+        "second stage"
+      ],
+      "weight": 0.1
     }
   ],
-  "scoring": { "hallucination_penalty": 0.15, "min_pass": 0.70 }
+  "scoring": {
+    "hallucination_penalty": 0.15,
+    "min_pass": 0.7
+  }
 }
-
