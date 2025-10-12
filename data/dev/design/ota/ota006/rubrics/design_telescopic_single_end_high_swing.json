@@ -1,5 +1,5 @@
 {
-  "rubric_id": "design_telescoπc_single_end_high_swing",
+  "rubric_id": "design_telescopic_single_end_high_swing",
   "version": "0.1.0",
   "weights": {
     "structural_correctness": 0.7,
@@ -9,17 +9,17 @@
   "criteria": [
     {
       "id": "structural_correctness",
-      "desc": "Netlist structure matches the high-swing telescoπc single-ended reference (n/p cascodes, PMOS high-swing elements, vop output).",
+      "desc": "Netlist structure matches the high-swing telescopic single-ended reference (n/p cascodes, PMOS high-swing elements, vop output).",
       "required": true,
       "weight": 0.7
     },
     {
       "id": "topology_terms",
-      "desc": "Mentions high-swing and telescoπc single-ended operation.",
+      "desc": "Mentions high-swing and telescopic single-ended operation.",
       "section": "Topology",
       "patterns_any": [
         "high-swing",
-        "telescoπc",
+        "telescopic",
         "single-ended",
         "single end"
       ],

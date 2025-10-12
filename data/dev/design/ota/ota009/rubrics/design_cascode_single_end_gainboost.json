@@ -18,7 +18,7 @@
       "desc": "Explicitly mentions cascode and gain-boost (or gain-boosted) in a single-ended OTA.",
       "section": "Topology",
       "patterns_any": [
-        "telescoπc",
+        "telescopic",
         "cascode",
         "gain-boost",
         "gain boosted",

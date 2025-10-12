@@ -1,5 +1,5 @@
 {
-  "rubric_id": "design_telescoπc_single_end",
+  "rubric_id": "design_telescopic_single_end",
   "version": "0.1.0",
   "weights": {
     "structural_correctness": 0.7,
@@ -9,16 +9,16 @@
   "criteria": [
     {
       "id": "structural_correctness",
-      "desc": "Netlist structure matches the telescoπc single-ended reference (NMOS/PMOS cascodes with single-ended output vop).",
+      "desc": "Netlist structure matches the telescopic single-ended reference (NMOS/PMOS cascodes with single-ended output vop).",
       "required": true,
       "weight": 0.7
     },
     {
       "id": "topology_terms",
-      "desc": "Mentions telescoπc/cascoded and single-ended.",
+      "desc": "Mentions telescopic/cascoded and single-ended.",
       "section": "Topology",
       "patterns_any": [
-        "telescoπc",
+        "telescopic",
         "cascod",
         "single-ended",
         "single end"

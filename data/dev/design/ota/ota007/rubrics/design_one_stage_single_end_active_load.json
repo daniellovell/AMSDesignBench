@@ -32,7 +32,7 @@
       "id": "safety",
       "desc": "Avoids claims implying other families.",
       "anti_patterns": [
-        "telescoπc",
+        "telescopic",
         "folded",
         "gain-boost",
         "fully differential",
