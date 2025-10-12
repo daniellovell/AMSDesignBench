@@ -1,6 +1,6 @@
 {
   "gbw_one_stage_mirror": [
-    "GBW ≈ (gm/CL)·k where k is mirror ratio from inner 5T core to output devices",
+    "GBW ≈ (gm/CL)*k where k is mirror ratio from inner 5T core to output devices",
     "Assumes unity-gain operation (β≈1), single dominant pole; cite CL, M1/M2 for gm, and output mirror devices (e.g., M5/M6/M8) for k"
   ],
   "ota_rout_high_swing": [
