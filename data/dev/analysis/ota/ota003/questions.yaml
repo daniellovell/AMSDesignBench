@@ -2,8 +2,8 @@ questions:
 - id: ota003_gbw
   track: analysis
   modality: auto
-  rubric_id: gbw_one_stage
-  rubric_path: rubrics/gbw_one_stage.json
+  rubric_id: gbw_one_stage_mirror
+  rubric_path: rubrics/gbw_one_stage_mirror.json
   prompt_template: gbw_one_stage.txt
   meta:
     topology: one_stage_ota
