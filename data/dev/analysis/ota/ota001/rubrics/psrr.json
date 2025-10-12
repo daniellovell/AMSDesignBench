@@ -34,7 +34,7 @@
     },
     {
       "id": "key_relation",
-      "desc": "States exact PSRR+ expression: PSRR ≈ gm_load  ×  ro_load.",
+      "desc": "States exact PSRR+ expression: PSRR ≈ gm_load  *  ro_load.",
       "required": true,
       "patterns_any": [
         "gm_load * ro_load",
@@ -65,7 +65,7 @@
     },
     {
       "id": "device_specificity",
-      "desc": "Uses device-specific expressions in final answer (e.g., PSRR ≈ gm_M3  ×  ro_M3).",
+      "desc": "Uses device-specific expressions in final answer (e.g., PSRR ≈ gm_M3  *  ro_M3).",
       "required": true,
       "section": "Answer",
       "patterns_any": [
@@ -79,7 +79,7 @@
     },
     {
       "id": "psrr_formula_db",
-      "desc": "Provides PSRR in dB: PSRR_dB ≈ 20log10(gm_load  ×  ro_load).",
+      "desc": "Provides PSRR in dB: PSRR_dB ≈ 20log10(gm_load  *  ro_load).",
       "required": true,
       "patterns_any": [
         "20*log10",

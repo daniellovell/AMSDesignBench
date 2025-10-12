@@ -32,7 +32,7 @@
     },
     {
       "id": "key_relation",
-      "desc": "States PSRR+ for common source: PSRR ≈ gm_load  ×  ro_load, limited by active load impedance.",
+      "desc": "States PSRR+ for common source: PSRR ≈ gm_load  *  ro_load, limited by active load impedance.",
       "required": true,
       "patterns_any": [
         "PSRR",
@@ -83,7 +83,7 @@
     },
     {
       "id": "psrr_formula",
-      "desc": "Recognizes PSRR formula: PSRR ≈ 20log10(ΔV_supply/ΔV_out) ≈ 20log10(gm_load  ×  ro_load).",
+      "desc": "Recognizes PSRR formula: PSRR ≈ 20log10(ΔV_supply/ΔV_out) ≈ 20log10(gm_load  *  ro_load).",
       "patterns_any": [
         "20*log10",
         "20 log",

@@ -24,7 +24,7 @@
     },
     {
       "id": "key_relation",
-      "desc": "States exact PSRR+ expression: PSRR ≈ PSRR_1  ×  A_2.",
+      "desc": "States exact PSRR+ expression: PSRR ≈ PSRR_1  *  A_2.",
       "required": true,
       "patterns_any": [
         "PSRR_1  *  A_2",
@@ -70,7 +70,7 @@
     },
     {
       "id": "psrr_formula_db",
-      "desc": "Provides PSRR in dB: PSRR_dB ≈ 20log10(PSRR_1  ×  A_2).",
+      "desc": "Provides PSRR in dB: PSRR_dB ≈ 20log10(PSRR_1  *  A_2).",
       "required": true,
       "patterns_any": [
         "20*log10",

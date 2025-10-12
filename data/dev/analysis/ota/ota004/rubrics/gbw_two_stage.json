@@ -28,11 +28,11 @@
     },
     {
       "id": "key_relation",
-      "desc": "States GBW ≈ gm1 × gm6 × (ro2 ∥ ro4) / C_L for pre-comp two-stage and conditions.",
+      "desc": "States GBW ≈ gm1 * gm6 * (ro2 || ro4) / C_L for pre-comp two-stage and conditions.",
       "required": true,
       "patterns_any": [
         "gm1 * gm6",
-        "(ro2 ∥ ro4)",
+        "(ro2 || ro4)",
         "C_L"
       ],
       "min_any": 3,

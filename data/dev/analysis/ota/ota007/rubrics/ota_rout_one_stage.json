@@ -30,10 +30,10 @@
     },
     {
       "id": "key_relation",
-      "desc": "States r_out ≈ ro_n ∥ ro_p for common source with active load.",
+      "desc": "States r_out ≈ ro_n || ro_p for common source with active load.",
       "required": true,
       "patterns_any": [
-        "ro_n ∥ ro_p",
+        "ro_n || ro_p",
         "r_o",
         "output resistance",
         "ro/2"
@@ -51,7 +51,7 @@
         "M5",
         "M6",
         "parallel",
-        "∥"
+        "||"
       ],
       "min_any": 2,
       "weight": 0.05

@@ -4,7 +4,7 @@
     "Assumes unity-gain operation (β≈1), single dominant pole; cite CL, M1/M2 for gm, and output mirror devices (e.g., M5/M6/M8) for k"
   ],
   "ota_rout_high_swing": [
-    "r_out at vout ≈ r_op ∥ r_on (parallel of PMOS output device and NMOS mirror output device)",
+    "r_out at vout ≈ r_op || r_on (parallel of PMOS output device and NMOS mirror output device)",
     "Small-signal assumption; cite output PMOS (e.g., M6) and NMOS mirror device (e.g., M8)"
   ]
 }

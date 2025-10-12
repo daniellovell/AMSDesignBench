@@ -33,7 +33,7 @@
     },
     {
       "id": "key_relation",
-      "desc": "States DC Gain ≈ gm × ro for high-swing one-stage OTA. Constant multiplicative factors are acceptable.",
+      "desc": "States DC Gain ≈ gm * ro for high-swing one-stage OTA. Constant multiplicative factors are acceptable.",
       "required": true,
       "patterns_any": [
         "2 * gm * ro",

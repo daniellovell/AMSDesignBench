@@ -36,15 +36,15 @@
     },
     {
       "id": "key_relation",
-      "desc": "States r_out at vout is the parallel combination of output NMOS and PMOS drain resistances. e.g. Mathematically equivalent to (ro_nmos ∥ ro_pmos)",
+      "desc": "States r_out at vout is the parallel combination of output NMOS and PMOS drain resistances. e.g. Mathematically equivalent to (ro_nmos || ro_pmos)",
       "required": true,
       "patterns_any": [
         "ro/2",
         "r_o/2",
         "r_out ≈ r_o/2",
         "rout ≈ ro/2",
-        "r_op ∥ r_on",
-        "r_op ∥ (r_on + r_tail)"
+        "r_op || r_on",
+        "r_op || (r_on + r_tail)"
       ],
       "anti_patterns": [
         "gm*ro²/2",
@@ -63,7 +63,7 @@
         "M5",
         "M6",
         "parallel",
-        "∥"
+        "||"
       ],
       "min_any": 2,
       "weight": 0.05

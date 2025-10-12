@@ -31,7 +31,7 @@
     },
     {
       "id": "key_relation",
-      "desc": "States DC Gain ≈ (gm × ro)² for high-swing telescopic cascode OTA.  Cascode gives squared gain. Constant multiplicative factors are acceptable.",
+      "desc": "States DC Gain ≈ (gm * ro)² for high-swing telescopic cascode OTA.  Cascode gives squared gain. Constant multiplicative factors are acceptable.",
       "required": true,
       "patterns_any": [
         "(gm * ro)²",

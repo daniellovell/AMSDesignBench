@@ -27,11 +27,11 @@
     },
     {
       "id": "key_relation",
-      "desc": "States r_out at vout is the parallel combination of output NMOS and PMOS drain resistances. e.g. Mathematically equivalent to (ro_nmos ∥ ro_pmos)",
+      "desc": "States r_out at vout is the parallel combination of output NMOS and PMOS drain resistances. e.g. Mathematically equivalent to (ro_nmos || ro_pmos)",
       "required": true,
       "patterns_any": [
-        "ro6 ∥ ro7",
-        "ro_cs2 ∥ ro_pMOS_load",
+        "ro6 || ro7",
+        "ro_cs2 || ro_pMOS_load",
         "ro_cs2 in parallel with ro_pMOS_load",
         "NMOS CS transistor",
         "PMOS gate-biased load"
@@ -54,7 +54,7 @@
         "M5",
         "M6",
         "parallel",
-        "∥"
+        "||"
       ],
       "min_any": 2,
       "weight": 0.05

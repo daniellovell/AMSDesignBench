@@ -28,7 +28,7 @@
     },
     {
       "id": "key_relation",
-      "desc": "States r_out with gain-boosting effect, approximately (gm*ro)² × ro.",
+      "desc": "States r_out with gain-boosting effect, approximately (gm*ro)² * ro.",
       "required": true,
       "patterns_any": [
         "gm*ro³",
@@ -49,7 +49,7 @@
         "M5",
         "M6",
         "parallel",
-        "∥"
+        "||"
       ],
       "min_any": 2,
       "weight": 0.05

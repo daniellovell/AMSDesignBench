@@ -35,16 +35,16 @@
     },
     {
       "id": "key_relation",
-      "desc": "States exact DC Gain: A0 ≈ gm  ×  ro / 2 or gm  ×  (ro_n ∥ ro_p). Constant multiplicative factors are acceptable.",
+      "desc": "States exact DC Gain: A0 ≈ gm  *  ro / 2 or gm  *  (ro_n || ro_p). Constant multiplicative factors are acceptable.",
       "required": true,
       "patterns_any": [
         "2 * gm * ro",
         "Av0 ≈ gm * ro / 2",
-        "gm * (ro_n ∥ ro_p)",
+        "gm * (ro_n || ro_p)",
         "gm * ro",
         "gm * ro / 2",
         "gm * rout",
-        "gm*(ro_n ∥ ro_p)",
+        "gm*(ro_n || ro_p)",
         "gm*ro",
         "gm*ro/2",
         "gm_in * r_out"
@@ -72,7 +72,7 @@
     },
     {
       "id": "device_specificity",
-      "desc": "Uses device-specific expressions in final answer (e.g., A0 ≈ gm_M1  ×  (ro_M2 ∥ ro_M4)).",
+      "desc": "Uses device-specific expressions in final answer (e.g., A0 ≈ gm_M1  *  (ro_M2 || ro_M4)).",
       "required": true,
       "section": "Answer",
       "patterns_any": [

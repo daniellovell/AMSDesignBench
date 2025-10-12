@@ -29,7 +29,7 @@
     },
     {
       "id": "key_relation",
-      "desc": "States some general formulation of the telescopic cascoded e.g. mathematical equivalent to r_out: (gm*ro²)_p ∥ (gm*ro²)_n ≈ (gm*ro²)/2 at vop.",
+      "desc": "States some general formulation of the telescopic cascoded e.g. mathematical equivalent to r_out: (gm*ro²)_p || (gm*ro²)_n ≈ (gm*ro²)/2 at vop.",
       "required": true,
       "patterns_any": [
         "gm*ro²/2",
@@ -57,7 +57,7 @@
         "M5",
         "M6",
         "parallel",
-        "∥"
+        "||"
       ],
       "min_any": 2,
       "weight": 0.05

@@ -32,12 +32,12 @@
     },
     {
       "id": "key_relation",
-      "desc": "States DC Gain ≈ gm × ro / 2 or gm × (ro_n ∥ ro_p) for common source with active load. Constant multiplicative factors are acceptable.",
+      "desc": "States DC Gain ≈ gm * ro / 2 or gm * (ro_n || ro_p) for common source with active load. Constant multiplicative factors are acceptable.",
       "required": true,
       "patterns_any": [
         "2 * gm * ro",
         "Av0 ≈ gm * ro / 2",
-        "gm * (ro_n ∥ ro_p)",
+        "gm * (ro_n || ro_p)",
         "gm * ro",
         "gm * ro / 2",
         "gm * rout",

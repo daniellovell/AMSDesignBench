@@ -28,7 +28,7 @@
     },
     {
       "id": "key_relation",
-      "desc": "States r_out ≈ (gm*ro²)_p ∥ (gm*ro²)_n ≈ (gm*ro²)/2 at vout.",
+      "desc": "States r_out ≈ (gm*ro²)_p || (gm*ro²)_n ≈ (gm*ro²)/2 at vout.",
       "required": true,
       "patterns_any": [
         "gm*ro²/2",
@@ -53,7 +53,7 @@
         "M5",
         "M6",
         "parallel",
-        "∥"
+        "||"
       ],
       "min_any": 2,
       "weight": 0.05
