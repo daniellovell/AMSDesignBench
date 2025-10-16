@@ -1,0 +1,7 @@
+{
+  "bug_type": "feedback_polarity_error",
+  "expected_feedback": "negative",
+  "actual_feedback": "positive",
+  "fix": "Correct resistor divider connection or swap opamp inputs to establish negative feedback"
+}
+

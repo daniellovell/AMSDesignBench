@@ -1,0 +1,3 @@
+Design a single-ended transimpedance amplifier (TIA) with a feedback capacitor.
+Use an opamp with capacitive negative feedback to convert current input to voltage output.
+

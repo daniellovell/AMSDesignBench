@@ -1,0 +1,3 @@
+Design a noninverting voltage amplifier with a resistive feedback network.
+Use an opamp with signal input to non-inverting terminal and resistive divider feedback to inverting terminal.
+

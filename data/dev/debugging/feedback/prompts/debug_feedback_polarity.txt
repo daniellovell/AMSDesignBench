@@ -1,0 +1,18 @@
+You are an expert analog IC designer.
+A user reports their feedback amplifier is oscillating or unstable. From the {modality} artifact, diagnose whether the amplifier is in positive or negative feedback and how to fix it.
+
+Required sections (use these exact headers):
+- Symptoms
+- Fault
+- Grounded evidence
+- Fix
+- Answer
+
+Guidance:
+- In Symptoms: describe the behavior expected from the feedback type (positive vs negative).
+- In Fault: identify whether the circuit has positive or negative feedback, and whether that is correct.
+- In Grounded evidence: cite the exact element IDs and show the problematic connections from the artifact.
+- In Fix: propose a concrete change to establish proper negative feedback (e.g., swap opamp inputs, correct resistor connections).
+
+Return markdown only. NEVER use LaTeX or MathJax formatting in your response.
+

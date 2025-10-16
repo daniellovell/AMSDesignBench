@@ -1,0 +1,32 @@
+{
+  "rubric_id": "feedback_loop_gain",
+  "version": "0.1.0",
+  "weights": { "loop_gain_expression": 0.60, "grounded_evidence": 0.30, "correctness": 0.10 },
+  "criteria": [
+    {
+      "id": "loop_gain_expression",
+      "desc": "Provides correct loop gain expression: T = A0 * beta where beta = R2/(R1+R2), or T = A0 * R2/(R1+R2).",
+      "section": "Key relation",
+      "required": true,
+      "patterns_any": ["T = A0 * R2/(R1+R2)", "T = A0 * beta", "loop gain = A0 * R2/(R1+R2)", "A0 * R2/(R1+R2)", "A0*R2/(R1+R2)", "A0 * beta", "A(s) * beta", "beta * A0", "Aol * R2/(R1+R2)"],
+      "min_any": 1,
+      "weight": 0.60
+    },
+    {
+      "id": "grounded_evidence",
+      "desc": "Cites element IDs (R1, R2, XU2, opamp) and parameters (Aol, GBW) from the artifact.",
+      "section": "Grounded evidence",
+      "patterns_any": ["R1", "R2", "XU2", "opamp", "Aol", "GBW", "100K", "10Meg"],
+      "min_any": 3,
+      "weight": 0.30
+    },
+    {
+      "id": "correctness",
+      "desc": "Avoids confusing loop gain with closed-loop gain.",
+      "anti_patterns": ["-R1/R2", "Vout/Vin =", "closed-loop gain"],
+      "weight": 0.10
+    }
+  ],
+  "scoring": { "hallucination_penalty": 0.15, "min_pass": 0.70 }
+}
+

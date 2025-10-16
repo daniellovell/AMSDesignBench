@@ -1,0 +1,12 @@
+questions:
+- id: feedback004_design_inv
+  track: design
+  modality: auto
+  rubric_id: design_inverting_amp
+  rubric_path: rubrics/design_inverting_amp.json
+  prompt_template: design_feedback.txt
+  meta:
+    topology: inverting_voltage_amp
+    bench_version: 0.1.0
+    aspect: structure
+

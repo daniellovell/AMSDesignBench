@@ -1,0 +1,32 @@
+questions:
+- id: feedback002_closed_loop_gain
+  track: analysis
+  modality: auto
+  rubric_id: feedback_closed_loop_gain
+  rubric_path: rubrics/feedback_closed_loop_gain.json
+  prompt_template: feedback_closed_loop_gain.txt
+  meta:
+    topology: tia_feedback_capacitor
+    bench_version: 0.1.0
+    aspect: closed_loop_gain
+- id: feedback002_loop_gain
+  track: analysis
+  modality: auto
+  rubric_id: feedback_loop_gain
+  rubric_path: rubrics/feedback_loop_gain.json
+  prompt_template: feedback_loop_gain.txt
+  meta:
+    topology: tia_feedback_capacitor
+    bench_version: 0.1.0
+    aspect: loop_gain
+- id: feedback002_signal_modality
+  track: analysis
+  modality: auto
+  rubric_id: feedback_signal_modality
+  rubric_path: rubrics/feedback_signal_modality.json
+  prompt_template: feedback_signal_modality.txt
+  meta:
+    topology: tia_feedback_capacitor
+    bench_version: 0.1.0
+    aspect: signal_modality
+
