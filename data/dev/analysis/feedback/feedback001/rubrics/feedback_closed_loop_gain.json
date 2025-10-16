@@ -1,0 +1,32 @@
+{
+  "rubric_id": "feedback_closed_loop_gain",
+  "version": "0.1.0",
+  "weights": { "gain_expression": 0.60, "grounded_evidence": 0.30, "correctness": 0.10 },
+  "criteria": [
+    {
+      "id": "gain_expression",
+      "desc": "Provides correct closed-loop transimpedance gain expression: Vout/Iin = -R1 (or -Rf).",
+      "section": "Key relation",
+      "required": true,
+      "patterns_any": ["-R1", "-Rf", "-R", "Vout/Iin = -R1", "Vout/Iin = -Rf", "Vout/Iin = -R"],
+      "min_any": 1,
+      "weight": 0.60
+    },
+    {
+      "id": "grounded_evidence",
+      "desc": "Cites element IDs (R1, XU2, opamp) and nets (S_in, S_out) from the artifact.",
+      "section": "Grounded evidence",
+      "patterns_any": ["R1", "XU2", "S_in", "S_out"],
+      "min_any": 2,
+      "weight": 0.30
+    },
+    {
+      "id": "correctness",
+      "desc": "Avoids incorrect gain expressions or missing negative sign.",
+      "anti_patterns": ["Vout/Iin = R1", "Vout/Iin = R", "+R1", "1/R1"],
+      "weight": 0.10
+    }
+  ],
+  "scoring": { "hallucination_penalty": 0.15, "min_pass": 0.70 }
+}
+

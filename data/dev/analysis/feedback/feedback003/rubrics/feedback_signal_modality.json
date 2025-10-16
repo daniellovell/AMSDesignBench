@@ -1,0 +1,32 @@
+{
+  "rubric_id": "feedback_signal_modality",
+  "version": "0.1.0",
+  "weights": { "signal_modality": 0.70, "grounded_evidence": 0.20, "format": 0.10 },
+  "criteria": [
+    {
+      "id": "signal_modality",
+      "desc": "Correctly identifies input as voltage (V) and output as voltage (V) for voltage amplifier.",
+      "section": "Answer",
+      "required": true,
+      "patterns_any": ["V-V", "V - V", "voltage-to-voltage", "voltage to voltage", "V to V"],
+      "min_any": 1,
+      "weight": 0.70
+    },
+    {
+      "id": "grounded_evidence",
+      "desc": "Cites circuit elements (R1, R2, XU1, S_in, S_out) showing input/output connections.",
+      "section": "Grounded evidence",
+      "patterns_any": ["R1", "R2", "XU1", "S_in", "S_out", "opamp"],
+      "min_any": 2,
+      "weight": 0.20
+    },
+    {
+      "id": "format",
+      "desc": "Avoids incorrect signal modality (I-V, V-I, I-I).",
+      "anti_patterns": ["I-V", "I - V", "current-to-voltage", "V-I", "voltage-to-current", "I-I", "transimpedance"],
+      "weight": 0.10
+    }
+  ],
+  "scoring": { "hallucination_penalty": 0.15, "min_pass": 0.70 }
+}
+

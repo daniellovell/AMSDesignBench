@@ -1,0 +1,16 @@
+{
+  "feedback_closed_loop_gain": [
+    "Closed-loop transimpedance gain: Vout/Iin = -1/(sC1)",
+    "Where C1 is the feedback capacitor; integrator transfer function"
+  ],
+  "feedback_loop_gain": [
+    "Loop gain T = A0 or A(s)",
+    "Where A0 is the opamp open-loop DC gain",
+    "For TIA with capacitor, the loop gain is the opamp open-loop gain"
+  ],
+  "feedback_signal_modality": [
+    "Signal modality: I-V",
+    "Input: Current (I), Output: Voltage (V)"
+  ]
+}
+

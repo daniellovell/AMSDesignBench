@@ -1,0 +1,16 @@
+{
+  "feedback_closed_loop_gain": [
+    "Closed-loop voltage gain: Vout/Vin = -R1/R2",
+    "Inverting amplifier configuration with negative sign"
+  ],
+  "feedback_loop_gain": [
+    "Loop gain T = A0 * beta where beta = R2/(R1+R2)",
+    "Or equivalently: T = A0 * R2/(R1+R2)",
+    "Where A0 is opamp open-loop gain and beta is feedback factor"
+  ],
+  "feedback_signal_modality": [
+    "Signal modality: V-V",
+    "Input: Voltage (V), Output: Voltage (V)"
+  ]
+}
+
