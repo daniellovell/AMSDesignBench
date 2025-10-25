@@ -14,7 +14,7 @@
       "desc": "Mentions inverting amplifier or inverting configuration terminology.",
       "section": "Topology",
       "patterns_any": ["inverting amplifier", "inverting configuration", "inverting"],
-      "min_any": 2,
+      "min_any": 1,
       "weight": 0.20
     },
     {

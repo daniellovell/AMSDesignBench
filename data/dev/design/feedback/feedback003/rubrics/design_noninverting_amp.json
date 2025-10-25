@@ -14,7 +14,7 @@
       "desc": "Mentions noninverting amplifier or voltage follower terminology.",
       "section": "Topology",
       "patterns_any": ["noninverting", "non-inverting", "voltage follower", "buffer"],
-      "min_any": 2,
+      "min_any": 1,
       "weight": 0.20
     },
     {

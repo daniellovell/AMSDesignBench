@@ -8,7 +8,7 @@
       "desc": "Provides correct closed-loop transimpedance gain expression: Vout/Iin = -1/(sC1) or -1/(jωC1).",
       "section": "Key relation",
       "required": true,
-      "patterns_any": ["-1/(sC1)", "-1/(jωC1)", "-1/(s*C1)", "-1/sC", "-1/(ωC1)", "1/(sC1)", "integrator"],
+      "patterns_any": ["-1/(sC1)", "-1/(jωC1)", "-1/(s*C1)", "-1/sC", "-1/(ωC1)", "integrator"],
       "min_any": 1,
       "weight": 0.60
     },

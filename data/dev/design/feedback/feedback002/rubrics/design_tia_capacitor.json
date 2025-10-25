@@ -14,7 +14,7 @@
       "desc": "Mentions transimpedance amplifier, TIA, integrator, or I-V converter terminology.",
       "section": "Topology",
       "patterns_any": ["transimpedance", "TIA", "integrator", "I-V", "current-to-voltage"],
-      "min_any": 2,
+      "min_any": 1,
       "weight": 0.20
     },
     {
