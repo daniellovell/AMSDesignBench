@@ -1,4 +1,3 @@
-* Single Ended TIA with Feedback Resistor
 subckt opamp in_n in_p out
 	* opamp implementation
 ends opamp

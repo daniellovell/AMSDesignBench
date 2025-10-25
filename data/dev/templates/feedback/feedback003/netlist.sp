@@ -1,4 +1,3 @@
-* Noninverting Voltage Amplifier with Resistive Feedback
 subckt opamp in_n in_p out
 	* opamp implementation
 ends opamp
