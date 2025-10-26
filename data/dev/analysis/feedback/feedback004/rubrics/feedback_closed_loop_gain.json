@@ -8,7 +8,7 @@
       "desc": "Provides correct closed-loop voltage gain expression: Vout/Vin = -R1/R2.",
       "section": "Key relation",
       "required": true,
-      "patterns_any": ["-R1/R2", "-(R1/R2)", "-R1/R2", "Vout/Vin = -R1/R2"],
+      "patterns_any": ["-R1/R2", "-(R1/R2)", "Vout/Vin = -R1/R2"],
       "min_any": 1,
       "weight": 0.60
     },
