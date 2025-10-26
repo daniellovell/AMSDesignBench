@@ -9,6 +9,16 @@ questions:
     topology: tia_feedback_resistor
     bench_version: 0.1.0
     aspect: closed_loop_gain
+- id: feedback001_beta_factor
+  track: analysis
+  modality: auto
+  rubric_id: feedback_beta_factor
+  rubric_path: rubrics/feedback_beta_factor.json
+  prompt_template: feedback_beta_factor.txt
+  meta:
+    topology: tia_feedback_resistor
+    bench_version: 0.1.0
+    aspect: beta_factor
 - id: feedback001_loop_gain
   track: analysis
   modality: auto

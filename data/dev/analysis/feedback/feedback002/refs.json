@@ -3,6 +3,11 @@
     "Closed-loop transimpedance gain: Vout/Iin = -1/(sC1)",
     "Where C1 is the feedback capacitor; integrator transfer function"
   ],
+  "feedback_beta_factor": [
+    "Feedback factor: beta = 1",
+    "Unity feedback for transimpedance amplifier (TIA)",
+    "Output voltage is fed back directly to inverting input through capacitor"
+  ],
   "feedback_loop_gain": [
     "Loop gain T = A0 or A(s)",
     "Where A0 is the opamp open-loop DC gain",

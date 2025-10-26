@@ -16,6 +16,8 @@
       "id": "grounded_evidence",
       "desc": "Cites circuit elements (R1, R2, XU2, S_in, S_out) showing input/output connections.",
       "section": "Grounded evidence",
+      "requires_grounding": true,
+      "min_refs": 2,
       "patterns_any": ["R1", "R2", "XU2", "S_in", "S_out", "opamp"],
       "min_any": 2,
       "weight": 0.20

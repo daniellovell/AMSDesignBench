@@ -11,7 +11,7 @@ Required sections (use these exact headers):
 
 Guidance:
 - In Topology: explicitly name the feedback topology (TIA, inverting, noninverting, etc.) and justify in 1 sentence using observed elements.
-- In Key relation: give the closed-loop gain expression (e.g., Vout/Vin, Vout/Iin) with proper signs and units.
+- In Key relation: state the closed-loop gain expression (e.g., Vout/Vin, Vout/Iin) with proper signs and units.
 - In Grounded evidence: cite element IDs (resistors, capacitors, opamp) and nets from the artifact.
 - Avoid generic statements without conditions.
 

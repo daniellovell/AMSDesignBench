@@ -11,7 +11,7 @@ Required sections (use these exact headers):
 
 Guidance:
 - In Topology: explicitly name the feedback topology and justify in 1 sentence using observed elements.
-- In Key relation: give the loop gain expression (typically A(s) * beta where A(s) is opamp open-loop gain and beta is feedback factor).
+- In Key relation: state the loop gain expression T with the feedback factor beta fully expanded (e.g., T = A0 * R1/(R1+R2), NOT just T = A0 * beta). Include the actual component values.
 - In Grounded evidence: cite element IDs and parameters from the artifact (e.g., opamp gain parameter, feedback network elements).
 - Distinguish between loop gain and closed-loop gain.
 

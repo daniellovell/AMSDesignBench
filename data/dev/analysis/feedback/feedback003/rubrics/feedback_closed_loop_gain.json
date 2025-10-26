@@ -16,6 +16,8 @@
       "id": "grounded_evidence",
       "desc": "Cites element IDs (R1, R2, XU1, opamp) and nets (N001, S_in, S_out) from the artifact.",
       "section": "Grounded evidence",
+      "requires_grounding": true,
+      "min_refs": 3,
       "patterns_any": ["R1", "R2", "XU1", "N001", "S_in", "S_out"],
       "min_any": 3,
       "weight": 0.30

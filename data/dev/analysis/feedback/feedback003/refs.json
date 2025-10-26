@@ -3,10 +3,15 @@
     "Closed-loop voltage gain: Vout/Vin = 1 + R2/R1",
     "Noninverting amplifier configuration"
   ],
+  "feedback_beta_factor": [
+    "Feedback factor: beta = R1/(R1+R2)",
+    "Resistor divider at noninverting input",
+    "Fraction of output voltage fed back to inverting input"
+  ],
   "feedback_loop_gain": [
-    "Loop gain T = A0 * beta where beta = R1/(R1+R2)",
-    "Or equivalently: T = A0 * R1/(R1+R2)",
-    "Where A0 is opamp open-loop gain and beta is feedback factor"
+    "Loop gain T = A0 * R1/(R1+R2)",
+    "Where A0 is opamp open-loop gain and beta = R1/(R1+R2) is feedback factor",
+    "Must expand beta to show actual resistor ratio"
   ],
   "feedback_signal_modality": [
     "Signal modality: V-V",

@@ -5,17 +5,20 @@
   "criteria": [
     {
       "id": "loop_gain_expression",
-      "desc": "Provides correct loop gain expression: T = A0 * beta where beta = R2/(R1+R2), or T = A0 * R2/(R1+R2).",
+      "desc": "Provides correct loop gain expression: T = A0 * R2/(R1+R2). Must expand beta, NOT just T = A0 * beta.",
       "section": "Key relation",
       "required": true,
-      "patterns_any": ["T = A0 * R2/(R1+R2)", "T = A0 * beta", "loop gain = A0 * R2/(R1+R2)", "A0 * R2/(R1+R2)", "A0*R2/(R1+R2)", "A0 * beta", "A(s) * beta", "beta * A0", "Aol * R2/(R1+R2)"],
+      "patterns_any": ["T = A0 * R2/(R1+R2)", "loop gain = A0 * R2/(R1+R2)", "A0 * R2/(R1+R2)", "A0*R2/(R1+R2)", "Aol * R2/(R1+R2)", "A(s) * R2/(R1+R2)", "R2/(R1+R2) * A0"],
       "min_any": 1,
+      "anti_patterns": ["T = A0 * beta", "T=A0*beta", "A0 * beta", "A(s) * beta"],
       "weight": 0.60
     },
     {
       "id": "grounded_evidence",
       "desc": "Cites element IDs (R1, R2, XU2, opamp) and parameters (Aol, GBW) from the artifact.",
       "section": "Grounded evidence",
+      "requires_grounding": true,
+      "min_refs": 3,
       "patterns_any": ["R1", "R2", "XU2", "opamp", "Aol", "GBW", "100K", "10Meg"],
       "min_any": 3,
       "weight": 0.30
