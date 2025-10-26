@@ -1,0 +1,42 @@
+questions:
+- id: feedback004_closed_loop_gain
+  track: analysis
+  modality: auto
+  rubric_id: feedback_closed_loop_gain
+  rubric_path: rubrics/feedback_closed_loop_gain.json
+  prompt_template: feedback_closed_loop_gain.txt
+  meta:
+    topology: inverting_voltage_amp
+    bench_version: 0.1.0
+    aspect: closed_loop_gain
+- id: feedback004_beta_factor
+  track: analysis
+  modality: auto
+  rubric_id: feedback_beta_factor
+  rubric_path: rubrics/feedback_beta_factor.json
+  prompt_template: feedback_beta_factor.txt
+  meta:
+    topology: inverting_voltage_amp
+    bench_version: 0.1.0
+    aspect: beta_factor
+- id: feedback004_loop_gain
+  track: analysis
+  modality: auto
+  rubric_id: feedback_loop_gain
+  rubric_path: rubrics/feedback_loop_gain.json
+  prompt_template: feedback_loop_gain.txt
+  meta:
+    topology: inverting_voltage_amp
+    bench_version: 0.1.0
+    aspect: loop_gain
+- id: feedback004_signal_modality
+  track: analysis
+  modality: auto
+  rubric_id: feedback_signal_modality
+  rubric_path: rubrics/feedback_signal_modality.json
+  prompt_template: feedback_signal_modality.txt
+  meta:
+    topology: inverting_voltage_amp
+    bench_version: 0.1.0
+    aspect: signal_modality
+
