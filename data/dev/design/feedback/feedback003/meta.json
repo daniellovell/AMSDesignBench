@@ -1,8 +1,0 @@
-{
-  "topology": "noninverting_voltage_amp",
-  "gen_seed": 403,
-  "modalities": ["spice_netlist"],
-  "bench_version": "0.1.0",
-  "template_path": "../../../templates/feedback/feedback003"
-}
-

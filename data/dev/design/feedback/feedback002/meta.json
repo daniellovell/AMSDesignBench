@@ -1,8 +1,0 @@
-{
-  "topology": "tia_feedback_capacitor",
-  "gen_seed": 402,
-  "modalities": ["spice_netlist"],
-  "bench_version": "0.1.0",
-  "template_path": "../../../templates/feedback/feedback002"
-}
-
