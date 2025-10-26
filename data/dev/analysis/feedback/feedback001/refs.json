@@ -1,0 +1,21 @@
+{
+  "feedback_closed_loop_gain": [
+    "Closed-loop transimpedance gain: Vout/Iin = -R1",
+    "Where R1 is the feedback resistor (for ideal opamp)"
+  ],
+  "feedback_beta_factor": [
+    "Feedback factor: beta = 1",
+    "Unity feedback for transimpedance amplifier (TIA)",
+    "Output voltage is fed back directly to inverting input"
+  ],
+  "feedback_loop_gain": [
+    "Loop gain T = A0 (or Aol)",
+    "Where A0 is the opamp open-loop DC gain",
+    "For TIA, the loop gain is simply the opamp open-loop gain"
+  ],
+  "feedback_signal_modality": [
+    "Signal modality: I-V",
+    "Input: Current (I), Output: Voltage (V)"
+  ]
+}
+

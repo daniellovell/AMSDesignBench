@@ -1,0 +1,26 @@
+You are an expert analog IC designer.
+From the {modality} artifact, determine the loop gain of the given feedback amplifier circuit.
+
+**IMPORTANT ASSUMPTION:** Assume the op-amp has a finite open-loop gain A0, infinite input impedance, and zero output impedance when deriving your expressions.
+
+Required sections (use these exact headers):
+- Topology
+- Key relation
+- Grounded evidence
+- Answer
+
+Guidance:
+- In Topology: explicitly name the feedback topology and justify in 1 sentence using observed elements.
+- In Key relation: state the loop gain expression T with the feedback factor beta fully expanded (e.g., T = A0 * R1/(R1+R2), NOT just T = A0 * beta). Include the actual component values.
+- In Grounded evidence: cite element IDs and parameters from the artifact (e.g., opamp gain parameter, feedback network elements).
+- Distinguish between loop gain and closed-loop gain.
+
+**IMPORTANT - Symbolic Expression Requirements:**
+- You MUST provide a symbolic expression, not numeric values.
+- Denote op-amp gain as A0 for DC or A(s) for frequency-dependent expressions.
+- Denote component values using their element IDs from the circuit (e.g., R1, R2, C1, C2, etc.).
+- Use standard algebraic notation without LaTeX formatting.
+- Example formats: "Loop gain T = A0", "Loop gain T = A0 * R1/(R1+R2)", "Loop gain T = A(s)"
+
+Return markdown only. NEVER use LaTeX or MathJax formatting in your response.
+

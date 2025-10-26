@@ -1,0 +1,36 @@
+{
+  "rubric_id": "debug_feedback_polarity",
+  "version": "0.1.0",
+  "weights": { "fault_identification": 0.40, "grounded_evidence": 0.30, "fix": 0.20, "clarity": 0.10 },
+  "criteria": [
+    {
+      "id": "fault_identification",
+      "desc": "Correctly identifies whether the circuit has positive or negative feedback and whether that is correct.",
+      "section": "Fault",
+      "required": true,
+      "weight": 0.40
+    },
+    {
+      "id": "grounded_evidence",
+      "desc": "Cites exact element IDs and problematic connections from the artifact.",
+      "section": "Grounded evidence",
+      "required": true,
+      "weight": 0.30
+    },
+    {
+      "id": "fix",
+      "desc": "Proposes concrete change to establish proper negative feedback (e.g., swap opamp inputs, correct resistor connections).",
+      "section": "Fix",
+      "required": true,
+      "weight": 0.20
+    },
+    {
+      "id": "clarity",
+      "desc": "Explains symptoms and expected behavior clearly.",
+      "section": "Symptoms",
+      "weight": 0.10
+    }
+  ],
+  "scoring": { "hallucination_penalty": 0.15, "min_pass": 0.70 }
+}
+
