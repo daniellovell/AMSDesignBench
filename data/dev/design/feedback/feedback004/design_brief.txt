@@ -1,3 +1,0 @@
-Design an inverting voltage amplifier with a resistive feedback network.
-Use an opamp with non-inverting terminal grounded, signal input through resistor to inverting terminal, and feedback resistor from output to inverting terminal.
-
