@@ -108,6 +108,23 @@ def parse_model_spec(spec: str) -> tuple[str, Dict[str, Any]]:
     return spec.strip(), {}
 
 
+def normalize_judge_model(spec: Optional[str]) -> Optional[str]:
+    """
+    Normalize judge model specs so we can reuse adapter-style strings
+    (e.g., openai:gpt-4o-mini) while still passing raw model IDs to judge calls.
+    """
+    if spec is None:
+        return None
+    cleaned = str(spec).strip()
+    if not cleaned:
+        return None
+    if ":" in cleaned:
+        prefix, rest = cleaned.split(":", 1)
+        if prefix.strip().lower() in {"openai", "anthropic", "openrouter"}:
+            return rest.strip() or None
+    return cleaned
+
+
 def load_questions(item_dir: Path) -> List[Question]:
     """Load questions; support 'auto' modality expansion from meta.json.
     If a question has modality in {"auto","*","all"} or is missing, expand
@@ -468,7 +485,7 @@ def main():
         default=0,
         help="1-based item index within the selected scope (after family filter). 0 = all.",
     )
-    ap.add_argument("--judge-model", default=None, help="override judge model name")
+    ap.add_argument("--judge-model", "--judge_model", dest="judge_model", default=None, help="override judge model name")
     ap.add_argument("--model-workers", type=int, default=0, help="parallel model workers (0 = run all models in parallel)")
     ap.add_argument("--item-workers", type=int, default=8, help="per-model concurrent workers for items/questions")
     # Judge tuning
@@ -491,10 +508,17 @@ def main():
 
     # Load bench config (YAML)
     cfg = yaml.safe_load(Path("bench_config.yaml").read_text(encoding='utf-8')) or {}
+    eval_cfg_raw = cfg.get("eval") or {}
+    eval_cfg = eval_cfg_raw if isinstance(eval_cfg_raw, dict) else {}
     data_root = Path(cfg.get("paths", {}).get("data_root", "data"))
     # Prompts are referenced per-item: resolved as (item_dir/../prompts/<prompt_template>)
     outputs_root = Path(cfg.get("paths", {}).get("outputs_root", "outputs"))
     outputs_root.mkdir(parents=True, exist_ok=True)
+
+    judge_model_cfg = eval_cfg.get("judge_model")
+    judge_model_spec = args.judge_model if args.judge_model is not None else judge_model_cfg
+    judge_model = normalize_judge_model(judge_model_spec)
+    args.judge_model = judge_model
 
     split_dir = data_root / args.split
     if not split_dir.exists():
@@ -510,11 +534,38 @@ def main():
     elif args.model:
         model_specs.extend([t for t in str(args.model).split(",") if t])
     else:
-        cfg_models = (cfg.get("eval", {}) or {}).get("models")
+        cfg_models = eval_cfg.get("models") if isinstance(eval_cfg, dict) else None
         if isinstance(cfg_models, list) and cfg_models:
             model_specs = [str(m) for m in cfg_models]
         else:
             model_specs = ["dummy"]
+
+    dummy_requested = False
+    for spec in model_specs:
+        clean_spec = spec.strip()
+        if not clean_spec:
+            continue
+        if parse_model_spec(clean_spec)[0] == "dummy":
+            dummy_requested = True
+            break
+    judge_is_dummy = args.judge_model == "dummy"
+    if dummy_requested and not judge_is_dummy:
+        judge_display = args.judge_model or os.getenv("OPENAI_JUDGE_MODEL") or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        msg = (
+            f"[run_eval] --model dummy selected, but judge model is '{judge_display}'.\n"
+            "\033[31mRunning a dummy model with a real judge will consume API tokens.\033[0m\n"
+            "Hint: rerun with --judge_model dummy if you want a zero-cost judge.\n"
+            "Proceed anyway? [y/N]: "
+        )
+        if not sys.stdin.isatty():
+            raise SystemExit("Aborting: set --judge_model dummy to avoid real judge in non-interactive mode.")
+        try:
+            confirm = input(msg)
+        except EOFError:
+            raise SystemExit("Aborting: confirmation required to run dummy model with real judge.")
+        if confirm.strip().lower() not in {"y", "yes"}:
+            print("Aborting per user selection.", flush=True)
+            return
 
     # Build adapters map keyed by a printable slug
     adapters: Dict[str, Any] = {}
@@ -1460,7 +1511,14 @@ def main():
                 return summary
 
             inv_summary = _inventory_summary()
-            if pred:
+            if args.judge_model == "dummy":
+                zero_scores = {}
+                for crit in getattr(rubric_eff, "criteria", []) or []:
+                    cid = getattr(crit, "id", None)
+                    if isinstance(cid, str) and cid.strip():
+                        zero_scores[cid] = 0.0
+                judge = {"scores": zero_scores, "overall": 0.0, "debug": {"judge_model": "dummy"}}
+            elif pred:
                 try:
                     judge = judge_call(pred, rjson, ktext, refs, inv_summary, model=args.judge_model)
                 except Exception:

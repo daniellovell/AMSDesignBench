@@ -1,0 +1,39 @@
+{
+  "rubric_id": "debug_device_swap",
+  "version": "0.1.0",
+  "weights": { "fault": 0.45, "fix": 0.30, "groundedness": 0.15, "safety": 0.10 },
+  "criteria": [
+    {
+      "id": "fault_id",
+      "desc": "Identifies a specific device and wrong polarity (e.g., '<ID>' PMOS instead of NMOS), consistent with refs.swapped_id/from_type/to_type.",
+      "required": true,
+      "section": "Fault",
+      "patterns_any": ["PMOS", "NMOS", "swapped", "wrong type", "wrong polarity"],
+      "min_any": 2,
+      "anti_patterns": ["two-stage", "Miller"],
+      "weight": 0.45
+    },
+    {
+      "id": "fix",
+      "desc": "Proposes a concrete fix (change device to the correct model type and correct body tie).",
+      "required": true,
+      "section": "Fix",
+      "patterns_any": ["change", "to NMOS", "to PMOS", "to nch", "to pch", "body to 0", "body to VDD"],
+      "min_any": 1,
+      "weight": 0.30
+    },
+    {
+      "id": "grounding",
+      "desc": "References the real element (e.g., M1) from inventory and cites a line or node.",
+      "requires_grounding": true,
+      "min_refs": 1,
+      "weight": 0.15
+    },
+    {
+      "id": "safety",
+      "desc": "Avoids asserting parts that don't exist (no hallucinated IDs).",
+      "weight": 0.10
+    }
+  ],
+  "scoring": { "hallucination_penalty": 0.25, "min_pass": 0.70 }
+}
