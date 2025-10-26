@@ -43,22 +43,22 @@ XMp1 vout n1 vdd vdd sky130_fd_pr__pfet_01v8 L=Lp1 W=Wp1 nf=1
 """,
     "ota002": """
 ```spice
-* OTA002 - Telescopic Cascode (FUNCTIONAL for SKY130)
+* OTA002 - Telescopic Cascode (FUNCTIONAL: 51.2 dB with pin-swap fix)
 Vinp vip 0 DC 0.9 AC 0.5
 Vinn vin 0 DC 0.9 AC -0.5
-Vb1 vb1 0 DC 0.35
-Vb2 vb2 0 DC 0.35
-Vb3 vb3 0 DC 1.05
-Vtail vtail 0 DC 0.67
-XM3 N003 vip N005 0 sky130_fd_pr__nfet_01v8 L=1.0 W=70 nf=1
-XM4 N004 vin N005 0 sky130_fd_pr__nfet_01v8 L=1.0 W=70 nf=1
-XM2 voutn vb3 N003 0 sky130_fd_pr__nfet_01v8 L=1.0 W=60 nf=1
-XM1 voutp vb3 N004 0 sky130_fd_pr__nfet_01v8 L=1.0 W=60 nf=1
-XM5 N005 vtail 0 0 sky130_fd_pr__nfet_01v8 L=1.5 W=90 nf=1
-XM6 voutn vb2 N001 vdd sky130_fd_pr__pfet_01v8 L=1.0 W=100 nf=1
-XM7 voutp vb2 N002 vdd sky130_fd_pr__pfet_01v8 L=1.0 W=100 nf=1
-XM8 N001 vb1 vdd vdd sky130_fd_pr__pfet_01v8 L=1.0 W=60 nf=2
-XM9 N002 vb1 vdd vdd sky130_fd_pr__pfet_01v8 L=1.0 W=60 nf=2
+Vb1 vb1 0 DC 0.3
+Vb2 vb2 0 DC 0.5
+Vb3 vb3 0 DC 1.3
+Vtail vtail 0 DC 0.8
+XM3 N003 vip N005 0 sky130_fd_pr__nfet_01v8 L=1.0 W=50 nf=1
+XM4 N004 vin N005 0 sky130_fd_pr__nfet_01v8 L=1.0 W=50 nf=1
+XM2 voutn vb3 N003 0 sky130_fd_pr__nfet_01v8 L=1.0 W=45 nf=1
+XM1 voutp vb3 N004 0 sky130_fd_pr__nfet_01v8 L=1.0 W=45 nf=1
+XM5 N005 vtail 0 0 sky130_fd_pr__nfet_01v8 L=1.5 W=65 nf=1
+XM6 N001 vb2 voutn vdd sky130_fd_pr__pfet_01v8 L=1.0 W=75 nf=1
+XM7 N002 vb2 voutp vdd sky130_fd_pr__pfet_01v8 L=1.0 W=75 nf=1
+XM8 VDD vb1 N001 vdd sky130_fd_pr__pfet_01v8 L=1.0 W=100 nf=1
+XM9 VDD vb1 N002 vdd sky130_fd_pr__pfet_01v8 L=1.0 W=100 nf=1
 ```
 """,
     "ota003": """
