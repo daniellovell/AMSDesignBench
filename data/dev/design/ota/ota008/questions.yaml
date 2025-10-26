@@ -9,3 +9,26 @@ questions:
     topology: cascode_single_end
     bench_version: 0.1.0
     aspect: structure
+- id: ota008_design_with_verification_spice_netlist
+  track: design
+  modality: spice_netlist
+  rubric_id: design_cascode_se_verified
+  rubric_path: rubrics/design_cascode_se_verified.json
+  prompt_template: design_prompt.txt
+  require_sections: []
+  answer_format: "spice_netlist"
+  attachments:
+    - path: netlist_template.sp
+      description: "SPICE netlist template with BLANK parameters"
+    - path: ../../../../../pdk/skywater130/gm_id_tables/sky130_nfet_gmid_lut.json
+      description: "Complete NFET Gm/ID lookup table for SKY130"
+    - path: ../../../../../pdk/skywater130/gm_id_tables/sky130_pfet_gmid_lut.json
+      description: "Complete PFET Gm/ID lookup table for SKY130"
+  verification:
+    enabled: true
+    simulator: ngspice
+    spec_file: verification/design_spec.json
+  meta:
+    topology: cascode_se
+    bench_version: 0.2.0
+    aspect: complete_design_with_specs

@@ -366,10 +366,43 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
             err = r.get("error")
             if err:
                 judge_html += ("<div class=small style='color:#b00'>Error: " + esc(str(err)) + "</div>")
+            
+            # SPICE Verification Details
+            verification_html = ""
+            verification = r.get("verification_details")
+            if verification:
+                sim_passed = verification.get("simulation_passed", False)
+                metrics = verification.get("metrics", {})
+                ver_err = verification.get("error")
+                
+                status_color = "#0a0" if sim_passed else "#b00"
+                status_text = "✅ PASSED" if sim_passed else "❌ FAILED"
+                verification_html = f"<div style='margin-top:8px;'><b style='color:{status_color}'>SPICE Verification: {status_text}</b></div>"
+                
+                if metrics:
+                    verification_html += "<table class=small style='margin-top:4px;'><tr><th>Metric</th><th>Value</th><th>Status</th></tr>"
+                    per_crit = scores.get("per_criterion", {})
+                    for metric_name, value in metrics.items():
+                        # Find corresponding criterion to get threshold
+                        crit_data = per_crit.get(f"verification_{metric_name.replace('_hz', '').replace('_db', '').replace('_deg', '')}")
+                        if crit_data and isinstance(crit_data, dict):
+                            threshold = crit_data.get("threshold", "?")
+                            passed = crit_data.get("passed", False)
+                            status = "✅" if passed else "❌"
+                            value_str = f"{value:.2f}" if isinstance(value, (int, float)) else str(value)
+                            verification_html += f"<tr><td>{esc(metric_name)}</td><td>{esc(value_str)}</td><td>{status} (req: {esc(threshold)})</td></tr>"
+                        else:
+                            value_str = f"{value:.2f}" if isinstance(value, (int, float)) else str(value)
+                            verification_html += f"<tr><td>{esc(metric_name)}</td><td>{esc(value_str)}</td><td>-</td></tr>"
+                    verification_html += "</table>"
+                
+                if ver_err:
+                    verification_html += f"<div class=small style='color:#b00;margin-top:4px;'>Error: {esc(str(ver_err))}</div>"
+            
             answer = r.get("answer", "")
             answer_html = f"<details><summary>View answer</summary><div class=mono>{esc(answer)}</div></details>"
             blocks.append(
-                f"<tr><td>{esc(m)}</td><td>{judge_html}</td><td>{answer_html}</td></tr>"
+                f"<tr><td>{esc(m)}</td><td>{judge_html}{verification_html}</td><td>{answer_html}</td></tr>"
             )
 
         html_out = f"""

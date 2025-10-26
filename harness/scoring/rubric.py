@@ -20,7 +20,8 @@ def score_answer(answer: str, rubric: Rubric, inventory: Inventory) -> Dict[str,
     full_text = answer.strip()
     # Pre-parse sections once for potential section-scoped criteria
     sections = {title: body for title, body in sectionize_markdown(full_text)}
-    total_weight = sum(c.weight for c in rubric.criteria)
+    # Total weight excludes verification criteria (handled separately by SPICE simulation)
+    total_weight = sum(c.weight for c in rubric.criteria if not c.verification)
     points = 0.0
     per_crit: Dict[str, Any] = {}
 
@@ -30,6 +31,10 @@ def score_answer(answer: str, rubric: Rubric, inventory: Inventory) -> Dict[str,
 
     # First pass: pattern criteria
     for c in rubric.criteria:
+        # Skip verification criteria - they're handled by SPICE simulation
+        if c.verification:
+            continue
+            
         score = 0.0
         ok_required = True
         pattern_weight = c.weight
@@ -65,15 +70,16 @@ def score_answer(answer: str, rubric: Rubric, inventory: Inventory) -> Dict[str,
 
         ok = True
         # patterns_any with optional min_any threshold
+        # Use regex matching (patterns contain regex like \d, .*, etc.)
         if c.patterns_any:
             from ..utils.text import count_any
-            cnt = count_any(scoped_text, c.patterns_any)
+            cnt = count_any(scoped_text, c.patterns_any, use_regex=True)
             min_req = c.min_any if isinstance(c.min_any, int) and c.min_any > 0 else 1
             ok = ok and (cnt >= min_req)
         # patterns_all must all appear
         if c.patterns_all:
             for p in c.patterns_all:
-                if not contains_any(scoped_text, [p]):
+                if not contains_any(scoped_text, [p], use_regex=True):
                     ok = False
                     break
         if c.required and not ok:
@@ -83,7 +89,7 @@ def score_answer(answer: str, rubric: Rubric, inventory: Inventory) -> Dict[str,
             score += pattern_weight
         if c.anti_patterns:
             for ap in c.anti_patterns:
-                if contains_any(scoped_text, [ap]):
+                if contains_any(scoped_text, [ap], use_regex=True):
                     # negate this criterion
                     score = 0.0
                     ok_required = False

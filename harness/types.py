@@ -47,6 +47,11 @@ class RubricCriterion(BaseModel):
     min_refs: Optional[int] = None
     weight: float = 0.0
     penalty_missing_ok: bool = False
+    # SPICE verification fields
+    verification: bool = False  # If True, this criterion is evaluated by SPICE simulation
+    metric: Optional[str] = None  # Metric name from simulation results
+    threshold: Optional[float] = None  # Threshold value for comparison
+    comparison: Optional[str] = None  # Comparison operator: >=, <=, >, <
 
 
 class Rubric(BaseModel):
@@ -64,10 +69,13 @@ class Question(BaseModel):
     artifact_path: str
     rubric_id: str
     rubric_path: str
-    prompt_template: str
+    prompt_template: Optional[str] = None  # Made optional, can use prompt_path instead
     require_sections: List[str]
     answer_format: str
     meta: Dict[str, Any] = Field(default_factory=dict)
+    verification: Optional[Dict[str, Any]] = None  # For SPICE verification
+    attachments: List[Dict[str, str]] = Field(default_factory=list)  # For Gm/ID tables, templates
+    prompt_path: Optional[str] = None  # Alternative to prompt_template
 
 
 class EvalItem(BaseModel):
