@@ -8,7 +8,8 @@ on:
     branches: [master]
 
 jobs:
-  run-dummy-eval:
+  test-dev-split-dummy:
+    name: Test dev split with dummy models
     runs-on: ubuntu-latest
 
     steps:
