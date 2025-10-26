@@ -1,0 +1,49 @@
+**TASK:** Fill in ALL BLANK parameters in the provided SPICE netlist template.
+
+**SPECIFICATIONS (use these EXACT values):**
+- VDD = 1.8 V
+- CL = 5 pF
+- Target: DC Gain ≥ 50 dB, GBW ≥ 20 MHz, Phase Margin ≥ 60°
+- Power < 0.8 mW
+- Technology: SKY130 (NFET min L=0.15µm, PFET min L=0.35µm)
+
+**TOPOLOGY: High-Swing Single-Stage OTA (single-ended)**
+- 8 transistors in current-mirror configuration with high-swing output
+- Input differential pair with additional gain stage
+- Optimized for rail-to-rail output swing
+
+**DESIGN CONSIDERATIONS:**
+- High output swing: Design for maximum voltage headroom
+- Use cascoded output stage for better swing
+- Choose VCM for input pair saturation
+- Size transistors for moderate inversion (Gm/ID ≈ 10-20 S/A)
+
+**INSTRUCTIONS:**
+
+1. **Copy the netlist template provided below**
+
+2. **Replace `.param VDD=BLANK` with `.param VDD=1.8`** (exact value from spec)
+
+3. **Replace `.param CL=BLANK` with `.param CL=5p`**
+
+4. **Design transistor sizes** using the Gm/ID tables:
+   - **CRITICAL**: Write `L_in=0.5` NOT `L_in=0.5u` (no 'u' suffix)
+   - Size all transistor groups for desired performance
+
+5. **Choose input common-mode voltage**:
+   - Replace `Vinp vinp 0 DC BLANK AC 0.5` with your chosen DC value (e.g., `DC 0.9 AC 0.5`)
+   - Replace `Vinn vinn 0 DC BLANK AC -0.5` with same DC value (e.g., `DC 0.9 AC -0.5`)
+
+6. **Design bias voltages** (coordinate with VCM)
+
+7. **Output the complete netlist** with NO BLANK remaining
+
+**CRITICAL RULES:**
+- ✅ Fill in VDD=1.8 and CL=5p exactly
+- ✅ Provide all bias voltages
+- ✅ NO 'u' suffix on L/W
+- ❌ Do NOT add .lib, .option, .control, .end, Vdd, Vss, or CL lines
+- ❌ Do NOT leave any BLANK
+
+**OUTPUT:** Provide ONLY the filled-in SPICE netlist in a code block.
+

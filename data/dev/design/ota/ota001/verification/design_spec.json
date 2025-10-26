@@ -1,0 +1,110 @@
+{
+  "design_id": "ota001",
+  "topology": "five_transistor_ota",
+  "description": "5-Transistor OTA with NMOS differential pair - Design and Verification",
+  "pdk": {
+    "technology": "sky130",
+    "supply_voltage": 1.8,
+    "temperature": 27,
+    "pdk_path": "../../../../../../pdk/skywater130"
+  },
+  "specifications": {
+    "supply_voltage": {
+      "value": 1.8,
+      "unit": "V",
+      "description": "Power supply voltage VDD - MUST be filled in netlist"
+    },
+    "load_capacitance": {
+      "value": 5e-12,
+      "unit": "F",
+      "description": "Output load capacitance CL - MUST be filled in netlist"
+    },
+    "dc_gain": {
+      "min": 40.0,
+      "unit": "dB",
+      "weight": 0.25,
+      "description": "Low-frequency voltage gain"
+    },
+    "unity_gain_frequency": {
+      "min": 10e6,
+      "target": 50e6,
+      "unit": "Hz",
+      "weight": 0.20,
+      "description": "Frequency where gain crosses 0 dB (GBW)"
+    },
+    "phase_margin": {
+      "min": 60.0,
+      "target": 70.0,
+      "unit": "degrees",
+      "weight": 0.20,
+      "description": "Phase margin at unity gain frequency"
+    },
+    "power": {
+      "max": 90e-6,
+      "target": 50e-6,
+      "unit": "W",
+      "weight": 0.15,
+      "description": "Total power consumption (VDD * IDD)"
+    },
+    "bias_current_budget": {
+      "min": 10e-6,
+      "max": 50e-6,
+      "unit": "A",
+      "description": "Total bias current range"
+    }
+  },
+  "test_conditions": {
+    "load_capacitance": "5p",
+    "feedback_factor": 1.0,
+    "input_common_mode": 0.9,
+    "analyses": ["op", "ac"]
+  },
+  "constraints": {
+    "nfet_min_length": 150e-9,
+    "pfet_min_length": 350e-9,
+    "min_transistor_width": 300e-9,
+    "max_transistor_width": 100e-6,
+    "min_current": 1e-6,
+    "max_current": 1e-3
+  },
+  "verification": {
+    "simulator": "ngspice",
+    "enable_verification": true,
+    "netlist_requirements": {
+      "must_fill_blanks": true,
+      "required_params": ["VDD", "CL", "L1", "W1", "L3", "W3", "L5", "W5", "IBIAS"],
+      "required_voltage_sources": ["Vbias", "Vinc", "Vinn"],
+      "no_blank_keyword": true
+    },
+    "metrics": [
+      {
+        "name": "dc_gain_db",
+        "description": "DC voltage gain in dB",
+        "extract_method": "ac_response_at_low_freq",
+        "spec_ref": "dc_gain.min",
+        "unit": "dB"
+      },
+      {
+        "name": "unity_gain_freq_hz",
+        "description": "Unity gain frequency (GBW)",
+        "extract_method": "ugf_from_ac_response",
+        "spec_ref": "unity_gain_frequency.min",
+        "unit": "Hz"
+      },
+      {
+        "name": "phase_margin_deg",
+        "description": "Phase margin at UGF",
+        "extract_method": "phase_at_ugf",
+        "spec_ref": "phase_margin.min",
+        "unit": "degrees"
+      },
+      {
+        "name": "power_consumption_w",
+        "description": "Total DC power",
+        "extract_method": "vdd_times_idd",
+        "spec_ref": "power.max",
+        "unit": "W"
+      }
+    ]
+  }
+}

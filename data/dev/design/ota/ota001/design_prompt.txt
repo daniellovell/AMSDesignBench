@@ -1,0 +1,55 @@
+**TASK:** Fill in ALL BLANK parameters in the provided SPICE netlist template.
+
+**SPECIFICATIONS (use these EXACT values):**
+- VDD = 1.8 V
+- CL = 5 pF
+- Target: DC Gain ≥ 40 dB, GBW ≥ 10 MHz, Phase Margin ≥ 60°
+- Technology: SKY130 (NFET min L=0.15µm, PFET min L=0.35µm)
+
+**DESIGN CONSIDERATIONS:**
+- You must CHOOSE an appropriate input common-mode voltage for vinp/vinn
+- Typical choices: 0.6V to 1.0V (often mid-rail ~0.9V)
+- Design constraints:
+  - For M1/M2 saturation: VGS = VCM - V(ntail) must be > Vth (~0.4-0.5V for NFET)
+  - Coordinate Vbias_n with your chosen VCM
+  - Typical: if VCM = 0.9V and V(ntail) ≈ 0.3-0.4V, then Vbias_n ≈ 0.5-0.7V
+
+**INSTRUCTIONS:**
+
+1. **Copy the netlist template provided below**
+
+2. **Replace `.param VDD=BLANK` with `.param VDD=1.8`** (exact value from spec)
+
+3. **Replace `.param CL=BLANK` with `.param CL=5p`** (5 pF, use 'p' suffix)
+
+4. **Design transistor sizes** using the Gm/ID tables:
+   - Use Gm/ID ≈ 10-20 S/A for moderate inversion
+   - Replace `L1=BLANK W1=BLANK` with your designed values (input pair M1, M2)
+   - Replace `Lp=BLANK Wp=BLANK` with your designed values (current mirror load Mp1, Mp2)
+   - Replace `Ltail=BLANK Wtail=BLANK` with your designed values (tail current source)
+   - **CRITICAL**: Write `L1=0.5` NOT `L1=0.5u` (no 'u' suffix)
+
+5. **Choose input common-mode voltage**:
+   - Replace `Vinp vinp 0 DC BLANK AC 0.5` with your chosen DC value (e.g., `DC 0.9 AC 0.5`)
+   - Replace `Vinn vinn 0 DC BLANK AC -0.5` with same DC value (e.g., `DC 0.9 AC -0.5`)
+   - Keep AC amplitudes as shown (±0.5 for differential signal)
+
+6. **Design tail current bias voltage**:
+   - Calculate Vbias_n based on your chosen VCM
+   - Ensure V(ntail) allows M1/M2 to operate in saturation: VGS1 = VCM - V(ntail) > Vth
+   - Replace `Vbias_n vbias_n 0 DC BLANK` with your calculated value
+
+7. **Output the complete netlist** with:
+   - NO BLANK keywords remaining
+   - ALL parameters filled with numbers
+   - Device lines (XM1, XM2, etc.) EXACTLY as in template
+
+**CRITICAL RULES:**
+- ✅ Fill in VDD=1.8 and CL=5p exactly as specified
+- ✅ Use NO 'u' suffix on L/W in .param lines
+- ✅ Keep all XM device lines exactly as shown in template
+- ❌ Do NOT add .lib, .option, .control, .end, Vdd, Vss, vinp, vinn, or CL device lines
+- ❌ Do NOT leave any BLANK
+
+**OUTPUT:** Provide ONLY the filled-in SPICE netlist in a code block.
+

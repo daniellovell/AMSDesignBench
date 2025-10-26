@@ -1,0 +1,14 @@
+Starting design evaluation for dummy
+PDK: /Users/kesvis/justbedaniel_2/AMSDesignBench/pdk/skywater130
+Output: outputs/design_run_20251025_101202
+------------------------------------------------------------
+Found 1 design test cases
+
+[1/1] Evaluating ota001...
+  → Requesting design from LLM...
+  → Parsing netlist...
+  → Running SPICE simulation...
+
+Report saved to outputs/design_run_20251025_101202/dummy_design_report.txt
+
+Evaluation complete! Results saved to outputs/design_run_20251025_101202
