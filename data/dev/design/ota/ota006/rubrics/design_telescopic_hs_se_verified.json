@@ -1,0 +1,96 @@
+{
+  "rubric_id": "design_telescopic_hs_se_verified",
+  "version": "1.0.0",
+  "description": "Rubric for Telescopic HS SE with SPICE verification",
+  "max_score": 100.0,
+  "weights": {
+    "completeness": 1.0,
+    "verification": 1.0
+  },
+  "scoring": {
+    "hallucination_penalty": 0.0,
+    "case_sensitive": false,
+    "min_pass": 0.7
+  },
+  "criteria": [
+    {
+      "id": "netlist_completeness",
+      "desc": "Complete netlist with no BLANK",
+      "patterns_any": [
+        ".param VDD=1\\.8",
+        ".param CL=\\d+p",
+        "L3=\\d",
+        "L4=\\d",
+        "L1=\\d",
+        "L2=\\d",
+        "L5=\\d",
+        "L6=\\d",
+        "L7=\\d",
+        "L8=\\d",
+        "L9=\\d",
+        "W3=\\d",
+        "W4=\\d",
+        "W1=\\d",
+        "W2=\\d",
+        "W5=\\d",
+        "W6=\\d",
+        "W7=\\d",
+        "W8=\\d",
+        "W9=\\d",
+        "Vin.*DC.*AC",
+        "Vbias.*DC"
+      ],
+      "min_any": 20,
+      "anti_patterns": [
+        "BLANK"
+      ],
+      "weight": 15.0
+    },
+    {
+      "id": "transistor_models",
+      "desc": "Uses SKY130 models",
+      "patterns_any": [
+        "sky130_fd_pr__nfet_01v8",
+        "sky130_fd_pr__pfet_01v8"
+      ],
+      "min_any": 2,
+      "weight": 10.0
+    },
+    {
+      "id": "verification_dc_gain",
+      "desc": "DC gain \u2265 55 dB",
+      "verification": true,
+      "metric": "dc_gain_db",
+      "threshold": 55.0,
+      "comparison": ">=",
+      "weight": 25.0
+    },
+    {
+      "id": "verification_gbw",
+      "desc": "GBW \u2265 25 MHz",
+      "verification": true,
+      "metric": "unity_gain_freq_hz",
+      "threshold": 25000000.0,
+      "comparison": ">=",
+      "weight": 20.0
+    },
+    {
+      "id": "verification_phase_margin",
+      "desc": "Phase margin \u2265 60\u00b0",
+      "verification": true,
+      "metric": "phase_margin_deg",
+      "threshold": 60.0,
+      "comparison": ">=",
+      "weight": 15.0
+    },
+    {
+      "id": "verification_power",
+      "desc": "Power \u2264 0.7 mW",
+      "verification": true,
+      "metric": "power_w",
+      "threshold": 0.0007,
+      "comparison": "<=",
+      "weight": 15.0
+    }
+  ]
+}

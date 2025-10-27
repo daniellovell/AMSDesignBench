@@ -42,6 +42,7 @@ class OpenAIAdapter(BaseAdapter):
             question = item.get("question", {})
             req_sections = question.get("require_sections", [])
             modality = question.get("modality", "")
+            attachments = item.get("attachments", [])  # List of file paths to attach
             def _display_modality(mod: str) -> str:
                 m = (mod or "").strip()
                 if m == "cascode":
@@ -64,6 +65,25 @@ class OpenAIAdapter(BaseAdapter):
                 f"{prompt}\n"
             )
 
+            # Upload any file attachments to OpenAI
+            uploaded_file_ids: List[str] = []
+            if attachments:
+                for att_path in attachments:
+                    try:
+                        from pathlib import Path
+                        att_file = Path(att_path)
+                        if att_file.exists():
+                            with open(att_file, 'rb') as f:
+                                file_obj = self.client.files.create(
+                                    file=f,
+                                    purpose='assistants'
+                                )
+                                uploaded_file_ids.append(file_obj.id)
+                                user += f"\n\n**Attached file: {att_file.name}** (file_id: {file_obj.id})\n"
+                    except Exception as e:
+                        # Log but don't fail on attachment errors
+                        print(f"Warning: Failed to attach {att_path}: {e}")
+
             # Build a flexible params dict and adapt on common OpenAI param errors.
             params: Dict[str, Any] = {
                 "model": self.model,
@@ -74,6 +94,13 @@ class OpenAIAdapter(BaseAdapter):
                 "temperature": self.temperature,
                 "max_tokens": self.max_tokens,
             }
+            
+            # Add file attachments if present
+            if uploaded_file_ids:
+                params["messages"][1]["attachments"] = [
+                    {"file_id": fid, "tools": [{"type": "file_search"}]} 
+                    for fid in uploaded_file_ids
+                ]
             # Cross-thread rate limiting (approximate token count)
             try:
                 # Estimate tokens as chars/4 for system+user plus completion budget
@@ -151,6 +178,14 @@ class OpenAIAdapter(BaseAdapter):
                 raise last_exc
             # Extract text; if empty, fall back to Responses API for newer models
             text = (getattr(resp.choices[0].message, "content", None) or "").strip()
+            
+            # Clean up uploaded files
+            for fid in uploaded_file_ids:
+                try:
+                    self.client.files.delete(fid)
+                except Exception:
+                    pass  # Ignore cleanup errors
+            
             if not text:
                 # Try Responses API with the same backoff strategy
                 attempt = 0

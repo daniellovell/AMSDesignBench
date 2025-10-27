@@ -1,0 +1,70 @@
+{
+  "design_id": "ota004",
+  "topology": "two_stage_miller",
+  "description": "Two-Stage Miller OTA with high gain",
+  "pdk": {
+    "technology": "sky130",
+    "supply_voltage": 1.8,
+    "temperature": 27
+  },
+  "specifications": {
+    "dc_gain": {
+      "min": 70,
+      "target": 80,
+      "unit": "dB",
+      "weight": 0.25
+    },
+    "gbw": {
+      "min": 20e6,
+      "target": 50e6,
+      "unit": "Hz",
+      "weight": 0.20
+    },
+    "phase_margin": {
+      "min": 50,
+      "target": 60,
+      "unit": "deg",
+      "weight": 0.20,
+      "note": "Requires proper Miller compensation"
+    },
+    "power": {
+      "max": 1e-3,
+      "target": 400e-6,
+      "unit": "W",
+      "weight": 0.15
+    },
+    "output_swing": {
+      "min": 0.3,
+      "max": 1.5,
+      "unit": "V",
+      "weight": 0.10,
+      "note": "Rail-to-rail capability"
+    },
+    "input_common_mode_range": {
+      "min": 0.6,
+      "max": 1.2,
+      "unit": "V",
+      "weight": 0.10
+    },
+    "slew_rate": {
+      "min": 5e6,
+      "unit": "V/s",
+      "weight": 0.10
+    }
+  },
+  "test_conditions": {
+    "load_capacitance": "20p",
+    "feedback_factor": 1.0,
+    "input_common_mode": 0.9,
+    "analyses": ["dc", "ac", "tran"]
+  },
+  "constraints": {
+    "min_transistor_length": 150e-9,
+    "min_transistor_width": 300e-9,
+    "max_transistor_width": 100e-6,
+    "min_current": 5e-6,
+    "max_current": 2e-3,
+    "compensation_cap_range": [1e-12, 10e-12]
+  }
+}
+

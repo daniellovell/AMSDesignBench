@@ -3,19 +3,35 @@ import re
 from typing import Iterable, List, Tuple
 
 
-def contains_any(text: str, patterns: Iterable[str]) -> bool:
+def contains_any(text: str, patterns: Iterable[str], use_regex: bool = False) -> bool:
+    """Check if any pattern matches in text.
+    
+    Args:
+        text: Text to search in
+        patterns: Patterns to search for
+        use_regex: If True, treat patterns as regex; if False, escape them (literal match)
+    """
     t = text.lower()
     for p in patterns:
-        if re.search(re.escape(p.lower()), t):
+        pattern = p.lower() if use_regex else re.escape(p.lower())
+        if re.search(pattern, t):
             return True
     return False
 
 
-def count_any(text: str, patterns: Iterable[str]) -> int:
+def count_any(text: str, patterns: Iterable[str], use_regex: bool = False) -> int:
+    """Count how many patterns match in text.
+    
+    Args:
+        text: Text to search in
+        patterns: Patterns to search for
+        use_regex: If True, treat patterns as regex; if False, escape them (literal match)
+    """
     t = text.lower()
     cnt = 0
     for p in patterns:
-        if re.search(re.escape(p.lower()), t):
+        pattern = p.lower() if use_regex else re.escape(p.lower())
+        if re.search(pattern, t):
             cnt += 1
     return cnt
 

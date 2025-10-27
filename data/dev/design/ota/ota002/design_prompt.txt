@@ -1,0 +1,69 @@
+**TASK:** Fill in ALL BLANK parameters in the provided SPICE netlist template.
+
+**SPECIFICATIONS (use these EXACT values):**
+- VDD = 1.8 V
+- CL = 10 pF (per output, differential)
+- Target: DC Gain ≥ 60 dB, GBW ≥ 50 MHz, Phase Margin ≥ 55°
+- Power < 1 mW
+- Technology: SKY130 (NFET min L=0.15µm, PFET min L=0.35µm)
+
+**TOPOLOGY: Telescopic Cascode (Fully Differential)**
+- 9 transistors: input pair (M3,M4), NMOS cascodes (M1,M2), tail (M5), PMOS cascodes (M6,M7), PMOS mirrors (M8,M9)
+- Benefits: Very high gain (gm·ro² stacking), low power
+- Challenge: Limited output swing due to voltage stacking (4 transistors in stack)
+
+**DESIGN CONSIDERATIONS:**
+- **Cascode stacking**: Requires ~4 × Vdsat of headroom → output swing limited to ~0.5-1.3V
+- **Bias voltages** (critical for cascoding):
+  - `vb1`: PMOS mirror gate bias (sets load current)
+  - `vb2`: PMOS cascode gate bias (typically VDD - Vdsat_load)
+  - `vb3`: NMOS cascode gate bias (typically 2×Vdsat above ground)
+  - `vtail`: Tail current source bias
+- **Input common-mode**: Choose VCM to keep input pair in saturation
+  - Typical: 0.7-1.1V (ensure VGS > Vth for tail and input pair)
+- **Current levels**: Higher current → higher gm → higher GBW, but more power
+
+**INSTRUCTIONS:**
+
+1. **Copy the netlist template provided below**
+
+2. **Replace `.param VDD=BLANK` with `.param VDD=1.8`** (exact value from spec)
+
+3. **Replace `.param CL=BLANK` with `.param CL=10p`** (10 pF per output)
+
+4. **Design transistor sizes** using the Gm/ID tables:
+   - Use Gm/ID ≈ 10-20 S/A for moderate inversion
+   - Input pair (L_in, W_in): Choose L for matching, W for desired gm
+   - NMOS cascodes (L_ncas, W_ncas): Match input pair width
+   - Tail (L_tail, W_tail): Size for desired tail current
+   - PMOS cascodes (L_pcas, W_pcas): Match load current
+   - PMOS load (L_pload, W_pload): Size for load current matching
+   - **CRITICAL**: Write `L_in=0.5` NOT `L_in=0.5u` (no 'u' suffix)
+
+5. **Choose input common-mode voltage**:
+   - Replace `Vinp vinp 0 DC BLANK AC 0.5` with your chosen DC value (e.g., `DC 0.9 AC 0.5`)
+   - Replace `Vinn vinn 0 DC BLANK AC -0.5` with same DC value (e.g., `DC 0.9 AC -0.5`)
+   - Typical range: 0.7V to 1.1V
+
+6. **Design all four bias voltages** (this is critical for telescopic cascode):
+   - **Vb1** (PMOS mirror): Sets load current (typically VDD - Vgs_pload, ~1.0-1.2V)
+   - **Vb2** (PMOS cascode): Keeps M6/M7 in saturation (typically VDD - Vdsat, ~1.4-1.6V)
+   - **Vb3** (NMOS cascode): Keeps M1/M2 in saturation (typically 2×Vdsat, ~0.5-0.7V)
+   - **Vtail** (Tail current): Sets tail current based on chosen VCM
+
+7. **Output the complete netlist** with:
+   - NO BLANK keywords remaining
+   - ALL parameters filled with numbers
+   - ALL bias voltages specified
+   - Device lines (XM1-XM9) EXACTLY as in template
+
+**CRITICAL RULES:**
+- ✅ Fill in VDD=1.8 and CL=10p exactly as specified
+- ✅ Provide FOUR bias voltages (vb1, vb2, vb3, vtail)
+- ✅ Use NO 'u' suffix on L/W in .param lines
+- ✅ Keep all XM device lines exactly as shown in template
+- ❌ Do NOT add .lib, .option, .control, .end, Vdd, Vss, or CL device lines
+- ❌ Do NOT leave any BLANK
+
+**OUTPUT:** Provide ONLY the filled-in SPICE netlist in a code block.
+

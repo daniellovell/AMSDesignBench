@@ -252,15 +252,17 @@ def load_questions(item_dir: Path) -> List[Question]:
         return sections
 
     def _apply_defaults(qdict: Dict[str, Any]) -> Dict[str, Any]:
-        if not qdict.get("prompt_template"):
+        if not qdict.get("prompt_template") and not qdict.get("prompt_path"):
             raise SystemExit(
-                f"Question {qdict.get('id')} in {item_dir} must specify prompt_template."
+                f"Question {qdict.get('id')} in {item_dir} must specify prompt_template or prompt_path."
             )
         # Supply required sections when omitted by reading prompt header
         if not qdict.get("require_sections"):
-            sections = _extract_sections_from_prompt(str(qdict["prompt_template"]))
-            if sections:
-                qdict["require_sections"] = sections
+            prompt_name = qdict.get("prompt_template") or qdict.get("prompt_path", "")
+            if prompt_name:
+                sections = _extract_sections_from_prompt(str(prompt_name))
+                if sections:
+                    qdict["require_sections"] = sections
         if not qdict.get("require_sections"):
             qdict["require_sections"] = ["Answer"]
         # If rubric path is provided but id missing, read it from file
@@ -1080,11 +1082,17 @@ def main():
             item_dir = Path(it.item_dir)
             inv_ids = it.inventory.all_ids()
             # Prompt
-            if not q.prompt_template:
-                raise SystemExit(f"Question {q.id} must specify prompt_template (filename) under ../prompts: {item_dir}")
-            ppath = (item_dir.parent / "prompts" / q.prompt_template)
-            if not ppath.exists():
-                raise SystemExit(f"Prompt template not found for {q.id}: {ppath}")
+            if q.prompt_path:
+                # Direct path to prompt file (relative to item_dir)
+                ppath = item_dir / q.prompt_path
+                if not ppath.exists():
+                    raise SystemExit(f"Prompt file not found for {q.id}: {ppath}")
+            elif q.prompt_template:
+                ppath = (item_dir.parent / "prompts" / q.prompt_template)
+                if not ppath.exists():
+                    raise SystemExit(f"Prompt template not found for {q.id}: {ppath}")
+            else:
+                raise SystemExit(f"Question {q.id} must specify either prompt_template or prompt_path: {item_dir}")
             def _display_modality(mod: str) -> str:
                 # Human-friendly modality name for prompts to avoid confusion
                 if mod == "cascode":
@@ -1152,6 +1160,25 @@ def main():
                     prompt = prompt_tmpl.format(modality=_display_modality(q.modality), design_brief=design_brief)
                 except Exception:
                     prompt = prompt_tmpl.format(modality=_display_modality(q.modality))
+
+            # Collect attachment file paths to pass to adapter
+            attachment_paths = []
+            if q.attachments:
+                prompt += "\n\n**Attached Files:**\n"
+                for att in q.attachments:
+                    att_path = item_dir / att.get("path", "")
+                    if att_path.exists():
+                        desc = att.get("description", att_path.name)
+                        
+                        # For large files (Gm/ID tables), pass to adapter as file attachment
+                        if att_path.stat().st_size > 100_000:  # >100KB
+                            prompt += f"\n- **{att_path.name}**: {desc}\n"
+                            prompt += f"  (Full file attached, {att_path.stat().st_size:,} bytes)\n"
+                            attachment_paths.append(str(att_path.absolute()))
+                        else:
+                            # Small files: include full content in prompt
+                            att_content = att_path.read_text(encoding='utf-8')
+                            prompt += f"\n**{att_path.name}**:\n```\n{att_content}\n```\n"
 
             # Artifact
             art_path = item_dir / q.artifact_path
@@ -1320,6 +1347,7 @@ def main():
                         "artifact": artifact_used,
                         "inventory_ids": inv_ids,
                         "question": q.model_dump(),
+                        "attachments": attachment_paths,
                     }
                 ])[0]
             except Exception as e:
@@ -1432,6 +1460,122 @@ def main():
             rubric_eff = RubricModel.model_validate(rjson)
 
             scores = score_answer(pred, rubric_eff, eff_inv)
+
+            # SPICE Verification (if enabled)
+            verification_results = None
+            if q.verification and q.verification.get("enabled"):
+                try:
+                    from harness.design_verification.spice_runner import SpiceRunner
+                    from harness.design_verification.netlist_parser import parse_netlist_from_markdown
+                    
+                    # Load design spec
+                    spec_file = item_dir / q.verification.get("spec_file", "verification/design_spec.json")
+                    if spec_file.exists():
+                        design_spec = json.loads(spec_file.read_text(encoding='utf-8'))
+                        
+                        # Parse netlist from LLM response
+                        netlist = parse_netlist_from_markdown(pred)
+                        
+                        if netlist:
+                            # Run SPICE simulation
+                            pdk_path = Path("pdk/skywater130")
+                            runner = SpiceRunner(pdk_path=pdk_path, work_dir=Path(f"outputs/temp_sim_{q.id}"))
+                            sim_results = runner.run_simulation(netlist, design_spec, design_id=q.id)
+                            
+                            if sim_results.success:
+                                # Compute derived metrics
+                                # Phase margin from phase at UGF
+                                # PM = 180° - |phase| (distance from -180° instability point)
+                                if 'phase_at_ugf' in sim_results.metrics and 'phase_margin_deg' not in sim_results.metrics:
+                                    phase = sim_results.metrics['phase_at_ugf']
+                                    sim_results.metrics['phase_margin_deg'] = 180 - abs(phase)
+                                
+                                # Evaluate against specs and add to per_criterion scores
+                                for c in rubric.criteria:
+                                    if c.verification:
+                                        metric_name = c.metric
+                                        threshold = c.threshold
+                                        comparison = c.comparison or ">="
+                                        
+                                        if metric_name in sim_results.metrics:
+                                            value = sim_results.metrics[metric_name]
+                                            passed = False
+                                            if comparison == ">=":
+                                                passed = value >= threshold
+                                            elif comparison == "<=":
+                                                passed = value <= threshold
+                                            elif comparison == ">":
+                                                passed = value > threshold
+                                            elif comparison == "<":
+                                                passed = value < threshold
+                                            
+                                            criterion_score = c.weight if passed else 0.0
+                                            scores["per_criterion"][c.id] = {
+                                                "score": criterion_score / max(c.weight, 1e-9),
+                                                "value": value,
+                                                "threshold": threshold,
+                                                "passed": passed
+                                            }
+                                            scores["points"] += criterion_score
+                                            scores["total_weight"] += c.weight
+                                        else:
+                                            scores["per_criterion"][c.id] = {
+                                                "score": 0.0,
+                                                "error": f"Metric '{metric_name}' not found in simulation results"
+                                            }
+                                            scores["total_weight"] += c.weight
+                                
+                                # Add overall verification summary
+                                scores["verification"] = {
+                                    "passed": sim_results.success,
+                                    "metrics": sim_results.metrics
+                                }
+                                # Recalculate raw score with verification included
+                                scores["raw"] = scores["points"] / max(scores["total_weight"], 1e-9)
+                                scores["pass"] = scores["raw"] >= rubric.scoring.get("min_pass", 0.7)
+                            else:
+                                # Simulation failed - zero out all verification criteria
+                                for c in rubric.criteria:
+                                    if c.verification:
+                                        scores["per_criterion"][c.id] = {
+                                            "score": 0.0,
+                                            "error": "Simulation failed"
+                                        }
+                                        scores["total_weight"] += c.weight
+                                scores["verification"] = {
+                                    "passed": False,
+                                    "score": 0.0,
+                                    "error": sim_results.errors
+                                }
+                                scores["raw"] = scores["points"] / max(scores["total_weight"], 1e-9)
+                                scores["pass"] = scores["raw"] >= rubric.scoring.get("min_pass", 0.7)
+                        else:
+                            # No netlist found - zero out verification criteria
+                            for c in rubric.criteria:
+                                if c.verification:
+                                    scores["per_criterion"][c.id] = {
+                                        "score": 0.0,
+                                        "error": "No netlist found in response"
+                                    }
+                                    scores["total_weight"] += c.weight
+                            scores["raw"] = scores["points"] / max(scores["total_weight"], 1e-9)
+                            scores["pass"] = scores["raw"] >= rubric.scoring.get("min_pass", 0.7)
+                except Exception as e:
+                    # Exception - zero out verification criteria
+                    for c in rubric.criteria:
+                        if c.verification:
+                            scores["per_criterion"][c.id] = {
+                                "score": 0.0,
+                                "error": f"Verification exception: {str(e)}"
+                            }
+                            scores["total_weight"] += c.weight
+                    scores["verification"] = {
+                        "passed": False,
+                        "score": 0.0,
+                        "error": f"Verification exception: {str(e)}"
+                    }
+                    scores["raw"] = scores["points"] / max(scores["total_weight"], 1e-9)
+                    scores["pass"] = scores["raw"] >= rubric.scoring.get("min_pass", 0.7)
 
             # Judge
             judge = None
@@ -1553,6 +1697,20 @@ def main():
                 "scores": scores,
                 "judge": judge,
             }
+            
+            # Add verification details if SPICE verification ran
+            if q.verification and q.verification.get("enabled") and scores.get("verification"):
+                ver = scores["verification"]
+                rec["verification_details"] = {
+                    "simulation_passed": ver.get("passed", False),
+                    "metrics": ver.get("metrics", {}),
+                    "error": ver.get("error") if not ver.get("passed") else None
+                }
+                # Also add top-level metrics for easy access in reports
+                rec["verification_metrics"] = ver.get("metrics", {})
+                if ver.get("error"):
+                    rec["verification_errors"] = [ver.get("error")]
+            
             if error_msg:
                 rec["error"] = error_msg
             if judge and isinstance(judge.get("overall", None), (int, float)):
