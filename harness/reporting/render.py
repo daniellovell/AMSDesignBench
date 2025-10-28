@@ -311,14 +311,10 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
                     payload_pretty = json.dumps(payload_txt, indent=2) if payload_txt is not None else ""
                 except Exception:
                     payload_pretty = esc(str(payload_txt))
-                # Optionally show rubric snippet if present
-                rubric_md = jdbg.get("rubric_markdown") or ""
-                rubric_html = ("<div class=small><b>Rubric (Markdown)</b></div><div class=mono>" + esc(rubric_md) + "</div>") if rubric_md else ""
                 judge_debug_html = (
                     "<details><summary>Judge Prompt</summary>"
                     "<div class=small><b>System</b></div><div class=mono>" + esc(sys_txt) + "</div>"
                     "<div class=small><b>Instructions</b></div><div class=mono>" + esc(inst_txt) + "</div>"
-                    + rubric_html +
                     "<div class=small><b>Payload</b></div><div class=mono>" + esc(payload_pretty) + "</div>"
                     "</details>"
                 )

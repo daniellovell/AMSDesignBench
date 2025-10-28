@@ -208,7 +208,6 @@ def judge_answer(
                 "instructions": instr,
                 "payload": payload,
                 "judge_model": judge_model,
-                "rubric_markdown": rubric_text,
             }
         except Exception:
             pass
