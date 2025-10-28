@@ -8,7 +8,7 @@
 
 The AMSDesignBench is a specialized benchmark designed to assess the capabilities of Large Language Models (LLMs) in the domain of analog and mixed-signal (AMS) integrated circuit design. Moving beyond numerical simulation, this benchmark evaluates models on their ability to perform qualitative and symbolic reasoning about circuit behavior. Models are presented with design artifacts, such as SPICE netlists, and are tasked with analyzing circuit properties, identifying topologies, and proposing design improvements.
 
-Evaluation is conducted through rubric-based checks with knowledge-anchored judging by a separate LLM (i.e. LLM-as-judge). A key focus is on "groundedness"—the ability of a model to base its analysis on components and connections present in the provided artifacts, thereby penalizing hallucinated or irrelevant information. To mitigate the effects of pretraining, the benchmark incorporates several techniques, including on-the-fly randomization of netlist components. This repository provides the complete framework for running evaluations, scoring results, and generating detailed reports.
+Evaluation is conducted through rubric-based checks judged by a separate LLM (i.e. LLM-as-judge). A key focus is on "groundedness"—the ability of a model to base its analysis on components and connections present in the provided artifacts, thereby penalizing hallucinated or irrelevant information. To mitigate the effects of pretraining, the benchmark incorporates several techniques, including on-the-fly randomization of netlist components. This repository provides the complete framework for running evaluations, scoring results, and generating detailed reports.
 
 ## Benchmark Design and Methodology
 
@@ -22,7 +22,7 @@ The scoring mechanism is designed to be robust and multifaceted:
 
 1.  **Rubric-Based Scoring**: Each question is associated with a detailed rubric that specifies the required analytical points. The harness performs deterministic checks to see if the model's response correctly identifies key circuit characteristics and relationships.
 2.  **Groundedness Verification**: A critical component of the evaluation is ensuring that the model's reasoning is grounded in the provided circuit. The system checks that device names and circuit elements mentioned in the response correspond to actual elements in the SPICE netlist. Hallucinated components are penalized.
-3.  **LLM as a Judge**: To capture the nuances of qualitative analysis, a separate LLM (the "judge") scores the model's response against a knowledge anchor. These anchors are curated fact sheets describing canonical circuit behaviors. This provides a consistent and knowledge-aware assessment of the response's quality.
+3.  **LLM as a Judge**: To capture the nuances of qualitative analysis, a separate LLM (the "judge") scores the model's response against a Markdown rubric for the specific task.
 
 ### Overfitting and Pretraining Mitigation
 To prevent models from simply recalling solutions from their training data, we employ several mitigation strategies:
@@ -124,7 +124,7 @@ The repository is organized as follows:
 | `data/`                     | Dataset root, split into `dev`, `test`, `train`. Each split contains families (e.g., `analysis/`, `debugging/`, `design/`) and a shared `templates/` tree.            |
 | `prompts/`                  | Prompt templates used for generating model inputs.                           |
 | `rubrics/`                  | Scoring rubrics associated with evaluation questions.                        |
-| `knowledge/`                | Knowledge anchor documents used by the LLM judge for consistent scoring.     |
+| `judge_prompts/`           | Common judge prompt includes and templates used across families.             |
 | `outputs/`                  | Default directory for evaluation results and reports.                        |
 | `bench_config.yaml`         | Main configuration file for paths, limits, and default models.               |
 

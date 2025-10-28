@@ -1,0 +1,13 @@
+weight_loop_gain_expression: "0.60"
+weight_grounded_evidence: "0.30"
+weight_correctness: "0.10"
+loop_gain_target: "T = A0 * R1/(R1+R2)."
+loop_gain_disallowed: "Unexpanded beta (e.g., A0*beta) without explicitly stating R1/(R1+R2)."
+loop_gain_guidance: "Express loop gain as open-loop gain multiplied by feedback factor derived from the divider."
+loop_gain_reject: "T = A0*beta; A(s)*beta; closed-loop gain expressions."
+grounded_allowed_ids: "R1, R2, XU1, N001, S_in, S_out, 0, Aol, GBW"
+grounded_min_refs: "3"
+grounded_guidance: "Reference both resistors and the amplifier instance/parameters."
+correctness_reject: "Confusing with closed-loop gain; omitting divider factor."
+correctness_guidance: "Deduct for conflating quantities."
+

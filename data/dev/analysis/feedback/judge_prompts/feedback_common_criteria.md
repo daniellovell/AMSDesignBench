@@ -1,0 +1,1 @@
+- **grounded_evidence**: Award only when the explanation cites allowed identifiers from the inventory. Require at least `{grounded_min_refs}` distinct grounded references for scores above 0.5. Do not award for generic language that lacks citations.

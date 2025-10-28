@@ -33,28 +33,7 @@ class Inventory(BaseModel):
         return amap
 
 
-class RubricCriterion(BaseModel):
-    id: str
-    desc: str
-    required: bool = False
-    # Optional: restrict pattern matching to a named markdown section (case-insensitive)
-    section: Optional[str] = None
-    patterns_any: Optional[List[str]] = None
-    patterns_all: Optional[List[str]] = None
-    min_any: Optional[int] = None
-    anti_patterns: Optional[List[str]] = None
-    requires_grounding: bool = False
-    min_refs: Optional[int] = None
-    weight: float = 0.0
-    penalty_missing_ok: bool = False
-
-
-class Rubric(BaseModel):
-    rubric_id: str
-    version: str
-    weights: Dict[str, float]
-    criteria: List[RubricCriterion]
-    scoring: Dict[str, float]
+# Legacy rubric models removed: LLM-as-judge only
 
 
 class Question(BaseModel):
@@ -62,9 +41,9 @@ class Question(BaseModel):
     track: str
     modality: str
     artifact_path: str
-    rubric_id: str
-    rubric_path: str
     prompt_template: str
+    judge_prompt: str
+    judge_id: str
     require_sections: List[str]
     answer_format: str
     meta: Dict[str, Any] = Field(default_factory=dict)
