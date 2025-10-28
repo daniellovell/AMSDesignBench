@@ -1550,10 +1550,18 @@ def main():
                 if "overall" not in judge:
                     judge["overall"] = sum(j_scores.values())/len(j_scores) if j_scores else 0.0
 
-            try:
-                topic_str = str(Path(it.item_dir).resolve().relative_to(split_dir.resolve()).parent).replace(os.sep, "/")
-            except Exception:
-                topic_str = Path(it.item_dir).parent.name
+            # Normalize family/topic labeling
+            if "/" in str(args.split):
+                parts = Path(str(args.split)).parts
+                # Drop split head (e.g., 'dev') when present
+                topic_str = "/".join(parts[1:]) if len(parts) > 1 else parts[0]
+            else:
+                try:
+                    rel = Path(it.item_dir).resolve().relative_to(split_dir.resolve())
+                    parent = rel.parent
+                    topic_str = parent.as_posix() if str(parent) != "." else Path(args.split).as_posix()
+                except Exception:
+                    topic_str = Path(it.item_dir).parent.name
 
             rec = {
                 "model": slug,
