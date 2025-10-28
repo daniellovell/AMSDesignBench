@@ -1,6 +1,5 @@
-weight_loop_gain_expression: "0.60"
+weight_loop_gain_expression: "0.70"
 weight_grounded_evidence: "0.30"
-weight_correctness: "0.10"
 loop_gain_target: "T = A0 (also acceptable: Aol or A(s))."
 loop_gain_disallowed: "Symbolic products with beta that are never expanded."
 loop_gain_guidance: "Accept references to the op-amp open-loop gain parameters provided."
@@ -8,6 +7,4 @@ loop_gain_reject: "T = A0*beta; loop gain tied to 1/(s*C1) or closed-loop expres
 grounded_allowed_ids: "C1, XU2, S_in, S_out, 0, Aol, GBW"
 grounded_min_refs: "2"
 grounded_guidance: "Reference the op-amp instance and gain parameters when justifying loop gain."
-correctness_reject: "Loop gain equated to the closed-loop transimpedance."
-correctness_guidance: "Deduct for confusing loop gain with the integrating transfer."
 

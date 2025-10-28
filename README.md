@@ -137,7 +137,7 @@ Runs are designed to be deterministic. The randomization of SPICE netlists is co
 - Families: The harness supports multiple evaluation families under each split (e.g., `data/dev/analysis`, `data/dev/debugging`, `data/dev/design`). Family directories contain items (e.g., `ota/ota001/`) with family-specific `questions.yaml`, `rubrics/`, and `refs.json`.
 - Shared templates: Common circuit sources live under `data/<split>/templates/` (e.g., `data/dev/templates/ota/ota001/`). Place canonical artifacts there (`netlist.sp`, `inventory.json`, optionally `veriloga.va`).
 - Referencing templates:
-  - In each item’s `meta.json`, set `"template_path": "../../templates/<family>/<item_id>"` (relative to the item directory).
+  - In each item's `meta.json`, set `"template_path": "../../templates/<family>/<item_id>"` (relative to the item directory).
   - In `questions.yaml`, you can:
     - Omit `"artifact_path"` and the runner will infer the template directory (`meta.template_path` when provided, otherwise derived from the folder name—`analysis/ota/ota005` → `../../../templates/ota/ota005`) and append the canonical filenames per modality (e.g., `netlist.sp`, `netlist.cir`, `netlist.cas`).
     - Provide `"artifact_path"` as the template directory (e.g., `../../templates/ota/ota001`). For `modality: auto` (and also for explicit modalities), the runner appends the canonical filename for each modality, so casIR/cascode will correctly use `netlist.cir`/`netlist.cas`.

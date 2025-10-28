@@ -1,12 +1,9 @@
-weight_beta_expression: "0.60"
+weight_beta_expression: "0.70"
 weight_grounded_evidence: "0.30"
-weight_correctness: "0.10"
 beta_expression_target: "beta = 1 (unity feedback)."
 beta_expression_guidance: "Highlight that the capacitor connects output to summing node, keeping unity feedback."
 beta_expression_reject: "beta = 0; beta = C1; beta = 1/C1; no feedback path."
 grounded_allowed_ids: "C1, XU2, S_in, S_out, 0"
 grounded_min_refs: "2"
 grounded_guidance: "Reference the capacitor and op-amp nodes closing the unity loop."
-correctness_reject: "beta set to capacitor impedance or missing unity magnitude."
-correctness_guidance: "Deduct when the feedback factor deviates from 1."
 
