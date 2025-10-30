@@ -22,12 +22,12 @@ Scoring: overall = {weight_topology}*scores.topology + {weight_key_relation}*sco
 - Acceptable equivalents: {relation_equivalents}.
 
 ### device_specificity
-- Guidance: {device_guidance}.
+- Guidance: Use gm_Mi, ro_Mj (or equivalent) where applicable.
 
 ### grounded_evidence
 - Allowed identifiers: {grounded_allowed_ids}.
-- Minimum grounded references (>0.5 score): {grounded_min_refs}.
-- Guidance: {grounded_guidance}.
+- Minimum grounded references (>0.5 score): 3.
+- Guidance: Cite actual device IDs/nets from inventory to support claims.
 
 ### safety
-- Guidance: {safety_guidance}.
+- Guidance: Do not invent devices or nets not present in inventory.

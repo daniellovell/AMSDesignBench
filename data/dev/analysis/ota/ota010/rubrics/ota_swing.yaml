@@ -3,12 +3,6 @@ weight_key_relation: 0.35
 weight_device_specificity: 0.25
 weight_grounded_evidence: 0.2
 weight_safety: 0.1
-topology_target: ota010 topology
-topology_rejects: Clearly different OTA topologies
 relation_target: Canonical expression for the requested metric (author-provided per
   item)
-relation_equivalents: Mathematically equivalent forms are acceptable
-device_guidance: Use gm_Mi, ro_Mj (or equivalent) where applicable
-grounded_min_refs: 3
-grounded_guidance: Cite actual device IDs/nets from inventory to support claims
-safety_guidance: Do not invent devices or nets not present in inventory.
+{path:_ota_rubric_template.yaml}

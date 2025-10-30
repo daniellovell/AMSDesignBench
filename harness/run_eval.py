@@ -1415,7 +1415,10 @@ def main():
             vars_map: Dict[str, Any] = {}
             if vars_yaml.exists():
                 try:
-                    vars_map = yaml.safe_load(vars_yaml.read_text(encoding='utf-8')) or {}
+                    # Render YAML as a template to allow includes
+                    vars_yaml_text = vars_yaml.read_text(encoding='utf-8')
+                    rendered_yaml = render_template(vars_yaml_text, {}, base_dir=vars_yaml.parent)
+                    vars_map = yaml.safe_load(rendered_yaml) or {}
                 except Exception:
                     vars_map = {}
             # unwrap namespaced
