@@ -204,9 +204,9 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
         mod = rec_any.get("modality", "?")
         track = rec_any.get("track", "?")
         aspect = rec_any.get("aspect", "-")
-        rub = rec_any.get("judge_id", "?")
+        judge_id = rec_any.get("judge_id", "?")
         item_rel = f"items/{esc(fam)}/{esc(item_id)}_{esc(qid)}.html"
-        row = f"<tr><td><a href='{item_rel}'>{esc(fam)}/{esc(item_id)}</a></td><td>{esc(qid)}</td><td>{esc(track)}</td><td>{esc(mod)}</td><td>{esc(aspect)}</td><td>{esc(rub)}</td>"
+        row = f"<tr><td><a href='{item_rel}'>{esc(fam)}/{esc(item_id)}</a></td><td>{esc(qid)}</td><td>{esc(track)}</td><td>{esc(mod)}</td><td>{esc(aspect)}</td><td>{esc(judge_id)}</td>"
         row += model_score_cells(key)
         qrows.append(row + "</tr>")
 
@@ -284,8 +284,8 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
         modality = any_rec.get("modality", "?")
         track = any_rec.get("track", "?")
         aspect = any_rec.get("aspect", "-")
-        rubric_id = any_rec.get("judge_id", "?")
-        rubric_path = any_rec.get("judge_prompt", "")
+        judge_id = any_rec.get("judge_id", "?")
+        judge_prompt = any_rec.get("judge_prompt", "")
         artifact_text = any_rec.get("artifact") or ""
         artifact_path = any_rec.get("artifact_path") or ""
         rand_info = any_rec.get("artifact_randomization") or {}
@@ -361,7 +361,7 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
   <div><a href="../index.html">← Back to index</a></div>
   <h3>{esc(fam)}/{esc(item_id)} — {esc(qid)}</h3>
   <table class="small hdr">
-    <tr><td><b>Track</b></td><td>{esc(track)}</td><td><b>Modality</b></td><td>{esc(modality)}</td><td><b>Aspect</b></td><td>{esc(aspect)}</td><td><b>Judge</b></td><td>{esc(rubric_id)}</td><td><b>Judge Prompt</b></td><td>{esc(rubric_path) if rubric_path else '-'}</td></tr>
+    <tr><td><b>Track</b></td><td>{esc(track)}</td><td><b>Modality</b></td><td>{esc(modality)}</td><td><b>Aspect</b></td><td>{esc(aspect)}</td><td><b>Judge</b></td><td>{esc(judge_id)}</td><td><b>Judge Prompt</b></td><td>{esc(judge_prompt) if judge_prompt else '-'}</td></tr>
   </table>
   <h4>Artifact</h4>
   <div class="mono">{esc(artifact_text) if artifact_text else '(artifact not recorded)'}</div>
