@@ -1,0 +1,8 @@
+weight_loop_gain_expression: "0.70"
+weight_grounded_evidence: "0.30"
+loop_gain_target: "T = A0 (also acceptable: Aol or A(s))."
+loop_gain_disallowed: "Symbolic products with beta that are never expanded."
+loop_gain_guidance: "Accept references to the op-amp open-loop gain parameters provided."
+loop_gain_reject: "T = A0*beta; loop gain tied to 1/(s*C1) or closed-loop expressions."
+grounded_min_refs: "2"
+grounded_guidance: "Reference the op-amp instance and gain parameters when justifying loop gain."

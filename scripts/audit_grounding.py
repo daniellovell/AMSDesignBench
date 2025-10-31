@@ -28,7 +28,7 @@ def audit_item(item_dir: Path) -> bool:
         if not pt.exists():
             print(f"[red]Missing prompt template[/red] {pt}")
             ok = False
-        rpath = item_dir / q.rubric_path
+        rpath = item_dir / q.judge_prompt
         if not rpath.exists():
             print(f"[red]Missing rubric file[/red] {rpath}")
             ok = False

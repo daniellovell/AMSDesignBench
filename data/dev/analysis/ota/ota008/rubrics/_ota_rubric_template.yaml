@@ -1,0 +1,4 @@
+# Common rubric variables for ota008.
+topology_target: NMOS Cascode (Single-Ended)
+topology_rejects: 5-Transistor (5T) OTA, Telescopic Cascode, Two-Stage, Current Mirror OTA, Folded Cascode, Single-Stage Common Source, Gain-Boosted Cascode
+relation_equivalents: Mathematically equivalent forms are acceptable

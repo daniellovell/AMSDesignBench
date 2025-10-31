@@ -6,7 +6,7 @@ eval:
   temperature: 0.2
   top_p: 0.95
   judge_model: gpt-4o-mini
-  models: ["openai:gpt-4o-mini", "openai:gpt-5-nano", "anthropic:claude-3-5-haiku-latest"]
+  models: ["openai:gpt-4o-mini", "anthropic:claude-3-5-haiku-latest"]
 limits:
   max_items: null
   timeout_s: 60

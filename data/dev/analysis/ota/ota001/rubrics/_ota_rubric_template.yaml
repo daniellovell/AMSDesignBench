@@ -1,0 +1,4 @@
+# Common rubric variables for ota001.
+topology_target: 5-Transistor (5T) OTA
+topology_rejects: Telescopic Cascode, Two-Stage, Current Mirror OTA, Folded Cascode, Single-Stage Common Source, Gain-Boosted Cascode
+relation_equivalents: Mathematically equivalent forms are acceptable (e.g., g_m/C_L = g_m/(2*C_L)*2)

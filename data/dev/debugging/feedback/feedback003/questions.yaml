@@ -10,4 +10,3 @@ questions:
     topology: noninverting_voltage_amp
     bench_version: 0.1.0
     aspect: feedback_polarity
-

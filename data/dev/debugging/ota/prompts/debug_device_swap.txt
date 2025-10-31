@@ -11,7 +11,7 @@ Required sections (use these exact headers):
 Hard constraints:
 - Assume all required bias sources exist and are correctly driven UNLESS the artifact explicitly shows an unconnected bias port or a bias
 port tied to an illegal rail (e.g., NMOS gate bias to VDD, PMOS gate bias to GND) 
-Do NOT claim "missing bias" if a motif’s bias/ gate port is connected to any net typed as "bias".
+Do NOT claim "missing bias" if a motif's bias/ gate port is connected to any net typed as "bias".
 
 Guidance:
 - In Fault: specific device/structure/motif that is at fault.

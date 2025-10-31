@@ -1,0 +1,5 @@
+# Common rubric variables for filter012.
+topology_target: Second-order band-pass state-variable (SVF) biquad
+topology_rejects: notch, all-pass
+grounded_guidance: Cite active elements (op-amps), R/C elements, and nodes that form the filter.
+
