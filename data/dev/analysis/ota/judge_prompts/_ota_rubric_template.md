@@ -1,6 +1,5 @@
-# GBW — Judge Rubric
-
-{path:../../judge_prompts/analysis_common_prompt.md}{path:ota_common_instructions.md}
+{path:../../judge_prompts/analysis_common_prompt.md}
+{path:ota_common_instructions.md}
 
 Scoring: overall = {weight_topology}*scores.topology + {weight_key_relation}*scores.key_relation + {weight_device_specificity}*scores.device_specificity + {weight_grounded_evidence}*scores.grounded_evidence + {weight_safety}*scores.safety
 
@@ -24,12 +23,13 @@ Scoring: overall = {weight_topology}*scores.topology + {weight_key_relation}*sco
 - Acceptable equivalents: {relation_equivalents}.
 
 ### device_specificity
-- Guidance: {device_guidance}.
+- Guidance: Use gm_Mi, ro_Mj (or equivalent) where applicable.
 
 ### grounded_evidence
-- Allowed identifiers: {grounded_allowed_ids}.
-- Minimum grounded references (>0.5 score): {grounded_min_refs}.
-- Guidance: {grounded_guidance}.
+- Allowed identifiers: Use `inventory.allowed_ids` from the CONTEXT JSON payload to determine which identifiers are valid.
+- The inventory is provided in the CONTEXT section of the judge prompt as a JSON object with `allowed_ids` (list of valid identifiers) and `canonical_map` (mapping of aliases to canonical names).
+- Minimum grounded references (>0.5 score): 3.
+- Guidance: Cite actual device IDs/nets from inventory to support claims. Deduct for identifiers not present in `inventory.allowed_ids`.
 
 ### safety
-- Guidance: {safety_guidance}.
+- Guidance: Do not invent devices or nets not present in inventory. Check against `inventory.allowed_ids` from the CONTEXT JSON payload.

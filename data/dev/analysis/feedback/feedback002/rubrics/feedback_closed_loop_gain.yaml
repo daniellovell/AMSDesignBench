@@ -3,7 +3,6 @@ weight_grounded_evidence: "0.30"
 gain_expression_target: "Vout/Iin = -1/(s*C1)."
 gain_expression_guidance: "State the transimpedance magnitude and note the integrating capacitor's role and negative sign."
 gain_expression_reject: "Vout/Iin = C1; Vout/Iin = -C1; Vout/Iin = 1/C1; missing frequency dependence."
-grounded_allowed_ids: "C1, XU2, S_in, S_out, 0"
 grounded_min_refs: "2"
 grounded_guidance: "Cite the capacitor and IO nodes to justify the integrating relationship."
 

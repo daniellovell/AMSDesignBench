@@ -19,6 +19,7 @@ Scoring: compute `overall = {weight_loop_gain_expression}*scores.loop_gain_expre
 - Reject statements: `{loop_gain_reject}`.
 
 ### grounded_evidence
-- Allowed identifiers: `{grounded_allowed_ids}`.
+- Allowed identifiers: Use `inventory.allowed_ids` from the CONTEXT JSON payload to determine which identifiers are valid.
+- The inventory is provided in the CONTEXT section of the judge prompt as a JSON object with `allowed_ids` (list of valid identifiers) and `canonical_map` (mapping of aliases to canonical names).
 - Minimum grounded references for scores >0.5: `{grounded_min_refs}`.
-- Guidance: `{grounded_guidance}`.
+- Guidance: `{grounded_guidance}`. Deduct for identifiers not present in `inventory.allowed_ids`.

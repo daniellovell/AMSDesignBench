@@ -121,20 +121,20 @@ def judge_answer(
     base_delay = float(os.getenv("OPENAI_JUDGE_BACKOFF_BASE", 1.0))
     attempt = 0
     resp = None
-    # Cross-thread rate limiting for judge
-    try:
-        # Estimate tokens: rubric + serialized payload text + completion budget
-        est_tokens = int((len(instr) + len(json.dumps(payload))) / float(os.getenv("OPENAI_JUDGE_TOKEN_DIVISOR", 4))) + int(judge_max)
-        rpm = float(os.getenv("OPENAI_JUDGE_RPM", os.getenv("OPENAI_RPM", 0)) or 0)
-        tpm = float(os.getenv("OPENAI_JUDGE_TPM", os.getenv("OPENAI_TPM", 0)) or 0)
-        if rpm > 0 or tpm > 0:
-            get_limiter("openai_judge", rpm=rpm, tpm=tpm).acquire(token_cost=est_tokens, req_cost=1.0)
-    except Exception:
-        pass
+    # Prepare rate limiting config (computed once, used per attempt)
+    est_tokens = int((len(instr) + len(json.dumps(payload))) / float(os.getenv("OPENAI_JUDGE_TOKEN_DIVISOR", 4))) + int(judge_max)
+    rpm = float(os.getenv("OPENAI_JUDGE_RPM", os.getenv("OPENAI_RPM", 0)) or 0)
+    tpm = float(os.getenv("OPENAI_JUDGE_TPM", os.getenv("OPENAI_TPM", 0)) or 0)
     last_err = None
     with _sem():
         while attempt < max_attempts and resp is None:
             attempt += 1
+            # Cross-thread rate limiting for judge (checked before each API attempt)
+            if rpm > 0 or tpm > 0:
+                try:
+                    get_limiter("openai_judge", rpm=rpm, tpm=tpm).acquire(token_cost=est_tokens, req_cost=1.0)
+                except Exception as rate_err:
+                    print(f"[JUDGE] rate limiter error (attempt {attempt}/{max_attempts}): {rate_err}", file=_sys.stderr, flush=True)
             try:
                 resp = client.chat.completions.create(**params)
                 break
@@ -165,6 +165,19 @@ def judge_answer(
                 # Unhandled error: stop
                 print(f"[JUDGE] error (no retry): {emsg}", file=_sys.stderr, flush=True)
                 break
+    if resp is None:
+        # All retries failed - return error without accessing resp
+        dbg = {
+            "system": sys_prompt,
+            "instructions": instr,
+            "payload": payload,
+            "judge_model": judge_model,
+        }
+        if last_err:
+            print(f"[JUDGE] final failure after {attempt} attempts: {last_err}", file=_sys.stderr, flush=True)
+        else:
+            print(f"[JUDGE] final failure after {attempt} attempts: no response", file=_sys.stderr, flush=True)
+        return {"error": last_err or "Judge failed without response.", "debug": dbg}
     txt = (getattr(resp.choices[0].message, "content", None) or "").strip()
     if not txt:
         # Fallback to Responses API for models that do not return content here

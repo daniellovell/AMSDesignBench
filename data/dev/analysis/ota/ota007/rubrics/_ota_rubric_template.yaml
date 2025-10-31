@@ -1,0 +1,4 @@
+# Common rubric variables for ota007.
+topology_target: Single-Stage Common Source (Single-Ended)
+topology_rejects: 5-Transistor (5T) OTA, Telescopic Cascode, Two-Stage, Current Mirror OTA, Folded Cascode, Gain-Boosted Cascode
+relation_equivalents: Mathematically equivalent forms are acceptable
