@@ -2,4 +2,3 @@
 topology_target: RC low-pass (first-order)
 topology_rejects: high-pass, band-pass, notch, all-pass
 grounded_guidance: Cite R/C elements and nodes that form the filter path.
-

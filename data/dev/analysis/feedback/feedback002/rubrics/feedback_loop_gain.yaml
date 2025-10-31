@@ -6,4 +6,3 @@ loop_gain_guidance: "Accept references to the op-amp open-loop gain parameters p
 loop_gain_reject: "T = A0*beta; loop gain tied to 1/(s*C1) or closed-loop expressions."
 grounded_min_refs: "2"
 grounded_guidance: "Reference the op-amp instance and gain parameters when justifying loop gain."
-

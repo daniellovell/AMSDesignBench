@@ -5,4 +5,3 @@ beta_expression_guidance: "Explain that the feedback network directly ties the o
 beta_expression_reject: "beta = 0; beta = R1; beta = 1/R1; no feedback path."
 grounded_min_refs: "2"
 grounded_guidance: "Reference R1 and the op-amp terminals/nets that complete the unity feedback loop."
-

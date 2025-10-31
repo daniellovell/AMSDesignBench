@@ -8,4 +8,3 @@ grounded_min_refs: "2"
 grounded_guidance: "Reference the input/output nets and involved elements."
 format_reject: "Any modality description other than voltage-to-voltage."
 format_guidance: "Ensure consistent wording of voltage in/out."
-

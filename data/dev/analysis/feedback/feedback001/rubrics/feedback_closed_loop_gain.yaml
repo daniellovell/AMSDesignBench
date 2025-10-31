@@ -5,4 +5,3 @@ gain_expression_guidance: "Emphasize the transimpedance set by the feedback resi
 gain_expression_reject: "Vout/Iin = R1; Vout/Iin = +R1; Vout/Iin = 1/R1; missing negative sign."
 grounded_min_refs: "2"
 grounded_guidance: "Cite R1 and the inverting input/output nodes that force the resistor-defined gain."
-

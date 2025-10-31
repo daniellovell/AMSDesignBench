@@ -5,4 +5,3 @@ beta_expression_guidance: "Highlight that the capacitor connects output to summi
 beta_expression_reject: "beta = 0; beta = C1; beta = 1/C1; no feedback path."
 grounded_min_refs: "2"
 grounded_guidance: "Reference the capacitor and op-amp nodes closing the unity loop."
-
