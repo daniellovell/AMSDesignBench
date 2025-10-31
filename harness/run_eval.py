@@ -340,7 +340,7 @@ def load_questions(item_dir: Path) -> List[Question]:
                     # No explicit path provided; use canonical filename for modality
                     qdict["artifact_path"] = _default_artifact_for(ap)
                 qdict = _apply_defaults(qdict)
-            out.append(Question.model_validate(qdict))
+                out.append(Question.model_validate(qdict))
         else:
             # Normalize modality and artifact path if missing
             m = canonical_modality.get(str(mod), str(mod))
