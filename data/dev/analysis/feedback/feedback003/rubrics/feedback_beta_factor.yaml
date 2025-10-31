@@ -3,7 +3,5 @@ weight_grounded_evidence: "0.30"
 beta_expression_target: "beta = R1/(R1+R2)."
 beta_expression_guidance: "Identify the non-inverting divider from output to input node and express beta as the lower resistor over the sum."
 beta_expression_reject: "beta = R2/(R1+R2); beta = R1/R2; beta = R2/R1; beta = 1."
-grounded_allowed_ids: "R1, R2, XU1, N001, S_in, S_out, 0"
 grounded_min_refs: "2"
 grounded_guidance: "Reference the divider elements and the node they return to the input."
-

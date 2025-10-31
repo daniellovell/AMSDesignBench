@@ -10,4 +10,3 @@ questions:
     topology: tia_feedback_resistor
     bench_version: 0.1.0
     aspect: feedback_polarity
-

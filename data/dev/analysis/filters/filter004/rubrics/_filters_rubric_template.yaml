@@ -1,0 +1,4 @@
+# Common rubric variables for filter004.
+topology_target: RLC resonant band-pass (second-order)
+topology_rejects: low-pass, high-pass, notch, all-pass
+grounded_guidance: Cite R/L/C elements and nodes that form the filter path.

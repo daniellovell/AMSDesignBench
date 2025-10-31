@@ -39,4 +39,3 @@ questions:
     topology: inverting_voltage_amp
     bench_version: 0.1.0
     aspect: signal_modality
-

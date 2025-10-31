@@ -340,7 +340,7 @@ def load_questions(item_dir: Path) -> List[Question]:
                     # No explicit path provided; use canonical filename for modality
                     qdict["artifact_path"] = _default_artifact_for(ap)
                 qdict = _apply_defaults(qdict)
-            out.append(Question.model_validate(qdict))
+                out.append(Question.model_validate(qdict))
         else:
             # Normalize modality and artifact path if missing
             m = canonical_modality.get(str(mod), str(mod))
@@ -1415,18 +1415,16 @@ def main():
             vars_map: Dict[str, Any] = {}
             if vars_yaml.exists():
                 try:
-                    vars_map = yaml.safe_load(vars_yaml.read_text(encoding='utf-8')) or {}
-                except Exception:
+                    # Render YAML as a template to allow includes
+                    vars_yaml_text = vars_yaml.read_text(encoding='utf-8')
+                    rendered_yaml = render_template(vars_yaml_text, {}, base_dir=vars_yaml.parent)
+                    vars_map = yaml.safe_load(rendered_yaml) or {}
+                except Exception as e:
+                    print(f"[yellow]Warning: Failed to render/parse {vars_yaml}: {e}[/yellow]")
                     vars_map = {}
             # unwrap namespaced
             if isinstance(vars_map, dict) and stem in vars_map and isinstance(vars_map[stem], dict):
                 vars_map = vars_map[stem]
-            # default grounding ids if not provided
-            try:
-                allowed_ids_csv = ", ".join(eff_inv.all_ids())
-            except Exception:
-                allowed_ids_csv = ""
-            vars_map = {"grounded_allowed_ids": allowed_ids_csv, **(vars_map or {})}
             try:
                 rubric_md_rendered = render_template(rubric_md, {k: str(v) for k, v in vars_map.items()}, base_dir=jpath.parent)
             except Exception as e:
@@ -1550,10 +1548,18 @@ def main():
                 if "overall" not in judge:
                     judge["overall"] = sum(j_scores.values())/len(j_scores) if j_scores else 0.0
 
-            try:
-                topic_str = str(Path(it.item_dir).resolve().relative_to(split_dir.resolve()).parent).replace(os.sep, "/")
-            except Exception:
-                topic_str = Path(it.item_dir).parent.name
+            # Normalize family/topic labeling
+            if "/" in str(args.split):
+                parts = Path(str(args.split)).parts
+                # Drop split head (e.g., 'dev') when present
+                topic_str = "/".join(parts[1:]) if len(parts) > 1 else (parts[0] if parts else "")
+            else:
+                try:
+                    rel = Path(it.item_dir).resolve().relative_to(split_dir.resolve())
+                    parent = rel.parent
+                    topic_str = parent.as_posix() if str(parent) != "." else Path(args.split).as_posix()
+                except (ValueError, OSError):
+                    topic_str = Path(it.item_dir).parent.name
 
             rec = {
                 "model": slug,

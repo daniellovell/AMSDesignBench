@@ -3,7 +3,5 @@ weight_grounded_evidence: "0.30"
 gain_expression_target: "Vout/Iin = -R1."
 gain_expression_guidance: "Emphasize the transimpedance set by the feedback resistor and the negative sign from the inverting configuration."
 gain_expression_reject: "Vout/Iin = R1; Vout/Iin = +R1; Vout/Iin = 1/R1; missing negative sign."
-grounded_allowed_ids: "R1, XU2, S_in, S_out, 0"
 grounded_min_refs: "2"
 grounded_guidance: "Cite R1 and the inverting input/output nodes that force the resistor-defined gain."
-

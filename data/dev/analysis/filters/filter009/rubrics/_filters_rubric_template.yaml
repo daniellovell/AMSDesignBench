@@ -1,0 +1,4 @@
+# Common rubric variables for filter009.
+topology_target: Twin-T notch (band-stop)
+topology_rejects: low-pass, high-pass, band-pass, all-pass
+grounded_guidance: Cite R/C elements and nodes that form the twin-T network.

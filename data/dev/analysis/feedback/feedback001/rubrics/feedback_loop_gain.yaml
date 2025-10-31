@@ -4,7 +4,5 @@ loop_gain_target: "T = A0 (also acceptable: Aol or A(s))."
 loop_gain_disallowed: "Symbolic products like A0*beta without expanding beta."
 loop_gain_guidance: "Accept open-loop gain labels (A0, Aol, A(s)) that represent the op-amp gain in the loop."
 loop_gain_reject: "T = A0*beta; T = A(s)*beta; loop gain expressed as closed-loop result."
-grounded_allowed_ids: "XU2, S_in, S_out, 0, Aol, GBW"
 grounded_min_refs: "2"
 grounded_guidance: "Reference the amplifier element and its gain parameters (Aol, GBW) provided in the artifact."
-

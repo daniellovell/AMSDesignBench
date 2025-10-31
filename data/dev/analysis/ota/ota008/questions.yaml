@@ -2,70 +2,70 @@ questions:
 - id: ota008_gbw
   track: analysis
   modality: auto
-  rubric_id: gbw_one_stage
-  rubric_path: rubrics/gbw_one_stage.json
   prompt_template: gbw_one_stage.txt
   meta:
     topology: nmos_cascode_single_end
     bench_version: 0.1.0
     aspect: gbw
+  judge_prompt: ../judge_prompts/gbw_one_stage.md
+  judge_id: gbw_one_stage
 - id: ota008_rout
   track: analysis
   modality: auto
-  rubric_id: ota_rout_cascode
-  rubric_path: rubrics/ota_rout_cascode.json
   prompt_template: ota_rout.txt
   meta:
     topology: nmos_cascode_single_end
     bench_version: 0.1.0
     aspect: rout
+  judge_prompt: ../judge_prompts/ota_rout.md
+  judge_id: ota_rout
 - id: ota008_swing
   track: analysis
   modality: auto
-  rubric_id: ota_swing_cascode
-  rubric_path: rubrics/ota_swing_cascode.json
   prompt_template: ota_swing.txt
   meta:
     topology: nmos_cascode_single_end
     bench_version: 0.1.0
     aspect: swing
+  judge_prompt: ../judge_prompts/ota_swing.md
+  judge_id: ota_swing
 - id: ota008_gain_dc
   track: analysis
   modality: auto
-  rubric_id: gain_dc
-  rubric_path: rubrics/gain_dc.json
   prompt_template: ota_dc_gain.txt
   meta:
     topology: nmos_cascode_single_end
     bench_version: 0.1.0
     aspect: gain_dc
+  judge_prompt: ../judge_prompts/ota_dc_gain.md
+  judge_id: ota_dc_gain
 - id: ota008_psrr
   track: analysis
   modality: auto
-  rubric_id: psrr
-  rubric_path: rubrics/psrr.json
   prompt_template: ota_psrr.txt
   meta:
     topology: nmos_cascode_single_end
     bench_version: 0.1.0
     aspect: psrr
+  judge_prompt: ../judge_prompts/ota_psrr.md
+  judge_id: ota_psrr
 - id: ota008_noise_white
   track: analysis
   modality: auto
-  rubric_id: noise_white
-  rubric_path: rubrics/noise_white.json
   prompt_template: ota_noise_white.txt
   meta:
     topology: nmos_cascode_single_end
     bench_version: 0.1.0
     aspect: noise_white
+  judge_prompt: ../judge_prompts/ota_noise_white.md
+  judge_id: ota_noise_white
 - id: ota008_power_quiescent
   track: analysis
   modality: auto
-  rubric_id: power_quiescent
-  rubric_path: rubrics/power_quiescent.json
   prompt_template: ota_power_quiescent.txt
   meta:
     topology: nmos_cascode_single_end
     bench_version: 0.1.0
     aspect: power_quiescent
+  judge_prompt: ../judge_prompts/ota_power_quiescent.md
+  judge_id: ota_power_quiescent
