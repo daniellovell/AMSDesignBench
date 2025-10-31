@@ -3,8 +3,8 @@ questions:
   track: debugging
   modality: spice_netlist
   artifact_path: netlist_bug.sp
-  rubric_id: debug_device_swap
-  rubric_path: ../../rubrics/debug_device_swap.json
+  judge_prompt: ../judge_prompts/debug_device_swap.md
+  judge_id: debug_device_swap
   prompt_template: debug_device_swap.txt
   meta:
     topology: telescopic_cascode_single_end_high_swing
