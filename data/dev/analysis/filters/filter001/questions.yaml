@@ -2,10 +2,10 @@ questions:
 - id: filter001_identify
   track: analysis
   modality: auto
-  rubric_id: filters_identify_tf
-  rubric_path: rubrics/filters_identify_tf.json
   prompt_template: ../prompts/identify_tf.txt
   meta:
     family: filters
     bench_version: 0.1.0
     aspect: identify_transfer_function
+  judge_prompt: ../judge_prompts/identify_tf.md
+  judge_id: filters_identify_tf

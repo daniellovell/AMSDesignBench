@@ -1,0 +1,4 @@
+# Common rubric variables for filter006.
+topology_target: Active cascaded Chebyshev low-pass (two second-order sections)
+topology_rejects: notch, all-pass
+grounded_guidance: Cite active elements (op-amps), R/C elements, and nodes that form the filter stages.

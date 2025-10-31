@@ -1,0 +1,4 @@
+# Common rubric variables for filter011.
+topology_target: Second-order band-pass multiple feedback (MFB) biquad
+topology_rejects: notch, all-pass
+grounded_guidance: Cite active elements (op-amp), R/C elements, and nodes that form the filter.

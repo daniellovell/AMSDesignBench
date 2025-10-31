@@ -1,0 +1,9 @@
+weight_topology: 0.35
+weight_tf: 0.35
+weight_grounded_evidence: 0.2
+weight_safety: 0.1
+tf_target: H(s) = (s^2 + 1)/(s^2 + s/Q + 1)
+tf_equivalents: "H(s) = (s^2 + ω₀²)/(s^2 + (ω₀/Q)s + ω₀²) with normalized notch form"
+grounded_min_refs: 2
+safety_guidance: Do not invent elements or nets not present in inventory.
+{path:_filters_rubric_template.yaml}

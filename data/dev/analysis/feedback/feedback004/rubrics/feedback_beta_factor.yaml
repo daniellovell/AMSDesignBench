@@ -5,4 +5,3 @@ beta_expression_guidance: "Identify the divider feeding back a fraction of the o
 beta_expression_reject: "beta = R1/(R1+R2); beta = R1/R2; beta = R2/R1; beta = 1."
 grounded_min_refs: "2"
 grounded_guidance: "Reference both resistors and the node returning to the input."
-

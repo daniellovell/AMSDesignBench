@@ -5,4 +5,3 @@ gain_expression_guidance: "State the inverting gain with correct sign and ratio.
 gain_expression_reject: "R2/R1; -R1/R2; 1 + R2/R1."
 grounded_min_refs: "2"
 grounded_guidance: "Cite both resistors and the node connection forming the inverting network."
-

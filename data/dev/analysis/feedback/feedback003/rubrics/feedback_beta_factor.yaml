@@ -5,4 +5,3 @@ beta_expression_guidance: "Identify the non-inverting divider from output to inp
 beta_expression_reject: "beta = R2/(R1+R2); beta = R1/R2; beta = R2/R1; beta = 1."
 grounded_min_refs: "2"
 grounded_guidance: "Reference the divider elements and the node they return to the input."
-
