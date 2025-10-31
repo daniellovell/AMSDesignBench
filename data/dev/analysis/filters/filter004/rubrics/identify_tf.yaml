@@ -2,10 +2,8 @@ weight_topology: 0.35
 weight_tf: 0.35
 weight_grounded_evidence: 0.2
 weight_safety: 0.1
-topology_target: First-order RC filter
-topology_rejects: Incorrect filter family
-tf_target: H(s) in canonical first-order form
-tf_equivalents: Any algebraically equivalent representation
+tf_target: H(s) = s/(s^2 + s/Q + 1) or normalized band-pass form
+tf_equivalents: "H(s) = (s/ω₀)/((s/ω₀)^2 + (s/ω₀)/Q + 1) with ω₀ normalized"
 grounded_min_refs: 2
-grounded_guidance: Cite R/C elements and nodes that form the filter path.
 safety_guidance: Do not invent elements or nets not present in inventory.
+{path:_filters_rubric_template.yaml}

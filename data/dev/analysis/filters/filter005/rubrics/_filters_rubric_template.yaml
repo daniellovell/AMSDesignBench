@@ -1,0 +1,5 @@
+# Common rubric variables for filter005.
+topology_target: Active cascaded low-pass (two second-order sections)
+topology_rejects: notch, all-pass
+grounded_guidance: Cite active elements (op-amps), R/C elements, and nodes that form the filter stages.
+
