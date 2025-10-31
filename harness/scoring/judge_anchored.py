@@ -92,7 +92,7 @@ def judge_answer(
     instr = rubric_text
     messages = [
         {"role": "system", "content": sys_prompt},
-        {"role": "user", "content": instr + "\n\nCONTEXT:\n" + json.dumps(payload)},
+        {"role": "user", "content": instr + "\n\nCONTEXT:\n" + json.dumps(payload, indent=2)},
     ]
 
     judge_temp = float(os.getenv("OPENAI_JUDGE_TEMPERATURE", 0.0))
