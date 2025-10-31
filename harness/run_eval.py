@@ -224,7 +224,6 @@ def load_questions(item_dir: Path) -> List[Question]:
         return Path(filename).as_posix()
 
     prompts_dir = item_dir.parent / "prompts"
-    judge_prompts_dir = item_dir.parent / "judge_prompts"
 
     def _extract_sections_from_prompt(prompt_name: str) -> List[str]:
         ppath = prompts_dir / prompt_name
