@@ -1419,7 +1419,8 @@ def main():
                     vars_yaml_text = vars_yaml.read_text(encoding='utf-8')
                     rendered_yaml = render_template(vars_yaml_text, {}, base_dir=vars_yaml.parent)
                     vars_map = yaml.safe_load(rendered_yaml) or {}
-                except Exception:
+                except Exception as e:
+                    print(f"[yellow]Warning: Failed to render/parse {vars_yaml}: {e}[/yellow]")
                     vars_map = {}
             # unwrap namespaced
             if isinstance(vars_map, dict) and stem in vars_map and isinstance(vars_map[stem], dict):
