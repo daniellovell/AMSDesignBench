@@ -1424,12 +1424,6 @@ def main():
             # unwrap namespaced
             if isinstance(vars_map, dict) and stem in vars_map and isinstance(vars_map[stem], dict):
                 vars_map = vars_map[stem]
-            # default grounding ids if not provided
-            try:
-                allowed_ids_csv = ", ".join(eff_inv.all_ids())
-            except Exception:
-                allowed_ids_csv = ""
-            vars_map = {"grounded_allowed_ids": allowed_ids_csv, **(vars_map or {})}
             try:
                 rubric_md_rendered = render_template(rubric_md, {k: str(v) for k, v in vars_map.items()}, base_dir=jpath.parent)
             except Exception as e:

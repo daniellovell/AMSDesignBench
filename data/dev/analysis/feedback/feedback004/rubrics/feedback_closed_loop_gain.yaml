@@ -3,7 +3,6 @@ weight_grounded_evidence: "0.30"
 gain_expression_target: "Vout/Vin = -R2/R1."
 gain_expression_guidance: "State the inverting gain with correct sign and ratio."
 gain_expression_reject: "R2/R1; -R1/R2; 1 + R2/R1."
-grounded_allowed_ids: "R1, R2, XU2, N001, S_in, S_out, 0"
 grounded_min_refs: "2"
 grounded_guidance: "Cite both resistors and the node connection forming the inverting network."
 
