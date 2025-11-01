@@ -2,8 +2,8 @@ questions:
 - id: ota010_design_folded_fully_diff_pmos_in
   track: design
   modality: auto
-  rubric_id: design_folded_fully_diff_pmos_in
-  rubric_path: rubrics/design_folded_fully_diff_pmos_in.json
+  judge_prompt: ../judge_prompts/design_folded_fully_diff_pmos_in.md
+  judge_id: design_folded_fully_diff_pmos_in
   prompt_template: design_ota.txt
   meta:
     topology: folded_cascode_fully_diff_pmos_in

@@ -1,0 +1,11 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches the telescopic cascode reference (diff pair + tail with NMOS/PMOS cascodes, differential outputs)."
+topology_patterns_any: "telescopic; cascode; differential; fully differential"
+topology_min_any: 2
+safety_anti_patterns: "two-stage; second stage"
+
+hallucination_penalty: 0.15
+min_pass: 0.70

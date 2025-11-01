@@ -2,8 +2,8 @@ questions:
 - id: feedback002_design_tia_cap
   track: design
   modality: auto
-  rubric_id: design_tia_capacitor
-  rubric_path: rubrics/design_tia_capacitor.json
+  judge_prompt: ../judge_prompts/design_tia_capacitor.md
+  judge_id: design_tia_capacitor
   prompt_template: design_feedback.txt
   meta:
     topology: tia_feedback_capacitor

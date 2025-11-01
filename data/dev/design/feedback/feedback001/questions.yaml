@@ -2,8 +2,8 @@ questions:
 - id: feedback001_design_tia_res
   track: design
   modality: auto
-  rubric_id: design_tia_resistor
-  rubric_path: rubrics/design_tia_resistor.json
+  judge_prompt: ../judge_prompts/design_tia_resistor.md
+  judge_id: design_tia_resistor
   prompt_template: design_feedback.txt
   meta:
     topology: tia_feedback_resistor
