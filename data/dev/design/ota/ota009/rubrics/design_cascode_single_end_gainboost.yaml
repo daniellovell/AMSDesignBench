@@ -1,0 +1,11 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches a single-ended cascode with gain-boost loops on both NMOS and PMOS sides (aux amplifiers biasing cascode gates; main path: NMOS input → NMOS cascode → vout; PMOS cascode/load above vout)."
+topology_patterns_any: "telescopic; cascode; gain-boost; gain boosted; single-ended; single end"
+topology_min_any: 3
+safety_anti_patterns: "high-swing; folded; fully differential; two-stage"
+
+hallucination_penalty: 0.15
+min_pass: 0.70

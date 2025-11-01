@@ -1,0 +1,11 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches noninverting amplifier — opamp with signal at non-inverting input, resistive divider from output to inverting input and ground."
+topology_patterns_any: "noninverting; non-inverting; voltage follower; buffer"
+topology_min_any: 1
+safety_anti_patterns: "inverting amplifier; inverting configuration; positive feedback"
+
+hallucination_penalty: 0.15
+min_pass: 0.70

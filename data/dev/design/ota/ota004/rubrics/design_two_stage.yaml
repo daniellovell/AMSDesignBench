@@ -1,0 +1,11 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches the two-stage reference (stage 1 mirror OTA into stage 2 NMOS CS with PMOS gate-biased load)."
+topology_patterns_any: "two-stage; second stage"
+topology_min_any: 1
+safety_anti_patterns: "cascode; cascoded"
+
+hallucination_penalty: 0.15
+min_pass: 0.70

@@ -1,0 +1,11 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches the high-swing single-stage reference (PMOS mirror to VDD, NMOS mirror to ground, single-ended output)."
+topology_patterns_any: "high-swing; current mirror; single-stage"
+topology_min_any: 2
+safety_anti_patterns: "cascode; cascoded; two-stage; second stage"
+
+hallucination_penalty: 0.15
+min_pass: 0.70
