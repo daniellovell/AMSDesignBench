@@ -5,7 +5,7 @@ questions:
   artifact_path: netlist_bug.sp
   judge_prompt: ../judge_prompts/debug_feedback_polarity.md
   judge_id: debug_feedback_polarity
-  prompt_template: debug_feedback_polarity.txt
+  prompt_template: ../prompts/debug_feedback_polarity.txt
   meta:
     topology: tia_feedback_capacitor
     bench_version: 0.1.0

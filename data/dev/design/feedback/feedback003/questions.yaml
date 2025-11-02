@@ -4,7 +4,7 @@ questions:
   modality: auto
   judge_prompt: ../judge_prompts/design_noninverting_amp.md
   judge_id: design_noninverting_amp
-  prompt_template: design_feedback.txt
+  prompt_template: ../prompts/design_feedback.txt
   meta:
     topology: noninverting_voltage_amp
     bench_version: 0.1.0

@@ -4,7 +4,7 @@ questions:
   modality: auto
   judge_prompt: ../judge_prompts/design_folded_fully_diff_pmos_in.md
   judge_id: design_folded_fully_diff_pmos_in
-  prompt_template: design_ota.txt
+  prompt_template: ../prompts/design_ota.txt
   meta:
     topology: folded_cascode_fully_diff_pmos_in
     bench_version: 0.1.0
