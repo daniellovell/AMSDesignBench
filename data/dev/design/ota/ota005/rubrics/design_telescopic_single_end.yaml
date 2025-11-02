@@ -3,7 +3,7 @@ weight_topology_terms: 0.20
 weight_safety: 0.10
 
 structural_correctness_guidance: "Netlist structure matches the telescopic single-ended reference (NMOS/PMOS cascodes with single-ended output vop)."
-topology_patterns_any: "telescopic; cascod; single-ended; single end"
+topology_patterns_any: "telescopic; cascode; single-ended; single end"
 topology_min_any: 2
 safety_anti_patterns: "fully differential; two-stage"
 
