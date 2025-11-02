@@ -79,25 +79,14 @@ def validate_template_includes(template_path: Path, base_dir: Path, visited: set
     return errors
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser(description="Validate judge prompt and rubric mappings.")
-    ap.add_argument("--split", default="dev", help="Data split (default: dev)")
-    ap.add_argument("--family", default="analysis", help="Evaluation family (analysis/debugging/design)")
-    ap.add_argument(
-        "--family-subdir",
-        dest="family_subdir",
-        default=None,
-        help="Optional subdirectory under the family (e.g., feedback, ota). When omitted, validate all subdirectories containing prompts.",
-    )
-    args = ap.parse_args()
-
-    split_root = Path("data") / args.split
-    family_root = split_root / args.family
+def validate_family(split_root: Path, family: str, family_subdir: str | None = None) -> List[str]:
+    """Validate a single family. Returns list of error messages."""
+    family_root = split_root / family
     if not family_root.exists():
-        raise SystemExit(f"Family not found: {family_root}")
+        return [f"Family not found: {family_root}"]
 
-    if args.family_subdir:
-        subdirs = [args.family_subdir]
+    if family_subdir:
+        subdirs = [family_subdir]
     else:
         subdirs = [
             d.name
@@ -178,14 +167,87 @@ def main() -> None:
                         )
                 except Exception as exc:
                     errors.append(f"{yaml_path}: template rendering failed ({exc})")
-    if errors:
+    
+    return errors
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description="Validate judge prompt and rubric mappings.")
+    ap.add_argument("--split", default="dev", help="Data split (default: dev)")
+    ap.add_argument(
+        "--family",
+        default="analysis",
+        help="Evaluation family (analysis/debugging/design) or 'all' to validate all families",
+    )
+    ap.add_argument(
+        "--family-subdir",
+        dest="family_subdir",
+        default=None,
+        help="Optional subdirectory under the family (e.g., feedback, ota). When omitted, validate all subdirectories containing prompts.",
+    )
+    args = ap.parse_args()
+
+    split_root = Path("data") / args.split
+    if not split_root.exists():
+        raise SystemExit(f"Split not found: {split_root}")
+
+    # Determine which families to validate
+    if args.family.lower() == "all":
+        # Discover all families by scanning for directories with judge_prompts
+        # A family has judge_prompts if:
+        # 1. It has a judge_prompts directory directly, OR
+        # 2. It has subdirectories containing judge_prompts
+        families = []
+        for d in sorted(split_root.iterdir()):
+            if not d.is_dir():
+                continue
+            # Check if family has judge_prompts directly
+            if (d / "judge_prompts").exists():
+                families.append(d.name)
+                continue
+            # Check if any subdirectory has judge_prompts
+            if any((d / subdir / "judge_prompts").exists() for subdir in d.iterdir() if subdir.is_dir()):
+                families.append(d.name)
+        
+        if not families:
+            raise SystemExit(f"No families found in {split_root}")
+    else:
+        families = [args.family]
+
+    all_errors: List[str] = []
+    validated_subdirs: List[str] = []
+
+    # Validate each family
+    for family in families:
+        family_errors = validate_family(split_root, family, args.family_subdir)
+        all_errors.extend(family_errors)
+        
+        # Track which subdirs were validated for reporting
+        family_root = split_root / family
+        if family_root.exists():
+            if args.family_subdir:
+                validated_subdirs.append(f"{family}/{args.family_subdir}")
+            else:
+                subdirs = [
+                    d.name
+                    for d in sorted(family_root.iterdir())
+                    if d.is_dir() and (d / "judge_prompts").exists()
+                ]
+                if subdirs:
+                    validated_subdirs.extend([f"{family}/{sub}" for sub in subdirs])
+
+    if all_errors:
         print("Judge prompt validation errors:")
-        for msg in errors:
+        for msg in all_errors:
             print(" -", msg)
         sys.exit(1)
 
-    checked = ", ".join(subdirs)
-    print(f"Judge prompt mapping looks good for {args.split}/{args.family} ({checked}).")
+    if args.family.lower() == "all":
+        checked = ", ".join(sorted(set(validated_subdirs)))
+        print(f"Judge prompt mapping looks good for {args.split} (all families: {checked}).")
+    else:
+        checked = ", ".join([s for s in validated_subdirs if s.startswith(f"{args.family}/")])
+        print(f"Judge prompt mapping looks good for {args.split}/{args.family} ({checked}).")
 
 
 if __name__ == "__main__":

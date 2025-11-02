@@ -51,8 +51,9 @@ The evaluation uses an LLM judge (via OpenAI API) to score model responses. File
 
 ### Judge Prompt Validation
 - **Use before committing**: Run `scripts/validate_judge_prompts.py` to validate judge prompts and rubric YAML mappings.
-- **Checks**: File existence, YAML syntax, and that all template variables in judge prompts are defined in YAML files.
-- **Usage**: `python scripts/validate_judge_prompts.py --split dev --family <family> [--family-subdir <subdir>]`
+- **Checks**: File existence, YAML syntax, template variable completeness, and that all template includes resolve correctly.
+- **Usage**: `python scripts/validate_judge_prompts.py --split dev --family <family|all> [--family-subdir <subdir>]`
+  - Example: `--split dev --family all` (validates all families: `dev/analysis`, `dev/debugging`, `dev/design`)
   - Example: `--split dev --family design --family-subdir feedback` (validates `dev/design/feedback`)
   - Example: `--split dev --family analysis` (validates all subdirectories under `dev/analysis`)
 
