@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 from typing import Iterable, List, Tuple
@@ -104,14 +105,35 @@ def main() -> None:
                     errors.append(f"{yaml_path}: missing YAML for judge prompt {stem}")
                     continue
                 try:
+                    # First, validate YAML syntax by rendering any template variables in the YAML itself
                     rendered_yaml = render_template(
                         yaml_path.read_text(encoding="utf-8"),
                         {},
                         base_dir=yaml_path.parent,
                     )
-                    yaml.safe_load(rendered_yaml)
+                    yaml_data = yaml.safe_load(rendered_yaml)
+                    if yaml_data is None:
+                        yaml_data = {}
+                    
+                    # Convert YAML data to string values for template rendering
+                    yaml_vars = {k: str(v) for k, v in yaml_data.items()}
+                    
+                    # Render the judge prompt template with the YAML data
+                    judge_content = render_template(
+                        jpath.read_text(encoding="utf-8"),
+                        yaml_vars,
+                        base_dir=jpath.parent,
+                    )
+                    
+                    # Check for unreplaced template variables
+                    # Use the same pattern as harness/utils/template.py: only alphanumeric + underscore
+                    unreplaced = re.findall(r"\{([a-zA-Z0-9_]+)\}", judge_content)
+                    if unreplaced:
+                        errors.append(
+                            f"{jpath}: unreplaced variables: {', '.join(sorted(set(unreplaced)))}"
+                        )
                 except Exception as exc:
-                    errors.append(f"{yaml_path}: invalid YAML ({exc})")
+                    errors.append(f"{yaml_path}: template rendering failed ({exc})")
     if errors:
         print("Judge prompt validation errors:")
         for msg in errors:
