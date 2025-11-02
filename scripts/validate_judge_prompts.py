@@ -74,7 +74,6 @@ def main() -> None:
         judge_dir = base / "judge_prompts"
         if not judge_dir.exists():
             errors.append(f"{base}: missing judge_prompts directory")
-        prompts_dir = base / "prompts"
         items = [d for d in sorted(base.iterdir()) if d.is_dir() and (d / "questions.yaml").exists()]
         if not items:
             errors.append(f"{base}: no item directories with questions.yaml")
