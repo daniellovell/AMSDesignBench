@@ -226,10 +226,12 @@ def load_questions(item_dir: Path) -> List[Question]:
     prompts_dir = item_dir.parent / "prompts"
 
     def _extract_sections_from_prompt(prompt_name: str) -> List[str]:
-        ppath = prompts_dir / prompt_name
+        # Resolve prompt_name relative to item_dir (e.g., ../prompts/design_ota.txt)
+        ppath = (item_dir / prompt_name).resolve()
         try:
             lines = ppath.read_text(encoding='utf-8').splitlines()
         except Exception:
+            # If file not found, return empty list (sections extraction is optional)
             return []
         sections: List[str] = []
         capture = False
@@ -1074,10 +1076,16 @@ def main():
             inv_ids = it.inventory.all_ids()
             # Prompt
             if not q.prompt_template:
-                raise SystemExit(f"Question {q.id} must specify prompt_template (filename) under ../prompts: {item_dir}")
-            ppath = (item_dir.parent / "prompts" / q.prompt_template)
+                raise SystemExit(f"Question {q.id} must specify prompt_template (relative path, e.g., ../prompts/design_ota.txt): {item_dir}")
+            # Resolve prompt_template relative to item_dir (e.g., ../prompts/design_ota.txt from item_dir)
+            ppath = (item_dir / q.prompt_template).resolve()
             if not ppath.exists():
-                raise SystemExit(f"Prompt template not found for {q.id}: {ppath}")
+                raise SystemExit(
+                    f"Prompt template not found for {q.id}:\n"
+                    f"  Expected path: {ppath}\n"
+                    f"  Resolved from: {item_dir} / {q.prompt_template}\n"
+                    f"  Item directory: {item_dir}"
+                )
             def _display_modality(mod: str) -> str:
                 # Human-friendly modality name for prompts to avoid confusion
                 if mod == "cascode":
