@@ -31,9 +31,9 @@ def _resolve_judge_path(item_dir: Path, judge_prompt: str) -> Tuple[Path, str]:
     if rel.is_absolute():
         jpath = rel
     else:
-        jpath = (item_dir / rel)
+        jpath = (item_dir / rel).resolve()
     if not jpath.exists():
-        alt = item_dir.parent / "judge_prompts" / rel.name
+        alt = (item_dir.parent / "judge_prompts" / rel.name).resolve()
         if alt.exists():
             jpath = alt
     return jpath, rel.stem
