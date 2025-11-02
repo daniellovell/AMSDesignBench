@@ -40,6 +40,45 @@ def _resolve_judge_path(item_dir: Path, judge_prompt: str) -> Tuple[Path, str]:
     return jpath, rel.stem
 
 
+def validate_template_includes(template_path: Path, base_dir: Path, visited: set[Path] | None = None, depth: int = 0) -> List[str]:
+    """Validate that all {path:...} includes exist. Recursively validates nested includes."""
+    errors = []
+    if visited is None:
+        visited = set()
+    
+    # Guard against cycles and excessive depth
+    if depth > 8 or template_path in visited:
+        return errors
+    
+    visited.add(template_path)
+    
+    try:
+        content = template_path.read_text(encoding="utf-8")
+    except Exception as exc:
+        return [f"{template_path}: failed to read template ({exc})"]
+    
+    # Use the same pattern as harness/utils/template.py
+    includes = re.findall(r"\{path:([^}]+)\}", content)
+    
+    for include in includes:
+        include = include.strip()
+        include_path = Path(include)
+        # Resolve relative to base_dir if not absolute
+        if not include_path.is_absolute():
+            include_path = (base_dir / include_path).resolve()
+        else:
+            include_path = include_path.resolve()
+        
+        if not include_path.exists():
+            errors.append(f"{template_path}: include not found: {include} (resolved to {include_path})")
+        else:
+            # Recursively validate nested includes
+            nested_errors = validate_template_includes(include_path, include_path.parent, visited, depth + 1)
+            errors.extend(nested_errors)
+    
+    return errors
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Validate judge prompt and rubric mappings.")
     ap.add_argument("--split", default="dev", help="Data split (default: dev)")
@@ -96,6 +135,11 @@ def main() -> None:
                 if not jpath.exists():
                     errors.append(f"{q_path}: judge prompt not found: {judge_prompt}")
                     continue
+                
+                # Validate template includes before rendering
+                include_errors = validate_template_includes(jpath, jpath.parent)
+                errors.extend(include_errors)
+                
                 rubrics_dir = item_dir / "rubrics"
                 if not rubrics_dir.exists():
                     errors.append(f"{item_dir}: missing rubrics directory")
