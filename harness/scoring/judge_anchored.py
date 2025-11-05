@@ -45,8 +45,7 @@ def _sem() -> threading.Semaphore:
 
 def judge_answer(
     answer: str,
-    rubric_json: Dict[str, Any],
-    knowledge_snippets: str,
+    rubric_markdown: str,
     refs: Dict[str, Any],
     inventory: Optional[Dict[str, Any]] = None,
     model: Optional[str] = None,
@@ -56,92 +55,49 @@ def judge_answer(
         print("[JUDGE] OpenAI client not configured (set OPENAI_API_KEY)", file=_sys.stderr, flush=True)
         return {"error": "OpenAI client not configured (set OPENAI_API_KEY)."}
     judge_model = model or os.getenv("OPENAI_JUDGE_MODEL", os.getenv("OPENAI_MODEL", "gpt-4o-mini"))
-    # Track/family awareness for focused judging prompts
+
+    # Payload contains only rubric-provided instructions and evaluation context; no inline Python instructions
+    payload = {
+        "refs": refs,
+        "answer": answer,
+        "inventory": inventory or {},
+    }
+
+    rubric_text = str(rubric_markdown or "").strip()
+    # Track-aware but concise system prompt
     track = (refs or {}).get("track")
     track_l = str(track or "").strip().lower()
     if track_l == "design":
         sys_prompt = (
             "You are an impartial grading assistant for analog/mixed-signal circuit DESIGN. "
-            "You ONLY output JSON and never prose. Score the answer per rubric, strictly anchored to the provided knowledge, refs, and inventory."
+            "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
         )
     elif track_l == "analysis":
         sys_prompt = (
             "You are an impartial grading assistant for analog/mixed-signal circuit ANALYSIS. "
-            "You ONLY output JSON and never prose. Score the answer per rubric, strictly anchored to the provided knowledge, refs, and inventory."
+            "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
         )
     elif track_l == "debugging":
         sys_prompt = (
             "You are an impartial grading assistant for analog/mixed-signal circuit DEBUGGING. "
-            "You ONLY output JSON and never prose. Score the answer per rubric, strictly anchored to the provided knowledge, refs, and inventory."
+            "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
         )
     else:
         sys_prompt = (
             "You are an impartial grading assistant for analog/mixed-signal design/analysis/debugging. "
-            "You ONLY output JSON and never prose. Score the answer per rubric, strictly anchored to the provided knowledge, refs, and inventory."
+            "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
         )
-    payload = {
-        "rubric": rubric_json,
-        "knowledge": knowledge_snippets,
-        "refs": refs,
-        "answer": answer,
-        "inventory": inventory or {},
-    }
-    # Base instruction (common to all tracks)
-    instr_base = (
-        "Score the answer per-criterion with values in [0,1]."
-        " Required output format (JSON only):\n"
-        "{\n  \"scores\": { \"<criterion_id>\": <float 0..1>, ... },\n  \"overall\": <float 0..1>\n}\n"
-        "Do not include any other keys or text."
-        "\nConstraints for grounding/topology:"
-        " Use only identifiers/nets present in inventory.allowed_ids (case-insensitive)"
-        " or mapped via inventory.canonical_map (e.g., 'Cload'→'CL', 'GND'→'0')."
-        " Treat any cited identifiers not in this set as ungrounded/hallucinated and reflect in those criteria."
-        " If inventory.grounding_disabled is true, then any rubric criterion with requires_grounding=true"
-        " should be auto-awarded with score 1.0 (N/A for this modality), and citations should not be penalized."
-        " In the same case (grounding-disabled modalities such as analog description language), also auto-award"
-        " the 'safety' criterion with score 1.0."
-    )
-    # Track-specific guidance
-    if track_l == "design":
-        instr_extra = (
-            "\nDesign judging:"
-            " If refs include an answer key for the expected modality (answer_key_spice/answer_key_casir/answer_key_cas),"
-            " evaluate 'structural_correctness' (or equivalent) and any netlist-related criteria by comparing the answer's Netlist section to that key."
-            " Focus on structural correctness (required building blocks and their connections), not keyword presence."
-            " If the answer uses the wrong modality (e.g., SPICE requested but JSON/ADL provided), award 0.0 for those criteria."
-            " For casIR (JSON): check that motifs/ports and nets correspond to the reference motifs and port roles."
-            " For analog description language: check that motif instances (DiffPairNMOS, mirrors, cascodes, C(...)) match the reference composition."
-            " For SPICE: check that the transistor-level topology matches the reference (diff pair + tail, mirror/cascodes, output node)."
-            " Only award high scores when the structural match is strong; do NOT award based on restating the brief or topology terms alone."
-        )
-    elif track_l == "analysis":
-        instr_extra = (
-            "\nAnalysis judging:"
-            " Emphasize correctness of the key relation and conditions, anchored to provided knowledge."
-            " Treat mathematically equivalent expressions as correct even if notation differs."
-            " Examples: accept gm/CL, gm/C_L, gm/Cload, gm/C_{load}, and GBW = gm/(2π·CL) as equivalent to GBW = gm/(2 * π * CL);"
-            " ignore spacing and minor symbolization (≈, ~, ~=)."
-            " When inventory.grounding_disabled is true, do not penalize citations under 'safety' and auto-award any requires_grounding criteria."
-            " Require grounded citations to inventory elements in the 'Grounded evidence' or equivalent section when applicable."
-            " Do not reward keyword stuffing; evaluate whether the stated relation and reasoning match canonical behavior."
-        )
-    elif track_l == "debugging":
-        instr_extra = (
-            "\nDebugging judging:"
-            " If refs include bug information (e.g., bug_type=device_polarity_swap, swapped_id, from_type, to_type),"
-            " score whether the answer correctly identifies the fault, its location/device, the impact on operation, and a plausible fix."
-            " Anchor to the artifact/inventory and do not award credit for generic failure modes unrelated to the injected bug."
-        )
-    else:
-        instr_extra = ""
-    instr = instr_base + instr_extra
+
+    # Single user message: rubric markdown + serialized context
+    instr = rubric_text
     messages = [
         {"role": "system", "content": sys_prompt},
-        {"role": "user", "content": instr + "\n\nCONTEXT:\n" + json.dumps(payload)},
+        {"role": "user", "content": instr + "\n\nCONTEXT:\n" + json.dumps(payload, indent=2)},
     ]
+
     judge_temp = float(os.getenv("OPENAI_JUDGE_TEMPERATURE", 0.0))
     judge_max = int(os.getenv("OPENAI_JUDGE_MAX_TOKENS", 400))
-    # Flexible param handling like adapter: adapt for max_completion_tokens and temperature.
+    # Flexible param handling: adapt for max_completion_tokens and temperature when unsupported
     params: Dict[str, Any] = {
         "model": judge_model,
         "messages": messages,
@@ -151,6 +107,7 @@ def judge_answer(
     if "gpt-5" in str(judge_model or "").lower():
         params.pop("max_tokens", None)
         params.pop("temperature", None)
+
     def _parse_retry_after(msg: str) -> float:
         m = re.search(r"try again in\s*([0-9]+\.?[0-9]*)s", msg, flags=re.I)
         if m:
@@ -164,20 +121,20 @@ def judge_answer(
     base_delay = float(os.getenv("OPENAI_JUDGE_BACKOFF_BASE", 1.0))
     attempt = 0
     resp = None
-    # Cross-thread rate limiting for judge
-    try:
-        # Estimate tokens: system + serialized payload text + completion budget
-        est_tokens = int((len(JUDGE_SYS) + len(instr) + len(json.dumps(payload))) / float(os.getenv("OPENAI_JUDGE_TOKEN_DIVISOR", 4))) + int(judge_max)
-        rpm = float(os.getenv("OPENAI_JUDGE_RPM", os.getenv("OPENAI_RPM", 0)) or 0)
-        tpm = float(os.getenv("OPENAI_JUDGE_TPM", os.getenv("OPENAI_TPM", 0)) or 0)
-        if rpm > 0 or tpm > 0:
-            get_limiter("openai_judge", rpm=rpm, tpm=tpm).acquire(token_cost=est_tokens, req_cost=1.0)
-    except Exception:
-        pass
+    # Prepare rate limiting config (computed once, used per attempt)
+    est_tokens = int((len(sys_prompt) + len(instr) + len(json.dumps(payload, indent=2))) / float(os.getenv("OPENAI_JUDGE_TOKEN_DIVISOR", 4))) + int(judge_max)
+    rpm = float(os.getenv("OPENAI_JUDGE_RPM", os.getenv("OPENAI_RPM", 0)) or 0)
+    tpm = float(os.getenv("OPENAI_JUDGE_TPM", os.getenv("OPENAI_TPM", 0)) or 0)
     last_err = None
     with _sem():
         while attempt < max_attempts and resp is None:
             attempt += 1
+            # Cross-thread rate limiting for judge (checked before each API attempt)
+            if rpm > 0 or tpm > 0:
+                try:
+                    get_limiter("openai_judge", rpm=rpm, tpm=tpm).acquire(token_cost=est_tokens, req_cost=1.0)
+                except Exception as rate_err:
+                    print(f"[JUDGE] rate limiter error (attempt {attempt}/{max_attempts}): {rate_err}", file=_sys.stderr, flush=True)
             try:
                 resp = client.chat.completions.create(**params)
                 break
@@ -208,13 +165,26 @@ def judge_answer(
                 # Unhandled error: stop
                 print(f"[JUDGE] error (no retry): {emsg}", file=_sys.stderr, flush=True)
                 break
+    if resp is None:
+        # All retries failed - return error without accessing resp
+        dbg = {
+            "system": sys_prompt,
+            "instructions": instr,
+            "payload": payload,
+            "judge_model": judge_model,
+        }
+        if last_err:
+            print(f"[JUDGE] final failure after {attempt} attempts: {last_err}", file=_sys.stderr, flush=True)
+        else:
+            print(f"[JUDGE] final failure after {attempt} attempts: no response", file=_sys.stderr, flush=True)
+        return {"error": last_err or "Judge failed without response.", "debug": dbg}
     txt = (getattr(resp.choices[0].message, "content", None) or "").strip()
     if not txt:
         # Fallback to Responses API for models that do not return content here
         try:
             r2 = client.responses.create(
                 model=judge_model,
-                instructions=JUDGE_SYS,
+                instructions=sys_prompt,
                 input=(instr + "\n\nCONTEXT:\n" + json.dumps(payload)),
                 max_output_tokens=judge_max,
             )

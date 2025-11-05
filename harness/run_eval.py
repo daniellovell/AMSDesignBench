@@ -20,14 +20,14 @@ import threading
 if __package__ in (None, ""):
     sys.path.append(str(Path(__file__).resolve().parents[1]))
     from harness.types import Inventory, Question, EvalItem  # type: ignore
-    from harness.scoring.rubric import load_rubric, score_answer  # type: ignore
     from harness.scoring.groundedness import groundedness  # type: ignore
     from harness.reporting.render import generate_report, generate_outputs_index  # type: ignore
+    from harness.utils.template import render_template  # type: ignore
 else:
     from .types import Inventory, Question, EvalItem
-    from .scoring.rubric import load_rubric, score_answer
     from .scoring.groundedness import groundedness
     from .reporting.render import generate_report, generate_outputs_index
+    from .utils.template import render_template
 
 
 import importlib
@@ -226,10 +226,12 @@ def load_questions(item_dir: Path) -> List[Question]:
     prompts_dir = item_dir.parent / "prompts"
 
     def _extract_sections_from_prompt(prompt_name: str) -> List[str]:
-        ppath = prompts_dir / prompt_name
+        # Resolve prompt_name relative to item_dir (e.g., ../prompts/design_ota.txt)
+        ppath = (item_dir / prompt_name).resolve()
         try:
             lines = ppath.read_text(encoding='utf-8').splitlines()
         except Exception:
+            # If file not found, return empty list (sections extraction is optional)
             return []
         sections: List[str] = []
         capture = False
@@ -263,16 +265,18 @@ def load_questions(item_dir: Path) -> List[Question]:
                 qdict["require_sections"] = sections
         if not qdict.get("require_sections"):
             qdict["require_sections"] = ["Answer"]
-        # If rubric path is provided but id missing, read it from file
-        if qdict.get("rubric_path") and not qdict.get("rubric_id"):
-            rpath = (item_dir / str(qdict["rubric_path"]))
-            if rpath.exists():
-                try:
-                    rid = json.loads(rpath.read_text(encoding='utf-8')).get("rubric_id")
-                    if rid:
-                        qdict["rubric_id"] = str(rid)
-                except Exception:
-                    pass
+        # Judge prompt defaults: map prompt_template stem to ../judge_prompts/<stem>.md
+        if not qdict.get("judge_prompt"):
+            try:
+                stem = Path(str(qdict["prompt_template"]).strip()).stem
+            except Exception:
+                stem = "rubric"
+            qdict["judge_prompt"] = (Path("../judge_prompts") / f"{stem}.md").as_posix()
+        if not qdict.get("judge_id"):
+            try:
+                qdict["judge_id"] = Path(qdict["judge_prompt"]).stem
+            except Exception:
+                qdict["judge_id"] = str(qdict.get("id") or "judge")
         # Default answer format to markdown for legacy items
         if not qdict.get("answer_format"):
             qdict["answer_format"] = "markdown"
@@ -337,14 +341,6 @@ def load_questions(item_dir: Path) -> List[Question]:
                     # No explicit path provided; use canonical filename for modality
                     qdict["artifact_path"] = _default_artifact_for(ap)
                 qdict = _apply_defaults(qdict)
-                if not qdict.get("rubric_id"):
-                    raise SystemExit(
-                        f"Question {qdict.get('id')} in {item_dir} is missing rubric_id."
-                    )
-                if not qdict.get("rubric_path"):
-                    raise SystemExit(
-                        f"Question {qdict.get('id')} in {item_dir} is missing rubric_path."
-                    )
                 out.append(Question.model_validate(qdict))
         else:
             # Normalize modality and artifact path if missing
@@ -364,14 +360,6 @@ def load_questions(item_dir: Path) -> List[Question]:
                     pass
             raw["modality"] = m
             raw = _apply_defaults(raw)
-            if not raw.get("rubric_id"):
-                raise SystemExit(
-                    f"Question {raw.get('id')} in {item_dir} is missing rubric_id."
-                )
-            if not raw.get("rubric_path"):
-                raise SystemExit(
-                    f"Question {raw.get('id')} in {item_dir} is missing rubric_path."
-                )
             out.append(Question.model_validate(raw))
             # Special-case: For debugging items authored as spice_netlist only,
             # auto-add parallel questions for any additional available modalities
@@ -478,6 +466,12 @@ def main():
         choices=["analysis", "debugging", "design"],
         default=None,
         help="Limit to a specific evaluation family under data/<split>/<family>.",
+    )
+    ap.add_argument(
+        "--family-subdir",
+        dest="family_subdir",
+        default=None,
+        help="Optional subdirectory under the chosen family (e.g., feedback, filters, ota).",
     )
     ap.add_argument(
         "--item-index",
@@ -593,11 +587,11 @@ def main():
 
     # Combined results file for convenience/back-compat
     results_path = out_dir / "combined_results.jsonl"
-    rubrics_cache: Dict[str, Any] = {}
-    knowledge_cache: Dict[str, str] = {}
 
     # Scope items by optional family (e.g., debugging, analysis, design)
     search_root = split_dir if not args.family else (split_dir / args.family)
+    if args.family_subdir:
+        search_root = search_root / args.family_subdir
     if not search_root.exists():
         raise SystemExit(f"Scope not found: {search_root}")
     items = iter_items(search_root)
@@ -623,14 +617,15 @@ def main():
     scope_msg = f" split=[bold]{args.split}[/bold]"
     if args.family:
         scope_msg += f" family=[bold]{args.family}[/bold]"
+    if args.family_subdir:
+        scope_msg += f" subdir=[bold]{args.family_subdir}[/bold]"
     if args.item_index and args.item_index > 0:
         scope_msg += f" item-index=[bold]{args.item_index}[/bold]"
     print(f"[cyan]Evaluating[/cyan]{scope_msg} on models: {', '.join(model_slugs)}")
 
     write_lock = threading.Lock()
     progress_lock = threading.Lock()
-    rubric_lock = threading.Lock()
-    knowledge_lock = threading.Lock()
+    # No rubric lock: deterministic rubric scoring removed
 
     # Utility: randomize SPICE netlist
     def _unit_scale_to_float(val: str) -> float:
@@ -1081,10 +1076,16 @@ def main():
             inv_ids = it.inventory.all_ids()
             # Prompt
             if not q.prompt_template:
-                raise SystemExit(f"Question {q.id} must specify prompt_template (filename) under ../prompts: {item_dir}")
-            ppath = (item_dir.parent / "prompts" / q.prompt_template)
+                raise SystemExit(f"Question {q.id} must specify prompt_template (relative path, e.g., ../prompts/design_ota.txt): {item_dir}")
+            # Resolve prompt_template relative to item_dir (e.g., ../prompts/design_ota.txt from item_dir)
+            ppath = (item_dir / q.prompt_template).resolve()
             if not ppath.exists():
-                raise SystemExit(f"Prompt template not found for {q.id}: {ppath}")
+                raise SystemExit(
+                    f"Prompt template not found for {q.id}:\n"
+                    f"  Expected path: {ppath}\n"
+                    f"  Resolved from: {item_dir} / {q.prompt_template}\n"
+                    f"  Item directory: {item_dir}"
+                )
             def _display_modality(mod: str) -> str:
                 # Human-friendly modality name for prompts to avoid confusion
                 if mod == "cascode":
@@ -1326,17 +1327,17 @@ def main():
                 pred = ""
                 error_msg = str(getattr(e, "message", e))
 
-            # Rubric
-            if not q.rubric_path:
-                raise SystemExit(f"Question {q.id} must specify rubric_path relative to item_dir: {item_dir}")
-            rpath = (item_dir / q.rubric_path)
-            if not rpath.exists():
-                raise SystemExit(f"Rubric file not found for {q.id}: {rpath}")
-            rkey = str(rpath.resolve())
-            with rubric_lock:
-                rubric = rubrics_cache.get(rkey)
-                if rubric is None:
-                    rubrics_cache[rkey] = rubric = load_rubric(rpath)
+            # Judge prompt (Markdown) and variables
+            if not q.judge_prompt:
+                raise SystemExit(f"Question {q.id} must specify judge_prompt relative to item_dir: {item_dir}")
+            jpath = (item_dir / q.judge_prompt)
+            if not jpath.exists():
+                alt = (item_dir.parent / "judge_prompts" / Path(q.judge_prompt).name)
+                if alt.exists():
+                    jpath = alt
+                else:
+                    raise SystemExit(f"Judge prompt not found for {q.id}: {jpath}")
+            rubric_md = jpath.read_text(encoding='utf-8')
             # Build an effective inventory depending on modality
             def _inventory_from_casir(text: str) -> Inventory:
                 try:
@@ -1415,36 +1416,29 @@ def main():
                     from harness.types import Inventory as Inv  # type: ignore
                 eff_inv = Inv(elements={}, nets=[], blocks={})
 
-            # Adapt rubric for modalities that should not score grounding
-            rjson = rubric.model_dump()
-            if q.modality == "cascode":
-                for c in rjson.get("criteria", []) or []:
-                    if bool(c.get("requires_grounding")):
-                        c["weight"] = 0.0
-                s = rjson.get("scoring", {}) or {}
-                if "hallucination_penalty" in s:
-                    s["hallucination_penalty"] = 0.0
-                rjson["scoring"] = s
+            # Render judge prompt with YAML variables under item_dir/rubrics/<stem>.yaml
+            stem = Path(jpath).stem
+            vars_yaml = item_dir / "rubrics" / f"{stem}.yaml"
+            vars_map: Dict[str, Any] = {}
+            if vars_yaml.exists():
+                try:
+                    # Render YAML as a template to allow includes
+                    vars_yaml_text = vars_yaml.read_text(encoding='utf-8')
+                    rendered_yaml = render_template(vars_yaml_text, {}, base_dir=vars_yaml.parent)
+                    vars_map = yaml.safe_load(rendered_yaml) or {}
+                except Exception as e:
+                    print(f"[yellow]Warning: Failed to render/parse {vars_yaml}: {e}[/yellow]")
+                    vars_map = {}
+            # unwrap namespaced
+            if isinstance(vars_map, dict) and stem in vars_map and isinstance(vars_map[stem], dict):
+                vars_map = vars_map[stem]
             try:
-                from .scoring.rubric import Rubric as RubricModel  # type: ignore
-            except Exception:
-                from harness.scoring.rubric import Rubric as RubricModel  # type: ignore
-            rubric_eff = RubricModel.model_validate(rjson)
-
-            scores = score_answer(pred, rubric_eff, eff_inv)
+                rubric_md_rendered = render_template(rubric_md, {k: str(v) for k, v in vars_map.items()}, base_dir=jpath.parent)
+            except Exception as e:
+                raise SystemExit(f"Failed to render judge prompt for {q.id} at {jpath}: {e}")
 
             # Judge
             judge = None
-            kpath = Path("knowledge") / f"{q.rubric_id}.md"
-            if not kpath.exists():
-                alt = Path("knowledge") / "const_gm_currents.md"
-                ktext = alt.read_text(encoding='utf-8') if alt.exists() else ""
-            else:
-                with knowledge_lock:
-                    ktext = knowledge_cache.get(q.rubric_id)
-                    if ktext is None:
-                        ktext = kpath.read_text(encoding='utf-8')
-                        knowledge_cache[q.rubric_id] = ktext
             refs_path = item_dir / "refs.json"
             refs: Dict[str, Any] = {}
             if refs_path.exists():
@@ -1512,15 +1506,48 @@ def main():
 
             inv_summary = _inventory_summary()
             if args.judge_model == "dummy":
-                zero_scores = {}
-                for crit in getattr(rubric_eff, "criteria", []) or []:
-                    cid = getattr(crit, "id", None)
-                    if isinstance(cid, str) and cid.strip():
-                        zero_scores[cid] = 0.0
-                judge = {"scores": zero_scores, "overall": 0.0, "debug": {"judge_model": "dummy"}}
+                # Build a debug payload; keep concise, track-aware system prompt only
+                track_l = str(q.track or "").strip().lower()
+                if track_l == "design":
+                    sys_prompt = (
+                        "You are an impartial grading assistant for analog/mixed-signal circuit DESIGN. "
+                        "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
+                    )
+                elif track_l == "analysis":
+                    sys_prompt = (
+                        "You are an impartial grading assistant for analog/mixed-signal circuit ANALYSIS. "
+                        "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
+                    )
+                elif track_l == "debugging":
+                    sys_prompt = (
+                        "You are an impartial grading assistant for analog/mixed-signal circuit DEBUGGING. "
+                        "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
+                    )
+                else:
+                    sys_prompt = (
+                        "You are an impartial grading assistant for analog/mixed-signal design/analysis/debugging. "
+                        "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
+                    )
+                instr_flat = rubric_md_rendered
+                payload_dbg = {
+                    "refs": refs,
+                    "answer": pred,
+                    "inventory": inv_summary,
+                }
+                judge = {
+                    "scores": {},
+                    "overall": 0.0,
+                    "debug": {
+                        "system": sys_prompt,
+                        "instructions": instr_flat,
+                        "payload": payload_dbg,
+                        "judge_model": "dummy",
+                        "rubric_markdown": rubric_md_rendered,
+                    },
+                }
             elif pred:
                 try:
-                    judge = judge_call(pred, rjson, ktext, refs, inv_summary, model=args.judge_model)
+                    judge = judge_call(pred, rubric_md_rendered, refs, inv_summary, model=args.judge_model)
                 except Exception:
                     judge = None
             if judge and isinstance(judge.get("scores"), dict):
@@ -1528,10 +1555,18 @@ def main():
                 if "overall" not in judge:
                     judge["overall"] = sum(j_scores.values())/len(j_scores) if j_scores else 0.0
 
-            try:
-                topic_str = str(Path(it.item_dir).resolve().relative_to(split_dir.resolve()).parent).replace(os.sep, "/")
-            except Exception:
-                topic_str = Path(it.item_dir).parent.name
+            # Normalize family/topic labeling
+            if "/" in str(args.split):
+                parts = Path(str(args.split)).parts
+                # Drop split head (e.g., 'dev') when present
+                topic_str = "/".join(parts[1:]) if len(parts) > 1 else (parts[0] if parts else "")
+            else:
+                try:
+                    rel = Path(it.item_dir).resolve().relative_to(split_dir.resolve())
+                    parent = rel.parent
+                    topic_str = parent.as_posix() if str(parent) != "." else Path(args.split).as_posix()
+                except (ValueError, OSError):
+                    topic_str = Path(it.item_dir).parent.name
 
             rec = {
                 "model": slug,
@@ -1540,8 +1575,8 @@ def main():
                 "topic": topic_str,
                 "question_id": q.id,
                 "track": q.track,
-                "rubric_id": q.rubric_id,
-                "rubric_path": str(rpath),
+                "judge_id": q.judge_id,
+                "judge_prompt": str(jpath),
                 "modality": q.modality,
                 "split": args.split,
                 "aspect": (q.meta or {}).get("aspect"),
@@ -1550,13 +1585,11 @@ def main():
                 "artifact": artifact_used,
                 "artifact_randomization": rand_info or None,
                 "answer": pred,
-                "scores": scores,
                 "judge": judge,
             }
             if error_msg:
                 rec["error"] = error_msg
-            if judge and isinstance(judge.get("overall", None), (int, float)):
-                rec["raw_blended"] = 0.8 * scores["raw"] + 0.2 * float(judge["overall"])
+            # No deterministic scoring; judge-only
 
             with write_lock:
                 f_combined.write(json.dumps(rec) + "\n")

@@ -2,9 +2,9 @@ questions:
 - id: feedback004_closed_loop_gain
   track: analysis
   modality: auto
-  rubric_id: feedback_closed_loop_gain
-  rubric_path: rubrics/feedback_closed_loop_gain.json
-  prompt_template: feedback_closed_loop_gain.txt
+  judge_prompt: ../judge_prompts/feedback_closed_loop_gain.md
+  judge_id: feedback_closed_loop_gain
+  prompt_template: ../prompts/feedback_closed_loop_gain.txt
   meta:
     topology: inverting_voltage_amp
     bench_version: 0.1.0
@@ -12,9 +12,9 @@ questions:
 - id: feedback004_beta_factor
   track: analysis
   modality: auto
-  rubric_id: feedback_beta_factor
-  rubric_path: rubrics/feedback_beta_factor.json
-  prompt_template: feedback_beta_factor.txt
+  judge_prompt: ../judge_prompts/feedback_beta_factor.md
+  judge_id: feedback_beta_factor
+  prompt_template: ../prompts/feedback_beta_factor.txt
   meta:
     topology: inverting_voltage_amp
     bench_version: 0.1.0
@@ -22,9 +22,9 @@ questions:
 - id: feedback004_loop_gain
   track: analysis
   modality: auto
-  rubric_id: feedback_loop_gain
-  rubric_path: rubrics/feedback_loop_gain.json
-  prompt_template: feedback_loop_gain.txt
+  judge_prompt: ../judge_prompts/feedback_loop_gain.md
+  judge_id: feedback_loop_gain
+  prompt_template: ../prompts/feedback_loop_gain.txt
   meta:
     topology: inverting_voltage_amp
     bench_version: 0.1.0
@@ -32,11 +32,10 @@ questions:
 - id: feedback004_signal_modality
   track: analysis
   modality: auto
-  rubric_id: feedback_signal_modality
-  rubric_path: rubrics/feedback_signal_modality.json
-  prompt_template: feedback_signal_modality.txt
+  judge_prompt: ../judge_prompts/feedback_signal_modality.md
+  judge_id: feedback_signal_modality
+  prompt_template: ../prompts/feedback_signal_modality.txt
   meta:
     topology: inverting_voltage_amp
     bench_version: 0.1.0
     aspect: signal_modality
-

@@ -1,0 +1,11 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches TIA with resistive feedback — opamp with inverting input connected to signal input, non-inverting to ground, output fed back through resistor."
+topology_patterns_any: "transimpedance; TIA; I-V; current-to-voltage"
+topology_min_any: 1
+safety_anti_patterns: "positive feedback; capacitive feedback; capacitor feedback"
+
+hallucination_penalty: 0.15
+min_pass: 0.70

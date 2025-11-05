@@ -1,0 +1,28 @@
+# Common rubric parameters for feedback polarity debugging (Feedback subfamily)
+
+# Weights
+weight_fault_identification: 0.40
+weight_grounded_evidence: 0.30
+weight_fix: 0.20
+weight_clarity: 0.10
+
+# fault_identification criterion
+fault_identification_section: "Fault"
+fault_identification_guidance: "Correctly identify whether the circuit has positive or negative feedback and whether that configuration is correct for the intended circuit."
+
+# grounded_evidence criterion
+grounded_evidence_section: "Grounded evidence"
+grounded_evidence_guidance: "Cite exact element IDs and problematic node connections from the artifact (e.g., opamp inputs, feedback resistor connections)."
+grounded_min_refs: 2
+
+# fix criterion
+fix_section: "Fix"
+fix_guidance: "Propose concrete change to establish proper negative feedback (e.g., swap opamp inputs, correct resistor node connections)."
+
+# clarity criterion
+clarity_section: "Symptoms"
+clarity_guidance: "Explain symptoms of positive feedback (instability, oscillation, saturation) and expected behavior with negative feedback."
+
+# Scoring
+hallucination_penalty: 0.15
+min_pass: 0.70
