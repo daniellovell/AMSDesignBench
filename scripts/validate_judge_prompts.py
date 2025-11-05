@@ -142,11 +142,34 @@ def validate_family(split_root: Path, family: str, family_subdir: str | None = N
                     continue
                 try:
                     # First, validate YAML syntax by rendering any template variables in the YAML itself
-                    rendered_yaml = render_template(
-                        yaml_path.read_text(encoding="utf-8"),
-                        {},
-                        base_dir=yaml_path.parent,
-                    )
+                    # Note: Runtime variables in YAML are expected at runtime, so we provide mock values for validation
+                    # Mock runtime variables that might be used in YAML files
+                    mock_runtime_vars = {
+                        "swapped_id": "M1",
+                        "from_type": "PMOS",
+                        "to_type": "NMOS",
+                        "bug_type": "device_polarity_swap",
+                        "expected_polarity": "negative",
+                    }
+                    
+                    try:
+                        rendered_yaml = render_template(
+                            yaml_path.read_text(encoding="utf-8"),
+                            mock_runtime_vars,
+                            base_dir=yaml_path.parent,
+                        )
+                    except ValueError as ve:
+                        # If we still get a runtime variable error, it's a new runtime var we don't have a mock for
+                        # In this case, try to continue with empty vars_map
+                        if "Runtime variable" in str(ve) and "not found in vars_map" in str(ve):
+                            # Try with empty vars_map and let runtime vars remain unresolved
+                            # This will cause YAML parsing issues, but we'll catch that below
+                            rendered_yaml = yaml_path.read_text(encoding="utf-8")
+                            # Replace runtime directives with placeholder for YAML parsing
+                            rendered_yaml = re.sub(r"\{runtime:[a-zA-Z0-9_]+\}", '""', rendered_yaml)
+                        else:
+                            raise
+                    
                     yaml_data = yaml.safe_load(rendered_yaml)
                     if yaml_data is None:
                         yaml_data = {}
@@ -154,16 +177,36 @@ def validate_family(split_root: Path, family: str, family_subdir: str | None = N
                     # Convert YAML data to string values for template rendering
                     yaml_vars = {k: str(v) for k, v in yaml_data.items()}
                     
+                    # Add mock runtime vars to yaml_vars for judge prompt rendering
+                    yaml_vars.update(mock_runtime_vars)
+                    
                     # Render the judge prompt template with the YAML data
-                    judge_content = render_template(
-                        jpath.read_text(encoding="utf-8"),
-                        yaml_vars,
-                        base_dir=jpath.parent,
-                    )
+                    # Note: Runtime variables (e.g., {runtime:swapped_id}) are provided at runtime,
+                    # so we catch ValueError for missing runtime vars during validation
+                    try:
+                        judge_content = render_template(
+                            jpath.read_text(encoding="utf-8"),
+                            yaml_vars,
+                            base_dir=jpath.parent,
+                        )
+                    except ValueError as ve:
+                        # Check if this is a runtime variable error
+                        if "Runtime variable" in str(ve) and "not found in vars_map" in str(ve):
+                            # Runtime variables are expected at runtime, not during validation
+                            # Read the original template for unreplaced variable checking
+                            # Runtime directives will be filtered out below
+                            judge_content = jpath.read_text(encoding="utf-8")
+                        else:
+                            raise
                     
                     # Check for unreplaced template variables
                     # Use the same pattern as harness/utils/template.py: only alphanumeric + underscore
+                    # Exclude runtime directives since they're provided at runtime
                     unreplaced = re.findall(r"\{([a-zA-Z0-9_]+)\}", judge_content)
+                    # Also check for unresolved runtime directives and exclude them from errors
+                    runtime_directives = re.findall(r"\{runtime:([a-zA-Z0-9_]+)\}", judge_content)
+                    runtime_keys = set(runtime_directives)
+                    unreplaced = [v for v in unreplaced if v not in runtime_keys]
                     if unreplaced:
                         errors.append(
                             f"{jpath}: unreplaced variables: {', '.join(sorted(set(unreplaced)))}"
