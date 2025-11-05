@@ -17,7 +17,7 @@ def render_template(text: str, vars: Dict[str, str], base_dir: Optional[str | Pa
 
     def _resolve_includes(s: str, depth: int = 0) -> str:
         if depth > 8:
-            return s  # guard against cycles
+            raise ValueError(f"Include depth exceeds limit (possible circular dependency)")
         out = s
         for m in list(_PATH_RE.finditer(s)):
             raw = m.group(0)
@@ -26,12 +26,17 @@ def render_template(text: str, vars: Dict[str, str], base_dir: Optional[str | Pa
                 p = Path(rel)
                 if not p.is_absolute() and base is not None:
                     p = (base / p).resolve()
+                if not p.exists():
+                    raise FileNotFoundError(f"Include not found: {rel} (resolved to {p})")
                 content = p.read_text(encoding="utf-8")
                 content = _resolve_includes(content, depth + 1)
                 out = out.replace(raw, content)
-            except Exception:
-                # leave as-is if cannot read
-                continue
+            except FileNotFoundError:
+                # Re-raise FileNotFoundError for missing includes
+                raise
+            except Exception as exc:
+                # Wrap other exceptions with context
+                raise RuntimeError(f"Failed to read include {rel}: {exc}") from exc
         return out
 
     # 1) includes
@@ -40,4 +45,11 @@ def render_template(text: str, vars: Dict[str, str], base_dir: Optional[str | Pa
     def _sub(m: re.Match[str]) -> str:
         key = m.group(1)
         return str(vars.get(key, m.group(0)))
-    return _VAR_RE.sub(_sub, with_includes)
+    rendered = _VAR_RE.sub(_sub, with_includes)
+    
+    # 3) Check for unresolved includes (should not happen if _resolve_includes worked correctly)
+    unresolved_includes = _PATH_RE.findall(rendered)
+    if unresolved_includes:
+        raise RuntimeError(f"Unresolved include directives found in rendered template: {', '.join(unresolved_includes)}")
+    
+    return rendered

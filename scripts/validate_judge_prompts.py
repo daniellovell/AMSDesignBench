@@ -47,8 +47,11 @@ def validate_template_includes(template_path: Path, base_dir: Path, visited: set
         visited = set()
     
     # Guard against cycles and excessive depth
-    if depth > 8 or template_path in visited:
-        return errors
+    if depth > 8:
+        return [f"{template_path}: include depth exceeds limit (possible circular dependency)"]
+    
+    if template_path in visited:
+        return [f"{template_path}: circular include dependency detected"]
     
     visited.add(template_path)
     
