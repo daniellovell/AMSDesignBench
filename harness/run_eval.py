@@ -13,7 +13,7 @@ import yaml
 
 from rich import print
 from rich.progress import Progress, BarColumn, TimeElapsedColumn, TimeRemainingColumn, MofNCompleteColumn
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 import threading
 
 # Allow running as script or module
@@ -445,6 +445,219 @@ def iter_items(split_dir: Path) -> List[EvalItem]:
     return items
 
 
+# Utility: randomize SPICE netlist
+def _unit_scale_to_float(val: str) -> float:
+    s = val.strip().lower()
+    # Try plain float
+    try:
+        return float(s)
+    except Exception:
+        pass
+    # SPICE common suffix multipliers
+    muls = {
+        't': 1e12,
+        'g': 1e9,
+        'meg': 1e6,
+        'k': 1e3,
+        'm': 1e-3,
+        'u': 1e-6,
+        'n': 1e-9,
+        'p': 1e-12,
+        'f': 1e-15,
+    }
+    # handle 'meg' specially
+    if s.endswith('meg'):
+        try:
+            return float(s[:-3]) * muls['meg']
+        except Exception:
+            return 0.0
+    # last char as suffix
+    if s[-1] in muls:
+        try:
+            return float(s[:-1]) * muls[s[-1]]
+        except Exception:
+            return 0.0
+    return 0.0
+
+
+def _float_to_unit(val: float, like: str, sig_digits: Optional[int] = None) -> str:
+    # Render with the same unit suffix as 'like' if present. sig_digits limits precision.
+    fmt = (lambda x: f"{x:g}") if sig_digits is None else (lambda x: f"{x:.{sig_digits}g}")
+    s = like.strip()
+    if not s:
+        return fmt(val)
+    suf = s[-1]
+    lower = s.lower()
+    if lower.endswith('meg'):
+        return f"{fmt(val/1e6)}{s[-3:]}"
+    muls = {
+        't': 1e12,
+        'g': 1e9,
+        'k': 1e3,
+        'm': 1e-3,
+        'u': 1e-6,
+        'n': 1e-9,
+        'p': 1e-12,
+        'f': 1e-15,
+    }
+    suf_lower = suf.lower()
+    if suf_lower in muls:
+        scaled = val / muls[suf_lower]
+        return f"{fmt(scaled)}{suf}"
+    return fmt(val)
+
+
+def randomize_spice(text: str, seed: int) -> str:
+    rnd = random.Random(seed)
+    raw_lines = text.splitlines()
+    # identify .SUBCKT blocks and keep intact; also treat continuation lines '+' as part of previous statement
+    out_lines: List[str] = []
+    devices: List[List[str]] = []  # each device may have continuations
+    headers: List[str] = []
+    tails: List[str] = []
+    in_subckt = False
+    subckt_buf: List[str] = []
+    subckts: List[List[str]] = []
+    current_stmt: List[str] = []
+    for ln in raw_lines:
+        raw = ln.rstrip('\n')
+        s = raw.strip()
+        if not s:
+            # keep blank lines in tails for aesthetics later
+            tails.append(raw)
+            continue
+        low = s.lower()
+        if low.startswith('.subckt'):
+            # flush any pending statement before entering subckt
+            if current_stmt:
+                devices.append(current_stmt)
+                current_stmt = []
+            in_subckt = True
+            subckt_buf = [raw]
+            continue
+        if in_subckt:
+            subckt_buf.append(raw)
+            if low.startswith('.ends'):
+                in_subckt = False
+                subckts.append(subckt_buf)
+            continue
+        if s[0] in ('*', ';'):
+            # flush pending
+            if current_stmt:
+                devices.append(current_stmt)
+                current_stmt = []
+            headers.append(raw)
+            continue
+        if s[0] == '.':
+            # flush pending
+            if current_stmt:
+                devices.append(current_stmt)
+                current_stmt = []
+            headers.append(raw)
+            continue
+        if s[0] == '+':
+            # continuation of previous
+            if current_stmt:
+                current_stmt.append(raw)
+            else:
+                # orphan continuation -> treat as header to be safe
+                headers.append(raw)
+            continue
+        # start of a device/source statement
+        if current_stmt:
+            devices.append(current_stmt)
+        current_stmt = [raw]
+    # flush at end
+    if current_stmt:
+        devices.append(current_stmt)
+
+    # Jitter sizes on MOS and C devices
+    def _quantize_like(value: float, reference: float, rel_step: float, min_step: float) -> float:
+        if reference <= 0.0:
+            return value
+        step = max(abs(reference) * rel_step, min_step)
+        if step <= 0:
+            return value
+        quanta = int(round(value / step))
+        if quanta < 1:
+            quanta = 1
+        return quanta * step
+
+    def jitter_device(dev_lines: List[str]) -> List[str]:
+        line0 = dev_lines[0]
+        s = line0.strip()
+        if not s:
+            return dev_lines
+        # MOS: starts with M/m
+        if s[0].lower() == 'm':
+            # Scale W by factor and L by small jitter, preserve unit suffix
+            parts = s.split()
+            # Find W= and L= tokens
+            new_parts = []
+            w_like = None
+            l_like = None
+            for tok in parts:
+                if tok.upper().startswith('W='):
+                    w_like = tok.split('=',1)[1]
+                if tok.upper().startswith('L='):
+                    l_like = tok.split('=',1)[1]
+            # Heuristic: NMOS vs PMOS by model token (5th token typical)
+            # Fallback: if contains 'pch' treat as PMOS
+            is_p = ' pch ' in f' {s.lower()} '
+            base_w = _unit_scale_to_float(w_like) if w_like else 0.0
+            base_l = _unit_scale_to_float(l_like) if l_like else 0.0
+            w_new: Optional[float] = None
+            if base_w > 0.0:
+                heavy_tail = rnd.random() < 0.18  # Occasionally sample much larger analog devices
+                low = max(base_w * 0.5, 0.2e-6)
+                high = 100e-6  # Allow widths up to ~100 µm
+                if heavy_tail and high > low:
+                    w_candidate = math.exp(rnd.uniform(math.log(low), math.log(high)))
+                else:
+                    heavy_tail = False
+                    w_candidate = base_w * rnd.triangular(0.6, 1.9, 1.1 if is_p else 0.95)
+                w_candidate = min(max(w_candidate, 0.12e-6), 100e-6)
+                ref = w_candidate if heavy_tail else base_w
+                w_new = _quantize_like(w_candidate, ref, 0.005, 5e-9)
+            l_new: Optional[float] = None
+            if base_l > 0.0:
+                l_candidate = max(base_l * rnd.triangular(0.9, 1.2, 1.03), 1e-9)
+                l_new = _quantize_like(l_candidate, base_l, 0.002, 2e-9)
+            for tok in parts:
+                up = tok.upper()
+                if up.startswith('W=') and w_like and w_new is not None:
+                    tok = f"W={_float_to_unit(w_new, w_like, sig_digits=3)}"
+                elif up.startswith('L=') and l_like and l_new is not None:
+                    tok = f"L={_float_to_unit(l_new, l_like, sig_digits=3)}"
+                new_parts.append(tok)
+            dev_lines[0] = ' '.join(new_parts)
+            return dev_lines
+        # Capacitor: starts with C/c, format: Cname n1 n2 value [...]
+        if s[0].lower() == 'c':
+            parts = s.split()
+            if len(parts) >= 4:
+                like = parts[3]
+                base = _unit_scale_to_float(like)
+                if base > 0.0:
+                    scale = rnd.uniform(0.7, 1.3)
+                    newv = max(base * scale, 1e-18)
+                    parts[3] = _float_to_unit(newv, like, sig_digits=3)
+            dev_lines[0] = ' '.join(parts)
+            return dev_lines
+        return dev_lines
+
+    devices = [jitter_device(d) for d in devices]
+    # Shuffle devices order to reduce memorization (shuffle whole statement blocks)
+    rnd.shuffle(devices)
+    out_lines.extend(headers)
+    for blk in subckts:
+        out_lines.extend(blk)
+    for stmt in devices:
+        out_lines.extend(stmt)
+    out_lines.extend(tails)
+    return '\n'.join(out_lines) + ('\n' if text.endswith('\n') else '')
+
+
 def main():
     ap = argparse.ArgumentParser()
     # Back-compat: --model can be a single name or comma-separated list; prefer --models
@@ -626,216 +839,6 @@ def main():
     write_lock = threading.Lock()
     progress_lock = threading.Lock()
     # No rubric lock: deterministic rubric scoring removed
-
-    # Utility: randomize SPICE netlist
-    def _unit_scale_to_float(val: str) -> float:
-        s = val.strip().lower()
-        # Try plain float
-        try:
-            return float(s)
-        except Exception:
-            pass
-        # SPICE common suffix multipliers
-        muls = {
-            't': 1e12,
-            'g': 1e9,
-            'meg': 1e6,
-            'k': 1e3,
-            'm': 1e-3,
-            'u': 1e-6,
-            'n': 1e-9,
-            'p': 1e-12,
-            'f': 1e-15,
-        }
-        # handle 'meg' specially
-        if s.endswith('meg'):
-            try:
-                return float(s[:-3]) * muls['meg']
-            except Exception:
-                return 0.0
-        # last char as suffix
-        if s[-1] in muls:
-            try:
-                return float(s[:-1]) * muls[s[-1]]
-            except Exception:
-                return 0.0
-        return 0.0
-
-    def _float_to_unit(val: float, like: str, sig_digits: Optional[int] = None) -> str:
-        # Render with the same unit suffix as 'like' if present. sig_digits limits precision.
-        fmt = (lambda x: f"{x:g}") if sig_digits is None else (lambda x: f"{x:.{sig_digits}g}")
-        s = like.strip()
-        if not s:
-            return fmt(val)
-        suf = s[-1]
-        lower = s.lower()
-        if lower.endswith('meg'):
-            return f"{fmt(val/1e6)}{s[-3:]}"
-        muls = {
-            't': 1e12,
-            'g': 1e9,
-            'k': 1e3,
-            'm': 1e-3,
-            'u': 1e-6,
-            'n': 1e-9,
-            'p': 1e-12,
-            'f': 1e-15,
-        }
-        suf_lower = suf.lower()
-        if suf_lower in muls:
-            scaled = val / muls[suf_lower]
-            return f"{fmt(scaled)}{suf}"
-        return fmt(val)
-
-    def randomize_spice(text: str, seed: int) -> str:
-        rnd = random.Random(seed)
-        raw_lines = text.splitlines()
-        # identify .SUBCKT blocks and keep intact; also treat continuation lines '+' as part of previous statement
-        out_lines: List[str] = []
-        devices: List[List[str]] = []  # each device may have continuations
-        headers: List[str] = []
-        tails: List[str] = []
-        in_subckt = False
-        subckt_buf: List[str] = []
-        subckts: List[List[str]] = []
-        current_stmt: List[str] = []
-        for ln in raw_lines:
-            raw = ln.rstrip('\n')
-            s = raw.strip()
-            if not s:
-                # keep blank lines in tails for aesthetics later
-                tails.append(raw)
-                continue
-            low = s.lower()
-            if low.startswith('.subckt'):
-                # flush any pending statement before entering subckt
-                if current_stmt:
-                    devices.append(current_stmt)
-                    current_stmt = []
-                in_subckt = True
-                subckt_buf = [raw]
-                continue
-            if in_subckt:
-                subckt_buf.append(raw)
-                if low.startswith('.ends'):
-                    in_subckt = False
-                    subckts.append(subckt_buf)
-                continue
-            if s[0] in ('*', ';'):
-                # flush pending
-                if current_stmt:
-                    devices.append(current_stmt)
-                    current_stmt = []
-                headers.append(raw)
-                continue
-            if s[0] == '.':
-                # flush pending
-                if current_stmt:
-                    devices.append(current_stmt)
-                    current_stmt = []
-                headers.append(raw)
-                continue
-            if s[0] == '+':
-                # continuation of previous
-                if current_stmt:
-                    current_stmt.append(raw)
-                else:
-                    # orphan continuation -> treat as header to be safe
-                    headers.append(raw)
-                continue
-            # start of a device/source statement
-            if current_stmt:
-                devices.append(current_stmt)
-            current_stmt = [raw]
-        # flush at end
-        if current_stmt:
-            devices.append(current_stmt)
-
-        # Jitter sizes on MOS and C devices
-        def _quantize_like(value: float, reference: float, rel_step: float, min_step: float) -> float:
-            if reference <= 0.0:
-                return value
-            step = max(abs(reference) * rel_step, min_step)
-            if step <= 0:
-                return value
-            quanta = int(round(value / step))
-            if quanta < 1:
-                quanta = 1
-            return quanta * step
-
-        def jitter_device(dev_lines: List[str]) -> List[str]:
-            line0 = dev_lines[0]
-            s = line0.strip()
-            if not s:
-                return dev_lines
-            # MOS: starts with M/m
-            if s[0].lower() == 'm':
-                # Scale W by factor and L by small jitter, preserve unit suffix
-                parts = s.split()
-                # Find W= and L= tokens
-                new_parts = []
-                w_like = None
-                l_like = None
-                for tok in parts:
-                    if tok.upper().startswith('W='):
-                        w_like = tok.split('=',1)[1]
-                    if tok.upper().startswith('L='):
-                        l_like = tok.split('=',1)[1]
-                # Heuristic: NMOS vs PMOS by model token (5th token typical)
-                # Fallback: if contains 'pch' treat as PMOS
-                is_p = ' pch ' in f' {s.lower()} '
-                base_w = _unit_scale_to_float(w_like) if w_like else 0.0
-                base_l = _unit_scale_to_float(l_like) if l_like else 0.0
-                w_new: Optional[float] = None
-                if base_w > 0.0:
-                    heavy_tail = rnd.random() < 0.18  # Occasionally sample much larger analog devices
-                    low = max(base_w * 0.5, 0.2e-6)
-                    high = 100e-6  # Allow widths up to ~100 µm
-                    if heavy_tail and high > low:
-                        w_candidate = math.exp(rnd.uniform(math.log(low), math.log(high)))
-                    else:
-                        heavy_tail = False
-                        w_candidate = base_w * rnd.triangular(0.6, 1.9, 1.1 if is_p else 0.95)
-                    w_candidate = min(max(w_candidate, 0.12e-6), 100e-6)
-                    ref = w_candidate if heavy_tail else base_w
-                    w_new = _quantize_like(w_candidate, ref, 0.005, 5e-9)
-                l_new: Optional[float] = None
-                if base_l > 0.0:
-                    l_candidate = max(base_l * rnd.triangular(0.9, 1.2, 1.03), 1e-9)
-                    l_new = _quantize_like(l_candidate, base_l, 0.002, 2e-9)
-                for tok in parts:
-                    up = tok.upper()
-                    if up.startswith('W=') and w_like and w_new is not None:
-                        tok = f"W={_float_to_unit(w_new, w_like, sig_digits=3)}"
-                    elif up.startswith('L=') and l_like and l_new is not None:
-                        tok = f"L={_float_to_unit(l_new, l_like, sig_digits=3)}"
-                    new_parts.append(tok)
-                dev_lines[0] = ' '.join(new_parts)
-                return dev_lines
-            # Capacitor: starts with C/c, format: Cname n1 n2 value [...]
-            if s[0].lower() == 'c':
-                parts = s.split()
-                if len(parts) >= 4:
-                    like = parts[3]
-                    base = _unit_scale_to_float(like)
-                    if base > 0.0:
-                        scale = rnd.uniform(0.7, 1.3)
-                        newv = max(base * scale, 1e-18)
-                        parts[3] = _float_to_unit(newv, like, sig_digits=3)
-                dev_lines[0] = ' '.join(parts)
-                return dev_lines
-            return dev_lines
-
-        devices = [jitter_device(d) for d in devices]
-        # Shuffle devices order to reduce memorization (shuffle whole statement blocks)
-        rnd.shuffle(devices)
-        out_lines.extend(headers)
-        for blk in subckts:
-            out_lines.extend(blk)
-        for stmt in devices:
-            out_lines.extend(stmt)
-        out_lines.extend(tails)
-        return '\n'.join(out_lines) + ('\n' if text.endswith('\n') else '')
 
     def inject_device_swap_spice(text: str, seed: int):
         """Randomly swap one MOSFET device type: NMOS<->PMOS or nch<->pch.
@@ -1594,18 +1597,45 @@ def main():
             with write_lock:
                 f_combined.write(json.dumps(rec) + "\n")
                 model_files[slug].write(json.dumps(rec) + "\n")
+                # Flush immediately to prevent data loss on crash
+                f_combined.flush()
+                model_files[slug].flush()
                 total += 1
             with progress_lock:
                 progress.update(task_id, advance=1)
 
-        from concurrent.futures import ThreadPoolExecutor as _TPE
-        with _TPE(max_workers=max(1, int(args.item_workers))) as item_pool:
+        import time as _time
+        item_timeout = float(os.getenv("EVAL_ITEM_TIMEOUT", "300.0"))  # 5 min per item default
+        with ThreadPoolExecutor(max_workers=max(1, int(args.item_workers))) as item_pool:
             futs = []
             for it in items:
                 for q in it.questions:
                     futs.append(item_pool.submit(process_q, it, q))
-            for f in futs:
-                f.result()
+            for i, f in enumerate(futs):
+                try:
+                    # Add timeout to prevent indefinite hangs
+                    f.result(timeout=item_timeout)
+                except FutureTimeoutError:
+                    print(f"[ERROR] Item {i+1}/{len(futs)} timed out after {item_timeout}s - continuing with remaining items", file=sys.stderr, flush=True)
+                    # Write error record for timeout
+                    try:
+                        # Try to identify which item timed out (may not be perfect)
+                        rec = {
+                            "model": slug,
+                            "error": f"Item processing timed out after {item_timeout}s",
+                            "timeout": True,
+                        }
+                        with write_lock:
+                            f_combined.write(json.dumps(rec) + "\n")
+                            model_files[slug].write(json.dumps(rec) + "\n")
+                            f_combined.flush()
+                            model_files[slug].flush()
+                    except Exception:
+                        pass
+                except Exception as e:
+                    print(f"[ERROR] Item {i+1}/{len(futs)} failed: {e}", file=sys.stderr, flush=True)
+                    # Continue processing other items
+                    pass
 
     with results_path.open("w") as f_combined:
         # Progress setup: one task per model
@@ -1623,10 +1653,21 @@ def main():
             }
 
             max_workers = args.model_workers or len(model_slugs)
+            model_timeout = float(os.getenv("EVAL_MODEL_TIMEOUT", "3600.0"))  # 1 hour per model default
             with ThreadPoolExecutor(max_workers=max_workers) as ex:
                 futures = [ex.submit(run_for_model, slug) for slug in model_slugs]
-                for _ in futures:
-                    _.result()
+                for i, f in enumerate(futures):
+                    try:
+                        # Add timeout to prevent indefinite hangs
+                        f.result(timeout=model_timeout)
+                    except FutureTimeoutError:
+                        slug_affected = model_slugs[i] if i < len(model_slugs) else "unknown"
+                        print(f"[ERROR] Model {slug_affected} timed out after {model_timeout}s - continuing with remaining models", file=sys.stderr, flush=True)
+                        # Continue with other models
+                    except Exception as e:
+                        slug_affected = model_slugs[i] if i < len(model_slugs) else "unknown"
+                        print(f"[ERROR] Model {slug_affected} failed: {e}", file=sys.stderr, flush=True)
+                        # Continue with other models
 
     def _force_remove(path: Path) -> None:
         """Forcefully remove a file, directory, or symlink, handling broken symlinks and Windows quirks."""

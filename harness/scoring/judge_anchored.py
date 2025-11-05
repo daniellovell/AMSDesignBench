@@ -22,7 +22,9 @@ def _client() -> Optional[Any]:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         return None
-    return OpenAI(api_key=api_key)
+    # Add timeout to prevent hanging (default 60s, configurable via env)
+    timeout_seconds = float(os.getenv("OPENAI_TIMEOUT", "60.0"))
+    return OpenAI(api_key=api_key, timeout=timeout_seconds)
 
 
 _SEM: threading.Semaphore | None = None
@@ -136,12 +138,31 @@ def judge_answer(
                 except Exception as rate_err:
                     print(f"[JUDGE] rate limiter error (attempt {attempt}/{max_attempts}): {rate_err}", file=_sys.stderr, flush=True)
             try:
-                resp = client.chat.completions.create(**params)
+                # OpenAI client timeout is set in _client(), but add explicit timeout as backup
+                api_timeout = float(os.getenv("OPENAI_JUDGE_TIMEOUT", os.getenv("OPENAI_TIMEOUT", "60.0")))
+                resp = client.chat.completions.create(**params, timeout=api_timeout)
+                break
+            except TimeoutError as e:
+                emsg = f"API call timed out after {api_timeout}s"
+                last_err = emsg
+                print(f"[JUDGE] timeout (attempt {attempt}/{max_attempts}): {emsg}", file=_sys.stderr, flush=True)
+                # Retry on timeout unless max attempts reached
+                if attempt < max_attempts:
+                    delay = base_delay * (2 ** (attempt - 1))
+                    delay += _rnd.uniform(0.1, 0.5)
+                    print(f"[JUDGE] retrying after timeout; delay {delay:.1f}s", file=_sys.stderr, flush=True)
+                    time.sleep(min(delay, 10.0))
+                    continue
                 break
             except Exception as e:
-                emsg = str(getattr(e, "message", e))
-                last_err = emsg or str(e)
-                txt = (emsg or str(e)).lower()
+                # Capture error message more robustly
+                emsg = str(getattr(e, "message", ""))
+                if not emsg:
+                    emsg = str(e)
+                if not emsg:
+                    emsg = f"{type(e).__name__}: {repr(e)}"
+                last_err = emsg
+                txt = emsg.lower()
                 adapted = False
                 if "max_tokens" in txt and "max_completion_tokens" in txt:
                     params.pop("max_tokens", None)
@@ -176,17 +197,21 @@ def judge_answer(
         if last_err:
             print(f"[JUDGE] final failure after {attempt} attempts: {last_err}", file=_sys.stderr, flush=True)
         else:
-            print(f"[JUDGE] final failure after {attempt} attempts: no response", file=_sys.stderr, flush=True)
+            # This should rarely happen with improved error handling, but provide debug info if it does
+            print(f"[JUDGE] final failure after {attempt} attempts: no response (no exception captured)", file=_sys.stderr, flush=True)
+            print(f"[JUDGE] debug: client={client is not None}, judge_model={judge_model}, params keys={list(params.keys())}", file=_sys.stderr, flush=True)
         return {"error": last_err or "Judge failed without response.", "debug": dbg}
     txt = (getattr(resp.choices[0].message, "content", None) or "").strip()
     if not txt:
         # Fallback to Responses API for models that do not return content here
         try:
+            api_timeout = float(os.getenv("OPENAI_JUDGE_TIMEOUT", os.getenv("OPENAI_TIMEOUT", "60.0")))
             r2 = client.responses.create(
                 model=judge_model,
                 instructions=sys_prompt,
                 input=(instr + "\n\nCONTEXT:\n" + json.dumps(payload)),
                 max_output_tokens=judge_max,
+                timeout=api_timeout,
             )
             txt = (getattr(r2, "output_text", None) or "").strip()
             if not txt:
