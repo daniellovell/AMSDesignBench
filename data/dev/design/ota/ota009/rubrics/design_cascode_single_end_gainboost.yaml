@@ -9,3 +9,158 @@ safety_anti_patterns: "high-swing; folded; fully differential; two-stage"
 
 hallucination_penalty: 0.15
 min_pass: 0.70
+answer_key_SPICE: |
+  
+  M1 N005 vin 0 0 NMOS l=0.18u w=2u
+  M2 vout N004 N005 0 NMOS l=0.18u w=2u
+  M3 N001 N002 vout VDD PMOS l=0.18u w=4u
+  M4 VDD vb3 N001 VDD PMOS l=0.18u w=4u
+  M7 VDD N001 N002 VDD PMOS l=0.18u w=4u
+  M8 VDD vb1 N004 N003 PMOS l=0.18u w=4u
+  M5 N004 N005 0 0 NMOS l=0.18u w=2u
+  M6 N002 vb2 0 0 NMOS l=0.18u w=2u
+  VDD VDD 0 1.8
+  Cload vout 0 1p
+answer_key_CASIR: |
+  {
+    "ir_version": 1,
+    "format": "casir-json-1",
+    "level": "EL",
+    "meta": {"tool": "cascode-0.2.0", "when": "2025-10-09T00:00:00Z"},
+  
+    "nets": [
+      {"id": "VDD",  "domain": "supply",    "rail": "VDD"},
+      {"id": "GND",  "domain": "ground",    "rail": "GND"},
+      {"id": "vin",  "domain": "electrical"},
+      {"id": "vout", "domain": "electrical"},
+      {"id": "N001", "domain": "electrical"},
+      {"id": "N002", "domain": "electrical"},
+      {"id": "N004", "domain": "electrical"},
+      {"id": "N005", "domain": "electrical"},
+      {"id": "vb1",  "domain": "bias"},
+      {"id": "vb2",  "domain": "bias"},
+      {"id": "vb3",  "domain": "bias"}
+    ],
+  
+    "motifs": [
+      {
+        "id": "M_in",
+        "type": "NMOS",
+        "ports": {"gate": "vin", "drain": "N005", "source": "GND", "bulk": "GND"},
+        "params": {
+          "W": {"value": 2.0e-6, "unit": "m"},
+          "L": {"value": 1.8e-7, "unit": "m"},
+          "m": {"value": 1}
+        },
+        "impl": {"primitive": true, "pdk_device": "nfet_01v8"}
+      },
+      {
+        "id": "n_cas",
+        "type": "NMOSCascode",
+        "ports": {"in": "N005", "out": "vout", "bias": "N004", "gnd": "GND"},
+        "impl": {"char_ref": "lib.motifs/nmos_cascode@1.0"}
+      },
+      {
+        "id": "load_top",
+        "type": "ActiveLoad",
+        "traits": ["LoadDevice"],
+        "ports": {"node": "N001", "bias": "vb3", "vref": "VDD"},
+        "params": {"polarity": "PMOS"},
+        "impl": {"char_ref": "lib.motifs/active_load@1.0"}
+      },
+      {
+        "id": "p_cas",
+        "type": "PMOSCascodeElement",
+        "ports": {"out": "N001", "gate": "N002", "src": "vout"},
+        "impl": {"char_ref": "lib.motifs/pmos_cascode_element@1.0"}
+      },
+      {
+        "id": "n_gb_p",
+        "type": "TailCurrentSourceNMOS",
+        "ports": {"out": "N002", "gate": "vb2", "gnd": "GND"},
+        "impl": {"char_ref": "lib.motifs/tail_nmos@1.0"}
+      },
+      {
+        "id": "p_gb_p",
+        "type": "PMOSMirror",
+        "ports": {"from": "N001", "to": "N002", "vdd": "VDD"},
+        "impl": {"char_ref": "lib.motifs/pmos_mirror@1.0"}
+      },
+      {
+        "id": "load_gb",
+        "type": "ActiveLoad",
+        "traits": ["LoadDevice"],
+        "ports": {"node": "N004", "bias": "vb1", "vref": "VDD"},
+        "params": {"polarity": "PMOS"},
+        "impl": {"char_ref": "lib.motifs/active_load@1.0"}
+      },
+      {
+        "id": "M_gb",
+        "type": "NMOS",
+        "ports": {"gate": "N005", "drain": "N004", "source": "GND", "bulk": "GND"},
+        "params": {
+          "W": {"value": 2.0e-6, "unit": "m"},
+          "L": {"value": 1.8e-7, "unit": "m"},
+          "m": {"value": 1}
+        },
+        "impl": {"primitive": true, "pdk_device": "nfet_01v8"}
+      },
+      {
+        "id": "Cload",
+        "type": "Cap",
+        "ports": {"p": "vout", "n": "GND"},
+        "params": {"C": {"value": 1.0e-12, "unit": "F"}}
+      }
+    ],
+  
+    "constraints": {
+      "numeric": [
+        {"id": "c_gain", "kind": "ineq", "lhs": {"metric": "gain_db"}, "op": ">=", "rhs": {"value": 80, "unit": "dB"}, "scope": {"node": "vout"}}
+      ],
+      "tech": [{"id": "t_lmin", "kind": "limit", "on": "*", "rule": "L>=", "value": 1.8e-7, "unit": "m"}]
+    },
+  
+    "harness": {
+      "supplies": [{"net": "VDD", "value": 1.8, "unit": "V"}],
+      "loads": [{"node": "vout", "C": 1.0e-12, "unit": "F"}],
+      "sources": [{"node": "vin", "Z": 50.0, "unit": "Ohm"}],
+      "pvt": {"corners": ["TT@27C"]}
+    },
+  
+    "benches": ["AC_OpenLoop"],
+    "provenance": {"sources": [{"file": "templates/ota/ota009/netlist.cas", "span": {"from": 1, "to": 34}}]}
+  }
+answer_key_CASCODE: |
+  package analog.ota; import lib.motifs.*;
+  
+  class OTATelescopic_SE_GainBoost_Bound implements Amplifier {
+    supply VDD=1.8V; ground GND;
+    port in vin; port out vout;
+    // vb1: PMOS current source for NMOS-side gain-boost amp
+    // vb2: NMOS current source for PMOS-side gain-boost amp
+    // vb3: PMOS top current source over main PMOS cascode node (N001)
+    bias vb1, vb2, vb3;
+  
+    use {
+      // ---- NMOS input & NMOS cascode (main signal path)
+      M_in   = new NMOS() { gate<-vin; drain<-N005; source<-GND; bulk<-GND; };   // M1: D=N005, G=vin, S=GND
+      n_cas  = new NMOSCascode(in=N005, out=vout) { bias=N004; gnd=GND; };       // M2: D=vout, G=N004, S=N005
+  
+      // ---- PMOS load with PMOS cascode (top side of main path)
+      load_top = new ActiveLoad(polarity=PMOS) { node<-N001; bias<-vb3; vref<-VDD; };  // M4: D=VDD, G=vb3, S=N001
+      p_cas  = new PMOSCascodeElement(out=N001, gate=N002, src=vout);            // M3: D=N001, G=N002, S=vout
+  
+      // ---- PMOS-side gain-boost (bias N002)
+      // NMOS sink from N002 and PMOS device tied to N001 provide a boosted bias at N002
+      n_gb_p = new TailCurrentSourceNMOS() { out=N002; gate=vb2; gnd=GND; };     // M6: D=N002, G=vb2, S=GND
+      p_gb_p = new PMOSMirror(from=N001, to=N002, vdd=VDD);                       // M7: D=VDD, G=N001, S=N002
+  
+      // ---- NMOS-side gain-boost (bias N004)
+      // Small amplifier senses N005 and drives N004 (cascode gate) against VDD current source
+      load_gb = new ActiveLoad(polarity=PMOS) { node<-N004; bias<-vb1; vref<-VDD; };  // M8: D=VDD, G=vb1, S=N004
+      M_gb   = new NMOS() { gate<-N005; drain<-N004; source<-GND; bulk<-GND; };  // M5: D=N004, G=N005, S=GND
+  
+      // ---- Load capacitance
+      C(vout, GND, 1pF);                                                          // Cload
+    }
+  }
