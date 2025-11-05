@@ -9,3 +9,75 @@ safety_anti_patterns: "two-stage; second stage"
 
 hallucination_penalty: 0.15
 min_pass: 0.70
+answer_key_SPICE: |
+  M3 N003 vip N005 0 nch W=2u L=0.18u
+  M4 N004 vin N005 0 nch W=2u L=0.18u
+  M2 von vb3 N003 0 nch W=1u L=0.18u
+  M1 vop vb3 N004 0 nch W=1u L=0.18u
+  M5 N005 vtail 0 0 nch W=1u L=0.5u
+  M6 von vb2 N001 VDD pch W=2u L=0.18u
+  M7 vop vb2 N002 VDD pch W=2u L=0.18u
+  M8 N001 vb1 VDD VDD pch W=4u L=0.18u
+  M9 N002 vb1 VDD VDD pch W=4u L=0.18u
+  C1 vop 0 1p
+  C2 von 0 1p
+  VDD VDD 0 1.8
+answer_key_CASIR: |
+  {
+    "nets": [
+      {"id":"VDD","type":"supply"},{"id":"GND","type":"supply"},
+      {"id":"vip"},{"id":"vin"},
+      {"id":"vb1","type":"bias"},{"id":"vb2","type":"bias"},{"id":"vb3","type":"bias"},{"id":"vtail","type":"bias"},
+      {"id":"vop"},{"id":"von"},
+      {"id":"N001"},{"id":"N002"},{"id":"N003"},{"id":"N004"},{"id":"N005"}
+    ],
+    "motifs": [
+      {
+        "id":"dp","type":"DiffPairNMOS",
+        "ports":{"in_p":"vip","in_n":"vin","out_l":"N003","out_r":"N004","tail":"N005","gnd":"GND"}
+      },
+      {"id":"tail","type":"TailCurrentSourceNMOS","ports":{"out":"N005","gate":"vtail","gnd":"GND"}},
+  
+      // NMOS cascodes (each exposes a mid node used by PMOS loads)
+      {"id":"casL","type":"NMOSCascode","ports":{"in":"N003","mid":"N003","out":"von","bias":"vb3","gnd":"GND"}},
+      {"id":"casR","type":"NMOSCascode","ports":{"in":"N004","mid":"N004","out":"vop","bias":"vb3","gnd":"GND"}},
+  
+      // PMOS upper current sources (top devices) with gate=vb1
+      {"id":"ptopL","type":"PMOSCurrentSourceTop","ports":{"node":"N001","gate_top":"vb1","vdd":"VDD"}},
+      {"id":"ptopR","type":"PMOSCurrentSourceTop","ports":{"node":"N002","gate_top":"vb1","vdd":"VDD"}},
+  
+      // PMOS cascode loads from the NMOS mid nodes up to the top nodes
+      {"id":"ploadL","type":"PMOSCascodeLoad","ports":{"in":"N003","out":"von","bias":"vb2","top_node":"N001","vdd":"VDD"}},
+      {"id":"ploadR","type":"PMOSCascodeLoad","ports":{"in":"N004","out":"vop","bias":"vb2","top_node":"N002","vdd":"VDD"}},
+  
+      {"id":"clp","type":"Cap","ports":{"p":"vop","n":"GND"},"params":{"C":1e-12}},
+      {"id":"cln","type":"Cap","ports":{"p":"von","n":"GND"},"params":{"C":1e-12}}
+    ],
+    "provenance":{"source":"OTATelescopicDiff"}
+  }
+answer_key_CASCODE: |
+  package analog.ota; import lib.motifs.*;
+  
+  class OTATelescopicDiff implements Amplifier {
+    supply VDD=1.8V; ground GND;
+    port in_p vip, in_n vin; diff out(vop, von);
+    bias vb1, vb2, vb3, vtail;
+  
+    use {
+      dp   = new DiffPairNMOS(vip, vin) { gnd=GND; tail=N005; };
+      itail = new TailCurrentSourceNMOS() { out=N005; gate=vtail; gnd=GND; };
+  
+      // NMOS cascodes on both branches
+      pair casN = NMOSCascode(dp.out_l, dp.out_r) { bias=vb3; gnd=GND; };
+  
+      // PMOS cascoded loads with top current sources (vb1) and cascode gates (vb2)
+      pair loadP = PMOSCascodeLoad(casN.out_l, casN.out_r) { bias=vb2; top_gate=vb1; vdd=VDD; };
+  
+      alias von = loadP.out_l; alias vop = loadP.out_r;
+  
+      C(vop, GND, 1pF); C(von, GND, 1pF);
+    }
+  
+    // Preserve internal node names for mapping
+    alias N003 = casN.mid_l; alias N004 = casN.mid_r;
+  }

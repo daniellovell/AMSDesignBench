@@ -46,9 +46,9 @@ def _sem() -> threading.Semaphore:
 
 
 def judge_answer(
-    answer: str,
+    answer_to_evaluate: str,
     rubric_markdown: str,
-    refs: Dict[str, Any],
+    track: str,
     inventory: Optional[Dict[str, Any]] = None,
     model: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
@@ -60,34 +60,32 @@ def judge_answer(
 
     # Payload contains only rubric-provided instructions and evaluation context; no inline Python instructions
     payload = {
-        "refs": refs,
-        "answer": answer,
+        "answer_to_evaluate": answer_to_evaluate,
         "inventory": inventory or {},
     }
 
     rubric_text = str(rubric_markdown or "").strip()
     # Track-aware but concise system prompt
-    track = (refs or {}).get("track")
     track_l = str(track or "").strip().lower()
     if track_l == "design":
         sys_prompt = (
             "You are an impartial grading assistant for analog/mixed-signal circuit DESIGN. "
-            "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
+            "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
         )
     elif track_l == "analysis":
         sys_prompt = (
             "You are an impartial grading assistant for analog/mixed-signal circuit ANALYSIS. "
-            "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
+            "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
         )
     elif track_l == "debugging":
         sys_prompt = (
             "You are an impartial grading assistant for analog/mixed-signal circuit DEBUGGING. "
-            "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
+            "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
         )
     else:
         sys_prompt = (
             "You are an impartial grading assistant for analog/mixed-signal design/analysis/debugging. "
-            "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
+            "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
         )
 
     # Single user message: rubric markdown + serialized context

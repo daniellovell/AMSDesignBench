@@ -1,6 +1,0 @@
-{
-  "identify_tf": [
-    "Provide explicit H(s)=Vout(s)/Vin(s) in canonical form",
-    "Cite element IDs (R*, C*, L*, XU*) and nets (vin, vout)"
-  ]
-}
