@@ -1,0 +1,11 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches a fully-differential PMOS-input folded cascode (PMOS diff pair and tail from VDD; two folded NMOS branches to voutp/voutn; PMOS cascodes/top sources; two outputs voutp/voutn)."
+topology_patterns_any: "folded cascode; fully differential; PMOS input; voutp; voutn"
+topology_min_any: 2
+safety_anti_patterns: "single-ended; single end; two-stage"
+
+hallucination_penalty: 0.15
+min_pass: 0.70

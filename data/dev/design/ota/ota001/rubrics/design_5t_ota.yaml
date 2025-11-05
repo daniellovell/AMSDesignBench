@@ -1,0 +1,11 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches the reference for this modality (SPICE/casIR/ADL) — diff pair + tail + PMOS mirror to VDD, single-ended output."
+topology_patterns_any: "five-transistor; 5T; single-stage"
+topology_min_any: 2
+safety_anti_patterns: "cascode; cascoded; second stage; two-stage"
+
+hallucination_penalty: 0.15
+min_pass: 0.70

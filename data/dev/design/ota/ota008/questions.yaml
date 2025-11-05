@@ -2,9 +2,9 @@ questions:
 - id: ota008_design_cascode_single_end
   track: design
   modality: auto
-  rubric_id: design_cascode_single_end
-  rubric_path: rubrics/design_cascode_single_end.json
-  prompt_template: design_ota.txt
+  judge_prompt: ../judge_prompts/design_cascode_single_end.md
+  judge_id: design_cascode_single_end
+  prompt_template: ../prompts/design_ota.txt
   meta:
     topology: cascode_single_end
     bench_version: 0.1.0

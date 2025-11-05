@@ -1,0 +1,11 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches a cascode single-ended OTA (NMOS input device and NMOS cascode to vout, PMOS cascode load above vout, PMOS current source from VDD)."
+topology_patterns_any: "cascode; single-ended; single end"
+topology_min_any: 2
+safety_anti_patterns: "high-swing; folded; gain-boost; fully differential; two-stage"
+
+hallucination_penalty: 0.15
+min_pass: 0.70

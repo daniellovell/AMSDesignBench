@@ -1,0 +1,11 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches an NMOS common-source with PMOS active load (single transistor gain device to vout, PMOS gate-biased current source from VDD into vout, single-ended output)."
+topology_patterns_any: "common-source; CS; active load; PMOS load; single-ended; single end"
+topology_min_any: 2
+safety_anti_patterns: "telescopic; folded; gain-boost; fully differential; two-stage"
+
+hallucination_penalty: 0.15
+min_pass: 0.70
