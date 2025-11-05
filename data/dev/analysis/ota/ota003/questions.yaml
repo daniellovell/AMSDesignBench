@@ -2,7 +2,7 @@ questions:
 - id: ota003_gbw
   track: analysis
   modality: auto
-  prompt_template: gbw_one_stage.txt
+  prompt_template: ../prompts/gbw_one_stage.txt
   meta:
     topology: one_stage_ota
     bench_version: 0.1.0
@@ -12,7 +12,7 @@ questions:
 - id: ota003_rout
   track: analysis
   modality: auto
-  prompt_template: ota_rout.txt
+  prompt_template: ../prompts/ota_rout.txt
   meta:
     topology: one_stage_ota
     bench_version: 0.1.0
@@ -22,7 +22,7 @@ questions:
 - id: ota003_swing
   track: analysis
   modality: auto
-  prompt_template: ota_swing.txt
+  prompt_template: ../prompts/ota_swing.txt
   meta:
     topology: one_stage_ota
     bench_version: 0.1.0
@@ -32,7 +32,7 @@ questions:
 - id: ota003_gain_dc
   track: analysis
   modality: auto
-  prompt_template: ota_dc_gain.txt
+  prompt_template: ../prompts/ota_dc_gain.txt
   meta:
     topology: one_stage_ota
     bench_version: 0.1.0
@@ -42,7 +42,7 @@ questions:
 - id: ota003_psrr
   track: analysis
   modality: auto
-  prompt_template: ota_psrr.txt
+  prompt_template: ../prompts/ota_psrr.txt
   meta:
     topology: one_stage_ota
     bench_version: 0.1.0
@@ -52,7 +52,7 @@ questions:
 - id: ota003_noise_white
   track: analysis
   modality: auto
-  prompt_template: ota_noise_white.txt
+  prompt_template: ../prompts/ota_noise_white.txt
   meta:
     topology: one_stage_ota
     bench_version: 0.1.0
@@ -62,7 +62,7 @@ questions:
 - id: ota003_power_quiescent
   track: analysis
   modality: auto
-  prompt_template: ota_power_quiescent.txt
+  prompt_template: ../prompts/ota_power_quiescent.txt
   meta:
     topology: one_stage_ota
     bench_version: 0.1.0

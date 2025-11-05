@@ -2,9 +2,9 @@ questions:
 - id: feedback003_design_noninv
   track: design
   modality: auto
-  rubric_id: design_noninverting_amp
-  rubric_path: rubrics/design_noninverting_amp.json
-  prompt_template: design_feedback.txt
+  judge_prompt: ../judge_prompts/design_noninverting_amp.md
+  judge_id: design_noninverting_amp
+  prompt_template: ../prompts/design_feedback.txt
   meta:
     topology: noninverting_voltage_amp
     bench_version: 0.1.0

@@ -5,7 +5,7 @@ questions:
   artifact_path: netlist_bug.sp
   judge_prompt: ../judge_prompts/debug_device_swap.md
   judge_id: debug_device_swap
-  prompt_template: debug_device_swap.txt
+  prompt_template: ../prompts/debug_device_swap.txt
   meta:
     topology: two_stage
     bench_version: 0.1.0
