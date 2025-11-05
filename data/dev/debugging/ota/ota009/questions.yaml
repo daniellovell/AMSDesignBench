@@ -3,9 +3,9 @@ questions:
   track: debugging
   modality: spice_netlist
   artifact_path: netlist_bug.sp
-  rubric_id: debug_device_swap
-  rubric_path: ../../rubrics/debug_device_swap.json
-  prompt_template: debug_device_swap.txt
+  judge_prompt: ../judge_prompts/debug_device_swap.md
+  judge_id: debug_device_swap
+  prompt_template: ../prompts/debug_device_swap.txt
   meta:
     topology: gainboosted_cascode_single_end
     bench_version: 0.1.0

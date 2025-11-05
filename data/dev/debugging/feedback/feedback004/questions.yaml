@@ -3,9 +3,9 @@ questions:
   track: debugging
   modality: spice_netlist
   artifact_path: netlist_bug.sp
-  rubric_id: debug_feedback_polarity
-  rubric_path: ../../rubrics/debug_feedback_polarity.json
-  prompt_template: debug_feedback_polarity.txt
+  judge_prompt: ../judge_prompts/debug_feedback_polarity.md
+  judge_id: debug_feedback_polarity
+  prompt_template: ../prompts/debug_feedback_polarity.txt
   meta:
     topology: inverting_voltage_amp
     bench_version: 0.1.0

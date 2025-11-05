@@ -92,7 +92,7 @@ def judge_answer(
     instr = rubric_text
     messages = [
         {"role": "system", "content": sys_prompt},
-        {"role": "user", "content": instr + "\n\nCONTEXT:\n" + json.dumps(payload)},
+        {"role": "user", "content": instr + "\n\nCONTEXT:\n" + json.dumps(payload, indent=2)},
     ]
 
     judge_temp = float(os.getenv("OPENAI_JUDGE_TEMPERATURE", 0.0))
@@ -122,7 +122,7 @@ def judge_answer(
     attempt = 0
     resp = None
     # Prepare rate limiting config (computed once, used per attempt)
-    est_tokens = int((len(sys_prompt) + len(instr) + len(json.dumps(payload))) / float(os.getenv("OPENAI_JUDGE_TOKEN_DIVISOR", 4))) + int(judge_max)
+    est_tokens = int((len(sys_prompt) + len(instr) + len(json.dumps(payload, indent=2))) / float(os.getenv("OPENAI_JUDGE_TOKEN_DIVISOR", 4))) + int(judge_max)
     rpm = float(os.getenv("OPENAI_JUDGE_RPM", os.getenv("OPENAI_RPM", 0)) or 0)
     tpm = float(os.getenv("OPENAI_JUDGE_TPM", os.getenv("OPENAI_TPM", 0)) or 0)
     last_err = None

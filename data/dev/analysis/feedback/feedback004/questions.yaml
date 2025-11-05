@@ -4,7 +4,7 @@ questions:
   modality: auto
   judge_prompt: ../judge_prompts/feedback_closed_loop_gain.md
   judge_id: feedback_closed_loop_gain
-  prompt_template: feedback_closed_loop_gain.txt
+  prompt_template: ../prompts/feedback_closed_loop_gain.txt
   meta:
     topology: inverting_voltage_amp
     bench_version: 0.1.0
@@ -14,7 +14,7 @@ questions:
   modality: auto
   judge_prompt: ../judge_prompts/feedback_beta_factor.md
   judge_id: feedback_beta_factor
-  prompt_template: feedback_beta_factor.txt
+  prompt_template: ../prompts/feedback_beta_factor.txt
   meta:
     topology: inverting_voltage_amp
     bench_version: 0.1.0
@@ -24,7 +24,7 @@ questions:
   modality: auto
   judge_prompt: ../judge_prompts/feedback_loop_gain.md
   judge_id: feedback_loop_gain
-  prompt_template: feedback_loop_gain.txt
+  prompt_template: ../prompts/feedback_loop_gain.txt
   meta:
     topology: inverting_voltage_amp
     bench_version: 0.1.0
@@ -34,7 +34,7 @@ questions:
   modality: auto
   judge_prompt: ../judge_prompts/feedback_signal_modality.md
   judge_id: feedback_signal_modality
-  prompt_template: feedback_signal_modality.txt
+  prompt_template: ../prompts/feedback_signal_modality.txt
   meta:
     topology: inverting_voltage_amp
     bench_version: 0.1.0

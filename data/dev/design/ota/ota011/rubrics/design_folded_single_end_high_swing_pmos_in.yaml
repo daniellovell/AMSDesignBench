@@ -1,0 +1,11 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches a PMOS-input folded cascode with a high-swing PMOS side (single-ended output; PMOS high-swing pre-devices and cascodes; folded NMOS branch to vout)."
+topology_patterns_any: "folded cascode; high-swing; PMOS input; single-ended; single end"
+topology_min_any: 3
+safety_anti_patterns: "fully differential; two-stage"
+
+hallucination_penalty: 0.15
+min_pass: 0.70
