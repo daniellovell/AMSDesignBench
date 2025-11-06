@@ -11,9 +11,10 @@ import os as _os
 import sys as _sys
 
 try:
-    from openai import OpenAI
+    from openai import OpenAI, APITimeoutError
 except Exception:  # pragma: no cover
     OpenAI = None  # type: ignore
+    APITimeoutError = TimeoutError  # fallback to built-in if import fails
 
 
 def _client() -> Optional[Any]:
@@ -67,26 +68,16 @@ def judge_answer(
     rubric_text = str(rubric_markdown or "").strip()
     # Track-aware but concise system prompt
     track_l = str(track or "").strip().lower()
-    if track_l == "design":
-        sys_prompt = (
-            "You are an impartial grading assistant for analog/mixed-signal circuit DESIGN. "
-            "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
-        )
-    elif track_l == "analysis":
-        sys_prompt = (
-            "You are an impartial grading assistant for analog/mixed-signal circuit ANALYSIS. "
-            "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
-        )
-    elif track_l == "debugging":
-        sys_prompt = (
-            "You are an impartial grading assistant for analog/mixed-signal circuit DEBUGGING. "
-            "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
-        )
-    else:
-        sys_prompt = (
-            "You are an impartial grading assistant for analog/mixed-signal design/analysis/debugging. "
-            "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
-        )
+    track_display = {
+        "design": "DESIGN",
+        "analysis": "ANALYSIS",
+        "debugging": "DEBUGGING"
+    }.get(track_l, "design/analysis/debugging")
+
+    sys_prompt = (
+        f"You are an impartial grading assistant for analog/mixed-signal circuit {track_display}. "
+        "You ONLY output JSON and never prose. Score the answer using the rubric and inventory."
+    )
 
     # Single user message: rubric markdown + serialized context
     instr = rubric_text
@@ -140,7 +131,7 @@ def judge_answer(
                 api_timeout = float(os.getenv("OPENAI_JUDGE_TIMEOUT", os.getenv("OPENAI_TIMEOUT", "60.0")))
                 resp = client.chat.completions.create(**params, timeout=api_timeout)
                 break
-            except TimeoutError as e:
+            except APITimeoutError as e:
                 emsg = f"API call timed out after {api_timeout}s"
                 last_err = emsg
                 print(f"[JUDGE] timeout (attempt {attempt}/{max_attempts}): {emsg}", file=_sys.stderr, flush=True)

@@ -159,17 +159,30 @@ def validate_family(split_root: Path, family: str, family_subdir: str | None = N
                             base_dir=yaml_path.parent,
                         )
                     except ValueError as ve:
-                        # If we still get a runtime variable error, it's a new runtime var we don't have a mock for
-                        # In this case, try to continue with empty vars
+                        # Check if this is a runtime variable error
                         # TODO: Consider using a custom exception class (e.g., MissingRuntimeVariableError) in template.py
                         #       for a more robust contract between modules instead of string matching
-                        if "Runtime variable" in str(ve) and "not found in vars" in str(ve):
-                            # Try with empty vars and let runtime vars remain unresolved
-                            # This will cause YAML parsing issues, but we'll catch that below
-                            rendered_yaml = yaml_path.read_text(encoding="utf-8")
-                            # Replace runtime directives with placeholder for YAML parsing
-                            rendered_yaml = re.sub(r"\{runtime:[a-zA-Z0-9_]+\}", '""', rendered_yaml)
+                        error_msg = str(ve)
+                        if "Runtime variable" in error_msg and "not found in vars" in error_msg:
+                            # Parse the error message to extract the missing runtime variable name
+                            # Format: "Runtime variable '{key}' not found in vars"
+                            match = re.search(r"Runtime variable '([a-zA-Z0-9_]+)' not found in vars", error_msg)
+                            if match:
+                                missing_runtime_key = match.group(1)
+                                errors.append(
+                                    f"{yaml_path}: missing runtime variable binding: {missing_runtime_key} "
+                                    f"(required at runtime, not in validation mock vars)"
+                                )
+                            else:
+                                # Fallback if message format changes
+                                errors.append(
+                                    f"{yaml_path}: missing runtime variable binding (error: {error_msg}) "
+                                    f"(required at runtime, not in validation mock vars)"
+                                )
+                            # Skip further validation for this entry since we couldn't render the YAML
+                            continue
                         else:
+                            # Re-raise non-runtime ValueError exceptions unchanged
                             raise
                     
                     yaml_data = yaml.safe_load(rendered_yaml)

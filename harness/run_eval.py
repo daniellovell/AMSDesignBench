@@ -514,6 +514,7 @@ def randomize_spice(text: str, seed: int) -> str:
     out_lines: List[str] = []
     devices: List[List[str]] = []  # each device may have continuations
     headers: List[str] = []
+    footers: List[str] = []  # terminal deck controls like .end, .backanno
     tails: List[str] = []
     in_subckt = False
     subckt_buf: List[str] = []
@@ -522,10 +523,6 @@ def randomize_spice(text: str, seed: int) -> str:
     for ln in raw_lines:
         raw = ln.rstrip('\n')
         s = raw.strip()
-        if not s:
-            # keep blank lines in tails for aesthetics later
-            tails.append(raw)
-            continue
         low = s.lower()
         if low.startswith('.subckt'):
             # flush any pending statement before entering subckt
@@ -536,10 +533,15 @@ def randomize_spice(text: str, seed: int) -> str:
             subckt_buf = [raw]
             continue
         if in_subckt:
+            # Include blank lines inside subcircuit blocks to preserve structure
             subckt_buf.append(raw)
             if low.startswith('.ends'):
                 in_subckt = False
                 subckts.append(subckt_buf)
+            continue
+        if not s:
+            # keep blank lines in tails for aesthetics later (only for main netlist)
+            tails.append(raw)
             continue
         if s[0] in ('*', ';'):
             # flush pending
@@ -553,7 +555,15 @@ def randomize_spice(text: str, seed: int) -> str:
             if current_stmt:
                 devices.append(current_stmt)
                 current_stmt = []
-            headers.append(raw)
+            # Classify dot-directives: footer directives go to footers, others to headers
+            low_cmd = low.split()[0] if low else ""
+            # Footer directives (terminal deck controls)
+            footer_commands = {'.end', '.backanno', '.eof'}
+            if low_cmd in footer_commands:
+                footers.append(raw)
+            else:
+                # Header directives (.model, .param, .include, .lib, .options, etc.)
+                headers.append(raw)
             continue
         if s[0] == '+':
             # continuation of previous
@@ -655,6 +665,7 @@ def randomize_spice(text: str, seed: int) -> str:
     for stmt in devices:
         out_lines.extend(stmt)
     out_lines.extend(tails)
+    out_lines.extend(footers)
     return '\n'.join(out_lines) + ('\n' if text.endswith('\n') else '')
 
 
@@ -1170,143 +1181,96 @@ def main():
             if str(q.track).lower() == "design":
                 artifact_used = ""
             rand_info: Dict[str, Any] = {}
-            # Debugging support: generate bugged artifact from template if requested
-            bug_info: Dict[str, Any] = {}
-            if str(q.track).lower() == "debugging":
-                if q.modality == "spice_netlist":
-                    meta_path = item_dir / "meta.json"
-                    tpl_net = None
-                    if meta_path.exists():
-                        try:
-                            m = json.loads(meta_path.read_text(encoding='utf-8'))
-                            tpath = m.get("template_path") or m.get("template")
-                            if isinstance(tpath, str) and tpath.strip():
-                                tdir = (item_dir / tpath).resolve()
-                                tnet = tdir / "netlist.sp"
-                                if tnet.exists():
-                                    tpl_net = tnet.read_text(encoding='utf-8')
-                        except Exception:
-                            tpl_net = None
-                    base_text = tpl_net or artifact_text
-                    meta_seed = None
-                    mpath = item_dir / "meta.json"
-                    if mpath.exists():
-                        try:
-                            mm = json.loads(mpath.read_text(encoding='utf-8'))
-                            ms = mm.get("gen_seed")
-                            if isinstance(ms, int):
-                                meta_seed = ms
-                        except Exception:
-                            meta_seed = None
-                    if meta_seed is None:
-                        meta_seed = int.from_bytes(hashlib.sha256(str(item_dir).encode()).digest()[:8], 'big')
-                    bug_seed = int.from_bytes(hashlib.sha256(f"{meta_seed}:{Path(it.item_dir).name}:{q.id}:bug".encode()).digest()[:8], 'big')
-                    mutated, dev_id, from_t, to_t = inject_device_swap_spice(base_text or "", bug_seed)
-                    if dev_id:
-                        artifact_used = mutated
-                        bug_info = {"bug_type": "device_polarity_swap", "swapped_id": dev_id, "from_type": from_t, "to_type": to_t}
-                    else:
-                        artifact_used = base_text
-                    try:
-                        bug_path = item_dir / "netlist_bug.sp"
-                        bug_path.write_text(artifact_used, encoding='utf-8')
-                        art_path = bug_path
-                    except Exception:
-                        pass
-                elif q.modality == "casIR":
-                    meta_path = item_dir / "meta.json"
-                    tpl_cir = None
-                    if meta_path.exists():
-                        try:
-                            m = json.loads(meta_path.read_text(encoding='utf-8'))
-                            tpath = m.get("template_path") or m.get("template")
-                            if isinstance(tpath, str) and tpath.strip():
-                                tdir = (item_dir / tpath).resolve()
-                                tcir = tdir / "netlist.cir"
-                                if tcir.exists():
-                                    tpl_cir = tcir.read_text(encoding='utf-8')
-                        except Exception:
-                            tpl_cir = None
-                    base_text = tpl_cir or artifact_text
-                    meta_seed = None
-                    mpath = item_dir / "meta.json"
-                    if mpath.exists():
-                        try:
-                            mm = json.loads(mpath.read_text(encoding='utf-8'))
-                            ms = mm.get("gen_seed")
-                            if isinstance(ms, int):
-                                meta_seed = ms
-                        except Exception:
-                            meta_seed = None
-                    if meta_seed is None:
-                        meta_seed = int.from_bytes(hashlib.sha256(str(item_dir).encode()).digest()[:8], 'big')
-                    bug_seed = int.from_bytes(hashlib.sha256(f"{meta_seed}:{Path(it.item_dir).name}:{q.id}:bug".encode()).digest()[:8], 'big')
-                    mutated, dev_id, from_t, to_t = inject_device_swap_casir(base_text or "", bug_seed)
-                    if dev_id:
-                        artifact_used = mutated
-                        bug_info = {"bug_type": "device_polarity_swap", "swapped_id": dev_id, "from_type": from_t, "to_type": to_t}
-                    else:
-                        artifact_used = base_text
-                    try:
-                        bug_path = item_dir / "netlist_bug.cir"
-                        bug_path.write_text(artifact_used, encoding='utf-8')
-                        art_path = bug_path
-                    except Exception:
-                        pass
-                elif q.modality == "cascode":
-                    meta_path = item_dir / "meta.json"
-                    tpl_cas = None
-                    if meta_path.exists():
-                        try:
-                            m = json.loads(meta_path.read_text(encoding='utf-8'))
-                            tpath = m.get("template_path") or m.get("template")
-                            if isinstance(tpath, str) and tpath.strip():
-                                tdir = (item_dir / tpath).resolve()
-                                tcas = tdir / "netlist.cas"
-                                if tcas.exists():
-                                    tpl_cas = tcas.read_text(encoding='utf-8')
-                        except Exception:
-                            tpl_cas = None
-                    base_text = tpl_cas or artifact_text
-                    meta_seed = None
-                    mpath = item_dir / "meta.json"
-                    if mpath.exists():
-                        try:
-                            mm = json.loads(mpath.read_text(encoding='utf-8'))
-                            ms = mm.get("gen_seed")
-                            if isinstance(ms, int):
-                                meta_seed = ms
-                        except Exception:
-                            meta_seed = None
-                    if meta_seed is None:
-                        meta_seed = int.from_bytes(hashlib.sha256(str(item_dir).encode()).digest()[:8], 'big')
-                    bug_seed = int.from_bytes(hashlib.sha256(f"{meta_seed}:{Path(it.item_dir).name}:{q.id}:bug".encode()).digest()[:8], 'big')
-                    mutated, dev_id, from_t, to_t = inject_device_swap_cascode(base_text or "", bug_seed)
-                    if dev_id:
-                        artifact_used = mutated
-                        bug_info = {"bug_type": "device_polarity_swap", "swapped_id": dev_id, "from_type": from_t, "to_type": to_t}
-                    else:
-                        artifact_used = base_text
-                    try:
-                        bug_path = item_dir / "netlist_bug.cas"
-                        bug_path.write_text(artifact_used, encoding='utf-8')
-                        art_path = bug_path
-                    except Exception:
-                        pass
-
-            if q.modality == "spice_netlist" and artifact_used:
-                meta_seed = None
+            
+            # Helper functions for template loading and seed computation
+            def _load_template_text(modality: str, fallback: str) -> str:
+                """Load template text from meta.json template_path, or return fallback."""
+                meta_path = item_dir / "meta.json"
+                if not meta_path.exists():
+                    return fallback
+                try:
+                    m = json.loads(meta_path.read_text(encoding='utf-8'))
+                    tpath = m.get("template_path") or m.get("template")
+                    if not isinstance(tpath, str) or not tpath.strip():
+                        return fallback
+                    tdir = (item_dir / tpath).resolve()
+                    ext_map = {"spice_netlist": "sp", "casIR": "cir", "cascode": "cas"}
+                    template_file = tdir / f"netlist.{ext_map.get(modality, 'sp')}"
+                    if template_file.exists():
+                        return template_file.read_text(encoding='utf-8')
+                except Exception:
+                    pass
+                return fallback
+            
+            def _get_meta_seed() -> int:
+                """Get gen_seed from meta.json or compute from item_dir hash."""
                 mpath = item_dir / "meta.json"
                 if mpath.exists():
                     try:
-                        m = json.loads(mpath.read_text(encoding='utf-8'))
-                        ms = m.get("gen_seed")
+                        mm = json.loads(mpath.read_text(encoding='utf-8'))
+                        ms = mm.get("gen_seed")
                         if isinstance(ms, int):
-                            meta_seed = ms
+                            return ms
                     except Exception:
-                        meta_seed = None
-                if meta_seed is None:
-                    meta_seed = int.from_bytes(hashlib.sha256(str(item_dir).encode()).digest()[:8], 'big')
+                        pass
+                return int.from_bytes(hashlib.sha256(str(item_dir).encode()).digest()[:8], 'big')
+            
+            # Debugging support: generate bugged artifact from template if requested
+            bug_info: Dict[str, Any] = {}
+            if str(q.track).lower() == "debugging":
+                def _inject_device_swap(
+                    modality: str,
+                    inject_func,
+                    error_guidance: str
+                ) -> None:
+                    """Inject device swap bug and update artifact_used/bug_info."""
+                    nonlocal artifact_used, bug_info, art_path
+                    ext_map = {"spice_netlist": "sp", "casIR": "cir", "cascode": "cas"}
+                    ext = ext_map.get(modality, "sp")
+                    
+                    base_text = _load_template_text(modality, artifact_text)
+                    meta_seed = _get_meta_seed()
+                    bug_seed = int.from_bytes(
+                        hashlib.sha256(f"{meta_seed}:{Path(it.item_dir).name}:{q.id}:bug".encode()).digest()[:8],
+                        'big'
+                    )
+                    mutated, dev_id, from_t, to_t = inject_func(base_text or "", bug_seed)
+                    if dev_id:
+                        artifact_used = mutated
+                        bug_info = {"bug_type": "device_polarity_swap", "swapped_id": dev_id, "from_type": from_t, "to_type": to_t}
+                        try:
+                            bug_path = item_dir / f"netlist_bug.{ext}"
+                            bug_path.write_text(artifact_used, encoding='utf-8')
+                            art_path = bug_path
+                        except Exception:
+                            pass
+                    else:
+                        raise SystemExit(
+                            f"No eligible devices found for device swap injection in {q.id} "
+                            f"(modality: {modality}, item: {item_dir}). {error_guidance}"
+                        )
+                
+                if q.modality == "spice_netlist":
+                    _inject_device_swap(
+                        q.modality,
+                        inject_device_swap_spice,
+                        "Check that the template/netlist contains MOS devices with NMOS/PMOS or nch/pch model types."
+                    )
+                elif q.modality == "casIR":
+                    _inject_device_swap(
+                        q.modality,
+                        inject_device_swap_casir,
+                        "Check that the template/netlist contains motifs with NMOS/PMOS types."
+                    )
+                elif q.modality == "cascode":
+                    _inject_device_swap(
+                        q.modality,
+                        inject_device_swap_cascode,
+                        "Check that the template/netlist contains NMOS/PMOS identifiers in code contexts."
+                    )
+
+            if q.modality == "spice_netlist" and artifact_used:
+                meta_seed = _get_meta_seed()
                 per_item_seed = int.from_bytes(
                     hashlib.sha256(f"{meta_seed}:{Path(it.item_dir).name}:{q.id}".encode()).digest()[:8],
                     'big',
@@ -1425,17 +1389,9 @@ def main():
             vars_map: Dict[str, Any] = {}
             
             # Build runtime_vars from bug_info for template rendering
-            # For debugging items, provide defaults if bug_info is empty (e.g., when inject found no devices)
+            # Only emit runtime vars when a mutation actually occurred
+            # If no mutation happened, runtime_vars will be empty
             runtime_vars = {k: str(v) for k, v in bug_info.items()} if bug_info else {}
-            if str(q.track).lower() == "debugging" and not runtime_vars:
-                # Provide default runtime vars for debugging templates that expect them
-                # This handles cases where bug injection found no eligible devices
-                runtime_vars = {
-                    "swapped_id": "M1",  # Default device ID
-                    "from_type": "PMOS",  # Default types
-                    "to_type": "NMOS",
-                    "bug_type": "device_polarity_swap",
-                }
             
             if vars_yaml.exists():
                 try:

@@ -24,6 +24,14 @@ def color_for_score(x: float | None) -> str:
     return f"rgb({r},{g},{b})"
 
 
+def _render_judge_cell(score: float | None) -> str:
+    """Renders a colored table cell for a score."""
+    color = color_for_score(score)
+    if score is not None:
+        return f'<td style="background:{color}">{score:.3f}</td>'
+    return '<td>-</td>'
+
+
 def load_results(path: Path) -> List[Dict[str, Any]]:
     recs: List[Dict[str, Any]] = []
     for line in path.read_text().splitlines():
@@ -150,9 +158,8 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
     for m in models:
         a = per_model[m]
         judge_avg = a["judge_sum"] / a["judge_n"] if a["judge_n"] else None
-        color = color_for_score(judge_avg)
         row = f"<tr><td>{esc(m)}</td><td>{a['n']}</td>"
-        row += f"<td style=\"background:{color}\">{judge_avg:.3f}</td>" if judge_avg is not None else "<td>-</td>"
+        row += _render_judge_cell(judge_avg)
         leader_rows.append(row + "</tr>")
 
     # Families table (judge-only)
@@ -167,10 +174,8 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
                 n = a.get("n", 0)
                 jn = a.get("judge_n", 0)
                 javg = (a.get("judge_sum", 0.0) / jn) if jn else None
-                color = color_for_score(javg)
-                judge_cell = f"<td style=\"background:{color}\">{javg:.3f}</td>" if javg is not None else "<td>-</td>"
                 fam_rows.append(
-                    f"<tr><td>{esc(fam)}</td><td>{esc(m)}</td><td>{n}</td>" + judge_cell + "</tr>"
+                    f"<tr><td>{esc(fam)}</td><td>{esc(m)}</td><td>{n}</td>" + _render_judge_cell(javg) + "</tr>"
                 )
         fam_table = (
             "<div class=box><b>Families</b><table class=small>"
@@ -190,10 +195,8 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
                 n = a.get("n", 0)
                 jn = a.get("judge_n", 0)
                 javg = (a.get("judge_sum", 0.0) / jn) if jn else None
-                color = color_for_score(javg)
-                judge_cell = f"<td style=\"background:{color}\">{javg:.3f}</td>" if javg is not None else "<td>-</td>"
                 mod_rows.append(
-                    f"<tr><td>{esc(mod)}</td><td>{esc(m)}</td><td>{n}</td>" + judge_cell + "</tr>"
+                    f"<tr><td>{esc(mod)}</td><td>{esc(m)}</td><td>{n}</td>" + _render_judge_cell(javg) + "</tr>"
                 )
         mod_table = (
             "<div class=box><b>Modalities</b><table class=small>"
