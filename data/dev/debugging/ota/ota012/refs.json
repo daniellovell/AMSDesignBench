@@ -1,7 +1,0 @@
-{
-  "bug_type": "device_polarity_swap",
-  "swapped_id": "M1",
-  "expected_type": "NMOS",
-  "actual_type": "PMOS",
-  "notes": "ota012: folded_cascode_two_diode_tailcas_single_end_pmos_in"
-}

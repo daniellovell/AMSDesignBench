@@ -1020,7 +1020,7 @@ def main():
         """
         lines = text.splitlines()
         import re
-        ident_pat = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*?(?:NMOS|PMOS)[A-Za-z0-9_]*)\b")
+        ident_pat = re.compile(r"\b((?:[A-Za-z_][A-Za-z0-9_]*?)?(?:NMOS|PMOS)(?:[A-Za-z0-9_]*)?)\b")
         candidates = []  # (line_idx, span, full_token)
         for i, raw in enumerate(lines):
             # Ignore everything after '//' (treat as comment)
@@ -1423,11 +1423,25 @@ def main():
             stem = Path(jpath).stem
             vars_yaml = item_dir / "rubrics" / f"{stem}.yaml"
             vars_map: Dict[str, Any] = {}
+
+            # Build runtime_vars from bug_info for template rendering
+            # For debugging items, provide defaults if bug_info is empty (e.g., when inject found no devices)
+            runtime_vars = {k: str(v) for k, v in bug_info.items()} if bug_info else {}
+            if str(q.track).lower() == "debugging" and not runtime_vars:
+                # Provide default runtime vars for debugging templates that expect them
+                # This handles cases where bug injection found no eligible devices
+                runtime_vars = {
+                    "swapped_id": "M1",  # Default device ID
+                    "from_type": "PMOS",  # Default types
+                    "to_type": "NMOS",
+                    "bug_type": "device_polarity_swap",
+                }
+
             if vars_yaml.exists():
                 try:
-                    # Render YAML as a template to allow includes
+                    # Render YAML as a template to allow includes and runtime vars
                     vars_yaml_text = vars_yaml.read_text(encoding='utf-8')
-                    rendered_yaml = render_template(vars_yaml_text, {}, base_dir=vars_yaml.parent)
+                    rendered_yaml = render_template(vars_yaml_text, runtime_vars, base_dir=vars_yaml.parent)
                     vars_map = yaml.safe_load(rendered_yaml) or {}
                 except Exception as e:
                     print(f"[yellow]Warning: Failed to render/parse {vars_yaml}: {e}[/yellow]")
@@ -1435,21 +1449,24 @@ def main():
             # unwrap namespaced
             if isinstance(vars_map, dict) and stem in vars_map and isinstance(vars_map[stem], dict):
                 vars_map = vars_map[stem]
-            
+
             # Inject bug_info into vars_map for template rendering (debugging tasks)
             if bug_info:
-                vars_map.update(bug_info)
+                vars_map.update({k: str(v) for k, v in bug_info.items()})
                 # Derive expected_type and actual_type from bug_info if not present
                 if "from_type" in bug_info and "expected_type" not in vars_map:
-                    vars_map["expected_type"] = bug_info["from_type"]
+                    vars_map["expected_type"] = str(bug_info["from_type"])
                 if "to_type" in bug_info and "actual_type" not in vars_map:
-                    vars_map["actual_type"] = bug_info["to_type"]
-            
+                    vars_map["actual_type"] = str(bug_info["to_type"])
+
+            # Merge runtime_vars and vars_map for judge prompt rendering
+            all_vars = {**runtime_vars, **{k: str(v) for k, v in vars_map.items()}}
+
             # Note: For design tasks, answer keys are resolved via {modmux:answer_key} in templates
             # No need to manually inject answer_key variable anymore
-            
+
             try:
-                rubric_md_rendered = render_template(rubric_md, {k: str(v) for k, v in vars_map.items()}, base_dir=jpath.parent, modality=q.modality)
+                rubric_md_rendered = render_template(rubric_md, all_vars, base_dir=jpath.parent, modality=q.modality)
             except Exception as e:
                 raise SystemExit(f"Failed to render judge prompt for {q.id} at {jpath}: {e}")
 
@@ -1650,7 +1667,7 @@ def main():
         import shutil
         import subprocess
         import sys
-        
+
         # Try multiple methods to remove the existing item
         removed = False
         try:
@@ -1663,7 +1680,7 @@ def main():
         except OSError:
             # Broken symlink or access issue
             pass
-        
+
         if not removed:
             try:
                 # Try is_symlink without exists check
@@ -1672,7 +1689,7 @@ def main():
                     removed = True
             except OSError:
                 pass
-        
+
         if not removed:
             # Last resort: Windows-specific rmdir command for broken symlinks
             if sys.platform == 'win32':

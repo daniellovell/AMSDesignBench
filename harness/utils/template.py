@@ -12,7 +12,7 @@ def render_template(text: str, vars: Dict[str, str], base_dir: Optional[str | Pa
     """Render a lightweight bracket-template by:
     1) Resolving include directives of the form {path:relative/or/absolute.md} relative to base_dir
     2) Resolving modality multiplexing directives of the form {modmux:key} which look up key_SPICE, key_CASIR, or key_CASCODE based on modality
-    3) Resolving runtime variable directives of the form {runtime:key} which look up key directly in vars_map (raises ValueError if missing)
+    3) Resolving runtime variable directives of the form {runtime:key} which look up key directly in vars (raises ValueError if missing)
     4) Replacing {var} placeholders with provided string values.
     Missing variables are left as-is to surface gaps during validation.
     Runtime variables must be present or ValueError is raised.
@@ -79,15 +79,12 @@ def render_template(text: str, vars: Dict[str, str], base_dir: Optional[str | Pa
     def _resolve_runtime(s: str) -> str:
         """Resolve {runtime:key} directives by looking up key directly in vars.
         Raises ValueError if key is missing."""
-        out = s
-        for m in list(_RUNTIME_RE.finditer(s)):
-            raw = m.group(0)
-            key = m.group(1).strip()
+        def _sub_runtime(m: re.Match[str]) -> str:
+            key = m.group(1)
             if key in vars:
-                out = out.replace(raw, str(vars[key]))
-            else:
-                raise ValueError(f"Runtime variable '{key}' not found in vars_map")
-        return out
+                return str(vars[key])
+            raise ValueError(f"Runtime variable '{key}' not found in vars")
+        return _RUNTIME_RE.sub(_sub_runtime, s)
     
     with_runtime = _resolve_runtime(with_modmux)
     
