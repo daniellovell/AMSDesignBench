@@ -18,7 +18,7 @@ Compare the student's **answer_to_evaluate** field against the ground truth in t
 - If a criterion is omitted in your output, treat it as 0 before computing the weighted overall.
 
 ### Scoring Guidelines
-- Award **full credit** when the student's answer matches the ground truth in the rubric Answer Key (e.g., correctly identifies {runtime:swapped_id}, {runtime:bug_type})
+- Award **full credit** when the student's answer matches the ground truth in the rubric Answer Key
 - Award **partial credit** for partially correct or incomplete answers
 - Award **zero credit** when the answer contradicts the ground truth or is completely incorrect
 - Check specific answer key fields as indicated in the Answer Key section below

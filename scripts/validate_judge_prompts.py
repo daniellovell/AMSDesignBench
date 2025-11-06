@@ -144,12 +144,12 @@ def validate_family(split_root: Path, family: str, family_subdir: str | None = N
                     # First, validate YAML syntax by rendering any template variables in the YAML itself
                     # Note: Runtime variables in YAML are expected at runtime, so we provide mock values for validation
                     # Mock runtime variables that might be used in YAML files
+                    # These are for OTA device swap debugging (runtime-generated)
                     mock_runtime_vars = {
                         "swapped_id": "M1",
                         "from_type": "PMOS",
                         "to_type": "NMOS",
                         "bug_type": "device_polarity_swap",
-                        "expected_polarity": "negative",
                     }
                     
                     try:

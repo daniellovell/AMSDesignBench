@@ -20,7 +20,7 @@ Scoring: compute `overall = {weight_fault_identification}*scores.fault_identific
 
 ### fault_identification
 - Section: `{fault_identification_section}`.
-- Check rubric answer key for expected polarity issue ({runtime:bug_type}, {runtime:expected_polarity}).
+- Check rubric answer key for expected polarity issue (bug_type: {bug_type}, expected_feedback: {expected_feedback}, actual_feedback: {actual_feedback}).
 
 ### grounded_evidence
 - Section: `{grounded_evidence_section}`.
