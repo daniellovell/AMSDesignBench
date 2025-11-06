@@ -1,1 +1,7 @@
 {path:../../debug_feedback_polarity_common.yaml}
+
+# Answer key for this specific item
+bug_type: "feedback_polarity_error"
+expected_feedback: "negative"
+actual_feedback: "positive"
+fix: "Correct resistor divider connection or swap opamp inputs to establish negative feedback"

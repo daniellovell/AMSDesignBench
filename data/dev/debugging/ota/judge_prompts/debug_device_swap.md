@@ -8,7 +8,7 @@ Scoring: compute `overall = {weight_fault_id}*scores.fault_id + {weight_fix}*sco
 
 ## Criteria
 
-- **fault_id** — Award credit when the answer correctly identifies the device with swapped polarity matching refs.swapped_id, refs.from_type, refs.to_type. Check for mentions of PMOS/NMOS swap or wrong device type. Full credit requires citing the specific device ID and type mismatch. Partial credit for generic fault identification. Guidance: {fault_id_guidance}.
+- **fault_id** — Award credit when the answer correctly identifies the device with swapped polarity matching {runtime:swapped_id}, {runtime:from_type}, {runtime:to_type}. Check for mentions of PMOS/NMOS swap or wrong device type. Full credit requires citing the specific device ID and type mismatch. Partial credit for generic fault identification. Guidance: {fault_id_guidance}.
 
 - **fix** — Award credit when a concrete fix is proposed: change device model to correct type (e.g., nch/pch) and specify correct body connection (0/VDD). Partial credit for incomplete fixes. Guidance: {fix_guidance}.
 
@@ -20,7 +20,7 @@ Scoring: compute `overall = {weight_fault_id}*scores.fault_id + {weight_fix}*sco
 - Section: `{fault_id_section}`.
 - Required patterns (any {fault_id_min_any}): `{fault_id_patterns_any}`.
 - Reject patterns: `{fault_id_anti_patterns}`.
-- Match against refs.swapped_id, refs.from_type, refs.to_type from CONTEXT payload.
+- Match against {runtime:swapped_id}, {runtime:from_type}, {runtime:to_type} from the rubric.
 
 ### fix
 - Section: `{fix_section}`.
