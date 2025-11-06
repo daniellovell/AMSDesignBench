@@ -160,9 +160,11 @@ def validate_family(split_root: Path, family: str, family_subdir: str | None = N
                         )
                     except ValueError as ve:
                         # If we still get a runtime variable error, it's a new runtime var we don't have a mock for
-                        # In this case, try to continue with empty vars_map
-                        if "Runtime variable" in str(ve) and "not found in vars_map" in str(ve):
-                            # Try with empty vars_map and let runtime vars remain unresolved
+                        # In this case, try to continue with empty vars
+                        # TODO: Consider using a custom exception class (e.g., MissingRuntimeVariableError) in template.py
+                        #       for a more robust contract between modules instead of string matching
+                        if "Runtime variable" in str(ve) and "not found in vars" in str(ve):
+                            # Try with empty vars and let runtime vars remain unresolved
                             # This will cause YAML parsing issues, but we'll catch that below
                             rendered_yaml = yaml_path.read_text(encoding="utf-8")
                             # Replace runtime directives with placeholder for YAML parsing
@@ -191,22 +193,34 @@ def validate_family(split_root: Path, family: str, family_subdir: str | None = N
                         )
                     except ValueError as ve:
                         # Check if this is a runtime variable error
-                        if "Runtime variable" in str(ve) and "not found in vars_map" in str(ve):
-                            # Runtime variables are expected at runtime, not during validation
-                            # Read the original template for unreplaced variable checking
-                            # Runtime directives will be filtered out below
-                            judge_content = jpath.read_text(encoding="utf-8")
+                        # TODO: Consider using a custom exception class (e.g., MissingRuntimeVariableError) in template.py
+                        #       for a more robust contract between modules instead of string matching
+                        error_msg = str(ve)
+                        if "Runtime variable" in error_msg and "not found in vars" in error_msg:
+                            # Parse the error message to extract the missing runtime variable name
+                            # Format: "Runtime variable '{key}' not found in vars"
+                            match = re.search(r"Runtime variable '([a-zA-Z0-9_]+)' not found in vars", error_msg)
+                            if match:
+                                missing_runtime_key = match.group(1)
+                                errors.append(
+                                    f"{jpath}: missing runtime variable binding: {missing_runtime_key} "
+                                    f"(expected at runtime, not in validation mock vars)"
+                                )
+                            else:
+                                # Fallback if message format changes
+                                errors.append(
+                                    f"{jpath}: missing runtime variable binding (error: {error_msg})"
+                                )
+                            # Skip unreplaced-variable check for this prompt since we couldn't render it
+                            continue
                         else:
+                            # Re-raise non-runtime ValueError exceptions unchanged
                             raise
                     
                     # Check for unreplaced template variables
                     # Use the same pattern as harness/utils/template.py: only alphanumeric + underscore
-                    # Exclude runtime directives since they're provided at runtime
+                    # Note: Runtime directives {runtime:key} are not matched by this regex (no colon in character class)
                     unreplaced = re.findall(r"\{([a-zA-Z0-9_]+)\}", judge_content)
-                    # Also check for unresolved runtime directives and exclude them from errors
-                    runtime_directives = re.findall(r"\{runtime:([a-zA-Z0-9_]+)\}", judge_content)
-                    runtime_keys = set(runtime_directives)
-                    unreplaced = [v for v in unreplaced if v not in runtime_keys]
                     if unreplaced:
                         errors.append(
                             f"{jpath}: unreplaced variables: {', '.join(sorted(set(unreplaced)))}"
