@@ -3,5 +3,5 @@ weight_key_relation: 0.35
 weight_device_specificity: 0.25
 weight_grounded_evidence: 0.2
 weight_safety: 0.1
-relation_target: r_out ≈ gm * ro² / 2 (cascode output resistance)
+relation_target: "(gm*ro²)_p || (gm*ro²)_n ≈ (gm*ro²)/2 at vop"
 {path:_ota_rubric_template.yaml}

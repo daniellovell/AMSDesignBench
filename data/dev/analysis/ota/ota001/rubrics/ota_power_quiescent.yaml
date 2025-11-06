@@ -3,5 +3,5 @@ weight_key_relation: 0.4
 weight_device_specificity: 0.2
 weight_grounded_evidence: 0.2
 weight_safety: 0.1
-relation_target: P_quiescent ≈ VDD * I_bias (where I_bias is the tail current)
+relation_target: "Differential pair: Valid I_M5 (tail) OR (I_M1 + I_M2). NOT individual I_M1 or I_M2."
 {path:_ota_rubric_template.yaml}

@@ -3,5 +3,5 @@ weight_key_relation: 0.4
 weight_device_specificity: 0.2
 weight_grounded_evidence: 0.2
 weight_safety: 0.1
-relation_target: A0 ≈ gm1 * gm6 * (ro2 || ro4) * (ro6 || ro7) (two-stage gain product)
+relation_target: "DC Gain ≈ gm1 * rout1 * gm2 * rout2 for two-stage OTA"
 {path:_ota_rubric_template.yaml}

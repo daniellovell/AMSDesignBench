@@ -3,5 +3,5 @@ weight_key_relation: 0.35
 weight_device_specificity: 0.25
 weight_grounded_evidence: 0.2
 weight_safety: 0.1
-relation_target: GBW ≈ gm/CL under single-pole unity-gain assumptions
+relation_target: "GBW ≈ gm/CL under single-pole unity-gain assumptions"
 {path:_ota_rubric_template.yaml}

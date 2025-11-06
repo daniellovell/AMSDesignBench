@@ -3,5 +3,5 @@ weight_key_relation: 0.4
 weight_device_specificity: 0.2
 weight_grounded_evidence: 0.2
 weight_safety: 0.1
-relation_target: PSRR+ ≈ gm_load * ro_load (load device contribution)
+relation_target: "PSRR ≈ (gm*ro)² or (gm*ro)²"
 {path:_ota_rubric_template.yaml}

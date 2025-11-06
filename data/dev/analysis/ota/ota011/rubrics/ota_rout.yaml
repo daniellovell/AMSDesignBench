@@ -3,5 +3,5 @@ weight_key_relation: 0.35
 weight_device_specificity: 0.25
 weight_grounded_evidence: 0.2
 weight_safety: 0.1
-relation_target: r_out ≈ gm * ro² / 2 (folded cascode output resistance)
+relation_target: "r_out ≈ gm*ro (folded cascode high swing)"
 {path:_ota_rubric_template.yaml}

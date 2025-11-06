@@ -3,5 +3,5 @@ weight_key_relation: 0.4
 weight_device_specificity: 0.2
 weight_grounded_evidence: 0.2
 weight_safety: 0.1
-relation_target: A0 ≈ gm * ro² * A_boost (gain-boosted cascode gain, order higher than gm*ro²)
+relation_target: "DC Gain ≈ (gm*ro)³/2 for gain-boosted cascode"
 {path:_ota_rubric_template.yaml}

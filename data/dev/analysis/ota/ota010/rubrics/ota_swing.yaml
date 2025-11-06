@@ -3,5 +3,5 @@ weight_key_relation: 0.35
 weight_device_specificity: 0.25
 weight_grounded_evidence: 0.2
 weight_safety: 0.1
-relation_target: "High-side: VDD - (Vov_pcas + Vov_pmir); Low-side: Vov_tail + Vov_in + Vov_ncas"
+relation_target: "High-side: VDD - Vov_pcas; Low-side: Vov_ncas (folded cascode, fewer stacked devices)"
 {path:_ota_rubric_template.yaml}

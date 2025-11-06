@@ -3,5 +3,5 @@ weight_key_relation: 0.4
 weight_device_specificity: 0.2
 weight_grounded_evidence: 0.2
 weight_safety: 0.1
-relation_target: i²n,out ≈ 4kTγ(gm_input + gm_load)
+relation_target: "i²n,out ≈ (4kTγ)(gm_M1 + gm_M5 + gm_M6)"
 {path:_ota_rubric_template.yaml}
