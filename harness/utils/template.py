@@ -60,18 +60,16 @@ def render_template(text: str, vars: Dict[str, str], base_dir: Optional[str | Pa
     # 2) modality multiplexing
     def _resolve_modmux(s: str) -> str:
         """Resolve {modmux:key} directives by looking up key_MODALITY in vars."""
-        out = s
-        if modality_suffix:
-            for m in list(_MODMUX_RE.finditer(s)):
-                raw = m.group(0)
-                base_key = m.group(1).strip()
-                modmux_key = f"{base_key}_{modality_suffix}"
-                if modmux_key in vars:
-                    out = out.replace(raw, str(vars[modmux_key]))
-                else:
-                    # Leave unresolved to surface missing variables
-                    pass
-        return out
+        if not modality_suffix:
+            return s
+
+        def repl(m: re.Match[str]) -> str:
+            raw = m.group(0)
+            base_key = m.group(1).strip()
+            modmux_key = f"{base_key}_{modality_suffix}"
+            return str(vars.get(modmux_key, raw))
+
+        return _MODMUX_RE.sub(repl, s)
     
     with_modmux = _resolve_modmux(with_includes)
     
@@ -79,12 +77,18 @@ def render_template(text: str, vars: Dict[str, str], base_dir: Optional[str | Pa
     def _resolve_runtime(s: str) -> str:
         """Resolve {runtime:key} directives by looking up key directly in vars.
         Raises ValueError if key is missing."""
-        def _sub_runtime(m: re.Match[str]) -> str:
-            key = m.group(1)
+        last_end = 0
+        parts = []
+        for m in _RUNTIME_RE.finditer(s):
+            parts.append(s[last_end:m.start()])
+            key = m.group(1).strip()
             if key in vars:
-                return str(vars[key])
-            raise ValueError(f"Runtime variable '{key}' not found in vars")
-        return _RUNTIME_RE.sub(_sub_runtime, s)
+                parts.append(str(vars[key]))
+            else:
+                raise ValueError(f"Runtime variable '{key}' not found in vars")
+            last_end = m.end()
+        parts.append(s[last_end:])
+        return "".join(parts)
     
     with_runtime = _resolve_runtime(with_modmux)
     
