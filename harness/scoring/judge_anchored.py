@@ -11,9 +11,10 @@ import os as _os
 import sys as _sys
 
 try:
-    from openai import OpenAI
+    from openai import OpenAI, APITimeoutError
 except Exception:  # pragma: no cover
     OpenAI = None  # type: ignore
+    APITimeoutError = TimeoutError  # fallback to built-in if import fails
 
 
 def _client() -> Optional[Any]:
@@ -22,7 +23,9 @@ def _client() -> Optional[Any]:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         return None
-    return OpenAI(api_key=api_key)
+    # Add timeout to prevent hanging (default 60s, configurable via env)
+    timeout_seconds = float(os.getenv("OPENAI_TIMEOUT", "60.0"))
+    return OpenAI(api_key=api_key, timeout=timeout_seconds)
 
 
 _SEM: threading.Semaphore | None = None
@@ -44,9 +47,9 @@ def _sem() -> threading.Semaphore:
 
 
 def judge_answer(
-    answer: str,
+    answer_to_evaluate: str,
     rubric_markdown: str,
-    refs: Dict[str, Any],
+    track: str,
     inventory: Optional[Dict[str, Any]] = None,
     model: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
@@ -58,35 +61,23 @@ def judge_answer(
 
     # Payload contains only rubric-provided instructions and evaluation context; no inline Python instructions
     payload = {
-        "refs": refs,
-        "answer": answer,
+        "answer_to_evaluate": answer_to_evaluate,
         "inventory": inventory or {},
     }
 
     rubric_text = str(rubric_markdown or "").strip()
     # Track-aware but concise system prompt
-    track = (refs or {}).get("track")
     track_l = str(track or "").strip().lower()
-    if track_l == "design":
-        sys_prompt = (
-            "You are an impartial grading assistant for analog/mixed-signal circuit DESIGN. "
-            "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
-        )
-    elif track_l == "analysis":
-        sys_prompt = (
-            "You are an impartial grading assistant for analog/mixed-signal circuit ANALYSIS. "
-            "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
-        )
-    elif track_l == "debugging":
-        sys_prompt = (
-            "You are an impartial grading assistant for analog/mixed-signal circuit DEBUGGING. "
-            "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
-        )
-    else:
-        sys_prompt = (
-            "You are an impartial grading assistant for analog/mixed-signal design/analysis/debugging. "
-            "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
-        )
+    track_display = {
+        "design": "DESIGN",
+        "analysis": "ANALYSIS",
+        "debugging": "DEBUGGING"
+    }.get(track_l, "design/analysis/debugging")
+
+    sys_prompt = (
+        f"You are an impartial grading assistant for analog/mixed-signal circuit {track_display}. "
+        "You ONLY output JSON and never prose. Score the answer using the rubric and inventory."
+    )
 
     # Single user message: rubric markdown + serialized context
     instr = rubric_text
@@ -136,12 +127,31 @@ def judge_answer(
                 except Exception as rate_err:
                     print(f"[JUDGE] rate limiter error (attempt {attempt}/{max_attempts}): {rate_err}", file=_sys.stderr, flush=True)
             try:
-                resp = client.chat.completions.create(**params)
+                # OpenAI client timeout is set in _client(), but add explicit timeout as backup
+                api_timeout = float(os.getenv("OPENAI_JUDGE_TIMEOUT", os.getenv("OPENAI_TIMEOUT", "60.0")))
+                resp = client.chat.completions.create(**params, timeout=api_timeout)
+                break
+            except APITimeoutError as e:
+                emsg = f"API call timed out after {api_timeout}s"
+                last_err = emsg
+                print(f"[JUDGE] timeout (attempt {attempt}/{max_attempts}): {emsg}", file=_sys.stderr, flush=True)
+                # Retry on timeout unless max attempts reached
+                if attempt < max_attempts:
+                    delay = base_delay * (2 ** (attempt - 1))
+                    delay += _rnd.uniform(0.1, 0.5)
+                    print(f"[JUDGE] retrying after timeout; delay {delay:.1f}s", file=_sys.stderr, flush=True)
+                    time.sleep(min(delay, 10.0))
+                    continue
                 break
             except Exception as e:
-                emsg = str(getattr(e, "message", e))
-                last_err = emsg or str(e)
-                txt = (emsg or str(e)).lower()
+                # Capture error message more robustly
+                emsg = str(getattr(e, "message", ""))
+                if not emsg:
+                    emsg = str(e)
+                if not emsg:
+                    emsg = f"{type(e).__name__}: {repr(e)}"
+                last_err = emsg
+                txt = emsg.lower()
                 adapted = False
                 if "max_tokens" in txt and "max_completion_tokens" in txt:
                     params.pop("max_tokens", None)
@@ -176,17 +186,21 @@ def judge_answer(
         if last_err:
             print(f"[JUDGE] final failure after {attempt} attempts: {last_err}", file=_sys.stderr, flush=True)
         else:
-            print(f"[JUDGE] final failure after {attempt} attempts: no response", file=_sys.stderr, flush=True)
+            # This should rarely happen with improved error handling, but provide debug info if it does
+            print(f"[JUDGE] final failure after {attempt} attempts: no response (no exception captured)", file=_sys.stderr, flush=True)
+            print(f"[JUDGE] debug: client={client is not None}, judge_model={judge_model}, params keys={list(params.keys())}", file=_sys.stderr, flush=True)
         return {"error": last_err or "Judge failed without response.", "debug": dbg}
     txt = (getattr(resp.choices[0].message, "content", None) or "").strip()
     if not txt:
         # Fallback to Responses API for models that do not return content here
         try:
+            api_timeout = float(os.getenv("OPENAI_JUDGE_TIMEOUT", os.getenv("OPENAI_TIMEOUT", "60.0")))
             r2 = client.responses.create(
                 model=judge_model,
                 instructions=sys_prompt,
                 input=(instr + "\n\nCONTEXT:\n" + json.dumps(payload)),
                 max_output_tokens=judge_max,
+                timeout=api_timeout,
             )
             txt = (getattr(r2, "output_text", None) or "").strip()
             if not txt:
