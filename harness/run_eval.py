@@ -1397,7 +1397,7 @@ def main():
                 if artifact_used:
                     src_text_for_inv = artifact_used
                 else:
-                    # try template answer key (loaded below into refs)
+                    # Answer keys are loaded from YAML files (see rubric rendering below)
                     try:
                         mpath = item_dir / "meta.json"
                         if mpath.exists():
@@ -1423,7 +1423,7 @@ def main():
             stem = Path(jpath).stem
             vars_yaml = item_dir / "rubrics" / f"{stem}.yaml"
             vars_map: Dict[str, Any] = {}
-            
+
             # Build runtime_vars from bug_info for template rendering
             # For debugging items, provide defaults if bug_info is empty (e.g., when inject found no devices)
             runtime_vars = {k: str(v) for k, v in bug_info.items()} if bug_info else {}
@@ -1436,7 +1436,7 @@ def main():
                     "to_type": "NMOS",
                     "bug_type": "device_polarity_swap",
                 }
-            
+
             if vars_yaml.exists():
                 try:
                     # Render YAML as a template to allow includes and runtime vars
@@ -1449,54 +1449,29 @@ def main():
             # unwrap namespaced
             if isinstance(vars_map, dict) and stem in vars_map and isinstance(vars_map[stem], dict):
                 vars_map = vars_map[stem]
-            
+
+            # Inject bug_info into vars_map for template rendering (debugging tasks)
+            if bug_info:
+                vars_map.update({k: str(v) for k, v in bug_info.items()})
+                # Derive expected_type and actual_type from bug_info if not present
+                if "from_type" in bug_info and "expected_type" not in vars_map:
+                    vars_map["expected_type"] = str(bug_info["from_type"])
+                if "to_type" in bug_info and "actual_type" not in vars_map:
+                    vars_map["actual_type"] = str(bug_info["to_type"])
+
             # Merge runtime_vars and vars_map for judge prompt rendering
             all_vars = {**runtime_vars, **{k: str(v) for k, v in vars_map.items()}}
-            
+
+            # Note: For design tasks, answer keys are resolved via {modmux:answer_key} in templates
+            # No need to manually inject answer_key variable anymore
+
             try:
-                rubric_md_rendered = render_template(rubric_md, all_vars, base_dir=jpath.parent)
+                rubric_md_rendered = render_template(rubric_md, all_vars, base_dir=jpath.parent, modality=q.modality)
             except Exception as e:
                 raise SystemExit(f"Failed to render judge prompt for {q.id} at {jpath}: {e}")
 
             # Judge
             judge = None
-            refs_path = item_dir / "refs.json"
-            refs: Dict[str, Any] = {}
-            if refs_path.exists():
-                try:
-                    refs = json.loads(refs_path.read_text(encoding='utf-8'))
-                except Exception:
-                    refs = {}
-            if bug_info:
-                refs = {**(refs or {}), **bug_info}
-            # For design tasks: attach per-modality answer keys to refs for the judge
-            if str(q.track).lower() == "design":
-                try:
-                    mpath = item_dir / "meta.json"
-                    if mpath.exists():
-                        m = json.loads(mpath.read_text(encoding='utf-8'))
-                        tpath = m.get("template_path") or m.get("template")
-                        if isinstance(tpath, str) and tpath.strip():
-                            tdir = (item_dir / tpath).resolve()
-                            if q.modality == "spice_netlist":
-                                ak = tdir / "netlist.sp"
-                                if ak.exists():
-                                    refs = {**(refs or {}), "answer_key_spice": ak.read_text(encoding='utf-8')}
-                            if q.modality == "casIR":
-                                ak = tdir / "netlist.cir"
-                                if ak.exists():
-                                    refs = {**(refs or {}), "answer_key_casir": ak.read_text(encoding='utf-8')}
-                            elif q.modality == "cascode":
-                                ak = tdir / "netlist.cas"
-                                if ak.exists():
-                                    refs = {**(refs or {}), "answer_key_cas": ak.read_text(encoding='utf-8')}
-                except Exception:
-                    pass
-            # Always include minimal context for judge
-            refs = {**(refs or {}),
-                    "expected_modality": q.modality,
-                    "track": q.track,
-                    "aspect": (q.meta or {}).get("aspect")}
             try:
                 from .scoring.judge_anchored import judge_answer as judge_call  # type: ignore
             except Exception:
@@ -1532,27 +1507,26 @@ def main():
                 if track_l == "design":
                     sys_prompt = (
                         "You are an impartial grading assistant for analog/mixed-signal circuit DESIGN. "
-                        "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
+                        "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
                     )
                 elif track_l == "analysis":
                     sys_prompt = (
                         "You are an impartial grading assistant for analog/mixed-signal circuit ANALYSIS. "
-                        "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
+                        "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
                     )
                 elif track_l == "debugging":
                     sys_prompt = (
                         "You are an impartial grading assistant for analog/mixed-signal circuit DEBUGGING. "
-                        "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
+                        "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
                     )
                 else:
                     sys_prompt = (
                         "You are an impartial grading assistant for analog/mixed-signal design/analysis/debugging. "
-                        "You ONLY output JSON and never prose. Score the answer per rubric using the provided refs and inventory."
+                        "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
                     )
                 instr_flat = rubric_md_rendered
                 payload_dbg = {
-                    "refs": refs,
-                    "answer": pred,
+                    "answer_to_evaluate": pred,
                     "inventory": inv_summary,
                 }
                 judge = {
@@ -1568,7 +1542,7 @@ def main():
                 }
             elif pred:
                 try:
-                    judge = judge_call(pred, rubric_md_rendered, refs, inv_summary, model=args.judge_model)
+                    judge = judge_call(pred, rubric_md_rendered, q.track, inv_summary, model=args.judge_model)
                 except Exception:
                     judge = None
             if judge and isinstance(judge.get("scores"), dict):
@@ -1693,7 +1667,7 @@ def main():
         import shutil
         import subprocess
         import sys
-        
+
         # Try multiple methods to remove the existing item
         removed = False
         try:
@@ -1706,7 +1680,7 @@ def main():
         except OSError:
             # Broken symlink or access issue
             pass
-        
+
         if not removed:
             try:
                 # Try is_symlink without exists check
@@ -1715,7 +1689,7 @@ def main():
                     removed = True
             except OSError:
                 pass
-        
+
         if not removed:
             # Last resort: Windows-specific rmdir command for broken symlinks
             if sys.platform == 'win32':
