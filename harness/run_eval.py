@@ -1197,7 +1197,11 @@ def main():
                     ext_map = {"spice_netlist": "sp", "casIR": "cir", "cascode": "cas"}
                     template_file = tdir / f"netlist.{ext_map.get(modality, 'sp')}"
                     if template_file.exists():
-                        return template_file.read_text(encoding='utf-8')
+                        # Try UTF-8 first, then UTF-16 if that fails
+                        try:
+                            return template_file.read_text(encoding='utf-8')
+                        except UnicodeDecodeError:
+                            return template_file.read_text(encoding='utf-16')
                 except Exception:
                     pass
                 return fallback
@@ -1217,7 +1221,7 @@ def main():
             
             # Debugging support: generate bugged artifact from template if requested
             bug_info: Dict[str, Any] = {}
-            if str(q.track).lower() == "debugging":
+            if str(q.track).lower() == "debugging" and q.judge_id == "debug_device_swap":
                 def _inject_device_swap(
                     modality: str,
                     inject_func,
