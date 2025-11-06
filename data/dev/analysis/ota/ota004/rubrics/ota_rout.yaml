@@ -3,6 +3,5 @@ weight_key_relation: 0.35
 weight_device_specificity: 0.25
 weight_grounded_evidence: 0.2
 weight_safety: 0.1
-relation_target: Canonical expression for the requested metric (author-provided per
-  item)
+relation_target: r_out ≈ ro6 || ro7 (parallel of second stage output resistances)
 {path:_ota_rubric_template.yaml}
