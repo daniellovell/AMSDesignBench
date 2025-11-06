@@ -18,9 +18,9 @@ class TokenBucketLimiter:
         # capacities per minute
         self.req_capacity = float(max(rpm, 0.0))
         self.tok_capacity = float(max(tpm, 0.0))
-        # current tokens start full (burst allowed up to capacity)
-        self.req_tokens = self.req_capacity
-        self.tok_tokens = self.tok_capacity
+        # current tokens start at 50% capacity to reduce initial burst
+        self.req_tokens = self.req_capacity * 0.5
+        self.tok_tokens = self.tok_capacity * 0.5
         # refill rates per second
         self.req_rate = self.req_capacity / 60.0
         self.tok_rate = self.tok_capacity / 60.0
@@ -65,17 +65,17 @@ class TokenBucketLimiter:
                     else 0.0
                 )
                 wait_s = max(wait_req, wait_tok, 0.01)
-                # Log expected wait time before we block
-                # Example: [rate-limit] openai: sleeping ~1.11s (need req=0.0 tok=556.0; caps rpm=30000/m tpm=30000/m)
-                try:
-                    print(
-                        f"[rate-limit] {self.name}: sleeping ~{wait_s:.2f}s "
-                        f"(need req={need_req:.1f} tok={need_tok:.1f}; "
-                        f"caps rpm={self.req_capacity:.0f}/m tpm={self.tok_capacity:.0f}/m)"
-                    )
-                except Exception:
-                    pass
-                self.cond.wait(timeout=min(max(wait_req, 0.01), max(wait_tok, 0.01), 5.0))
+                # Only log significant waits (>5s) to reduce spam
+                if wait_s > 5.0:
+                    try:
+                        print(
+                            f"[rate-limit] {self.name}: sleeping ~{wait_s:.1f}s "
+                            f"(need tok={need_tok:.0f}; cap tpm={self.tok_capacity:.0f}/m)",
+                            flush=True
+                        )
+                    except Exception:
+                        pass
+                self.cond.wait(timeout=min(max(wait_req, 0.01), max(wait_tok, 0.01), 30.0))
 
 
 _LIMITERS: Dict[str, TokenBucketLimiter] = {}
