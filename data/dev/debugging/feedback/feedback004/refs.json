@@ -1,7 +1,0 @@
-{
-  "bug_type": "feedback_polarity_error",
-  "expected_feedback": "negative",
-  "actual_feedback": "positive",
-  "fix": "Swap opamp input connections to establish negative feedback"
-}
-

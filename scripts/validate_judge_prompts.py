@@ -142,11 +142,49 @@ def validate_family(split_root: Path, family: str, family_subdir: str | None = N
                     continue
                 try:
                     # First, validate YAML syntax by rendering any template variables in the YAML itself
-                    rendered_yaml = render_template(
-                        yaml_path.read_text(encoding="utf-8"),
-                        {},
-                        base_dir=yaml_path.parent,
-                    )
+                    # Note: Runtime variables in YAML are expected at runtime, so we provide mock values for validation
+                    # Mock runtime variables that might be used in YAML files
+                    # These are for OTA device swap debugging (runtime-generated)
+                    mock_runtime_vars = {
+                        "swapped_id": "M1",
+                        "from_type": "PMOS",
+                        "to_type": "NMOS",
+                        "bug_type": "device_polarity_swap",
+                    }
+                    
+                    try:
+                        rendered_yaml = render_template(
+                            yaml_path.read_text(encoding="utf-8"),
+                            mock_runtime_vars,
+                            base_dir=yaml_path.parent,
+                        )
+                    except ValueError as ve:
+                        # Check if this is a runtime variable error
+                        # TODO: Consider using a custom exception class (e.g., MissingRuntimeVariableError) in template.py
+                        #       for a more robust contract between modules instead of string matching
+                        error_msg = str(ve)
+                        if "Runtime variable" in error_msg and "not found in vars" in error_msg:
+                            # Parse the error message to extract the missing runtime variable name
+                            # Format: "Runtime variable '{key}' not found in vars"
+                            match = re.search(r"Runtime variable '([a-zA-Z0-9_]+)' not found in vars", error_msg)
+                            if match:
+                                missing_runtime_key = match.group(1)
+                                errors.append(
+                                    f"{yaml_path}: missing runtime variable binding: {missing_runtime_key} "
+                                    f"(required at runtime, not in validation mock vars)"
+                                )
+                            else:
+                                # Fallback if message format changes
+                                errors.append(
+                                    f"{yaml_path}: missing runtime variable binding (error: {error_msg}) "
+                                    f"(required at runtime, not in validation mock vars)"
+                                )
+                            # Skip further validation for this entry since we couldn't render the YAML
+                            continue
+                        else:
+                            # Re-raise non-runtime ValueError exceptions unchanged
+                            raise
+                    
                     yaml_data = yaml.safe_load(rendered_yaml)
                     if yaml_data is None:
                         yaml_data = {}
@@ -154,15 +192,47 @@ def validate_family(split_root: Path, family: str, family_subdir: str | None = N
                     # Convert YAML data to string values for template rendering
                     yaml_vars = {k: str(v) for k, v in yaml_data.items()}
                     
+                    # Add mock runtime vars to yaml_vars for judge prompt rendering
+                    yaml_vars.update(mock_runtime_vars)
+                    
                     # Render the judge prompt template with the YAML data
-                    judge_content = render_template(
-                        jpath.read_text(encoding="utf-8"),
-                        yaml_vars,
-                        base_dir=jpath.parent,
-                    )
+                    # Note: Runtime variables (e.g., {runtime:swapped_id}) are provided at runtime,
+                    # so we catch ValueError for missing runtime vars during validation
+                    try:
+                        judge_content = render_template(
+                            jpath.read_text(encoding="utf-8"),
+                            yaml_vars,
+                            base_dir=jpath.parent,
+                        )
+                    except ValueError as ve:
+                        # Check if this is a runtime variable error
+                        # TODO: Consider using a custom exception class (e.g., MissingRuntimeVariableError) in template.py
+                        #       for a more robust contract between modules instead of string matching
+                        error_msg = str(ve)
+                        if "Runtime variable" in error_msg and "not found in vars" in error_msg:
+                            # Parse the error message to extract the missing runtime variable name
+                            # Format: "Runtime variable '{key}' not found in vars"
+                            match = re.search(r"Runtime variable '([a-zA-Z0-9_]+)' not found in vars", error_msg)
+                            if match:
+                                missing_runtime_key = match.group(1)
+                                errors.append(
+                                    f"{jpath}: missing runtime variable binding: {missing_runtime_key} "
+                                    f"(expected at runtime, not in validation mock vars)"
+                                )
+                            else:
+                                # Fallback if message format changes
+                                errors.append(
+                                    f"{jpath}: missing runtime variable binding (error: {error_msg})"
+                                )
+                            # Skip unreplaced-variable check for this prompt since we couldn't render it
+                            continue
+                        else:
+                            # Re-raise non-runtime ValueError exceptions unchanged
+                            raise
                     
                     # Check for unreplaced template variables
                     # Use the same pattern as harness/utils/template.py: only alphanumeric + underscore
+                    # Note: Runtime directives {runtime:key} are not matched by this regex (no colon in character class)
                     unreplaced = re.findall(r"\{([a-zA-Z0-9_]+)\}", judge_content)
                     if unreplaced:
                         errors.append(
