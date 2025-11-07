@@ -82,7 +82,8 @@ def judge_answer(
 
     sys_prompt = (
         f"You are an impartial grading assistant for analog/mixed-signal circuit {track_display}. "
-        "You ONLY output JSON and never prose. Score the answer using the rubric and inventory."
+        "You ONLY output JSON and never prose. Score the answer using the rubric and inventory. "
+        "The `overall` field must be a computed numeric value (0-1), not a formula."
     )
 
     # Single user message: rubric markdown + serialized context

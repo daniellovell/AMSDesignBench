@@ -1,7 +1,6 @@
 weight_topology: 0.1
 weight_key_relation: 0.35
 weight_device_specificity: 0.25
-weight_grounded_evidence: 0.2
-weight_safety: 0.1
+weight_grounded_evidence: 0.3
 relation_target: "For two-stage without Miller comp, the dominant dynamics before compensation can show GBW ∝ gm(first)*gm(second)*(ro_load_first)/CL when β≈1 and second stage is voltage-controlled current source."
 {path:_ota_rubric_template.yaml}

@@ -4,7 +4,7 @@
 
 {path:../../judge_prompts/debug_common_instructions.md}
 
-Scoring: compute `overall = {weight_fault_id}*scores.fault_id + {weight_fix}*scores.fix + {weight_grounding}*scores.grounding + {weight_safety}*scores.safety`.
+Scoring: compute `overall = {weight_fault_id}*scores.fault_id + {weight_fix}*scores.fix + {weight_grounding}*scores.grounding`.
 
 ## Criteria
 
@@ -28,11 +28,7 @@ Scoring: compute `overall = {weight_fault_id}*scores.fault_id + {weight_fix}*sco
 
 ### grounding
 - Minimum grounded references: `{grounded_min_refs}`.
-- Guidance: `{grounded_guidance}`.
-
-### safety
-- Hallucination penalty: `{hallucination_penalty}` per invalid element reference.
-- Guidance: `{safety_guidance}`.
+- Guidance: `{grounded_guidance}`. Award credit for valid citations from `inventory.allowed_ids`. Deduct for identifiers not present in `inventory.allowed_ids` (hallucinated elements).
 
 ---
 

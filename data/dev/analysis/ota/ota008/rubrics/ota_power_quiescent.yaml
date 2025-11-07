@@ -1,7 +1,6 @@
 weight_topology: 0.1
 weight_key_relation: 0.4
 weight_device_specificity: 0.2
-weight_grounded_evidence: 0.2
-weight_safety: 0.1
+weight_grounded_evidence: 0.3
 relation_target: "Valid ANY device current (all in series). I_M1 ≈ I_M2 ≈ I_M3 ≈ ... ≈ I_M6"
 {path:_ota_rubric_template.yaml}
