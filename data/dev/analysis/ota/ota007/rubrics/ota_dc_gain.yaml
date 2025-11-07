@@ -1,7 +1,6 @@
 weight_topology: 0.1
 weight_key_relation: 0.4
 weight_device_specificity: 0.2
-weight_grounded_evidence: 0.2
-weight_safety: 0.1
-relation_target: A0 ≈ gm_M_in * (ro_M_in || ro_load) ≈ gm_M_in * ro / 2
+weight_grounded_evidence: 0.3
+relation_target: "A0 ≈ gm_M_in * (ro_M_in || ro_load) ≈ gm_M_in * ro / 2"
 {path:_ota_rubric_template.yaml}

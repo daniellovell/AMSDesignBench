@@ -1,8 +1,6 @@
 weight_topology: 0.1
 weight_key_relation: 0.35
 weight_device_specificity: 0.25
-weight_grounded_evidence: 0.2
-weight_safety: 0.1
-relation_target: Canonical expression for the requested metric (author-provided per
-  item)
+weight_grounded_evidence: 0.3
+relation_target: "High-side: VDD - Vov_pcas; Low-side: Vov_ncas (folded cascode with diodes)"
 {path:_ota_rubric_template.yaml}
