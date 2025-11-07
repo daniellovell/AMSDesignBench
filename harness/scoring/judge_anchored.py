@@ -144,7 +144,9 @@ def judge_answer(
     ]
 
     judge_temp = float(os.getenv("OPENAI_JUDGE_TEMPERATURE", 0.0))
-    judge_max = int(os.getenv("OPENAI_JUDGE_MAX_TOKENS", 400))
+    # GPT-5 models need more tokens, especially with reasoning effort enabled
+    default_max_tokens = 2000 if is_gpt5 else 400
+    judge_max = int(os.getenv("OPENAI_JUDGE_MAX_TOKENS", str(default_max_tokens)))
     # Flexible param handling: adapt for different API surfaces
     if use_responses_api:
         params: Dict[str, Any] = {
@@ -159,11 +161,8 @@ def judge_answer(
                 effort = "low"
             if effort not in {"", "default", "auto"}:
                 params["reasoning"] = {"effort": effort}
-            if judge_max:
-                params["max_output_tokens"] = judge_max
-        else:
-            if judge_max:
-                params["max_output_tokens"] = judge_max
+        if judge_max:
+            params["max_output_tokens"] = judge_max
         if judge_temp and not is_gpt5:
             params["temperature"] = judge_temp
     else:
@@ -194,53 +193,117 @@ def judge_answer(
                 pass
         return 0.0
 
-    def _log_truncation_if_needed(resp_obj: Any, max_tokens: Optional[int]) -> None:
-        if not max_tokens or max_tokens <= 0 or resp_obj is None:
-            return
+    def _extract_usage_dict(resp_obj: Any) -> Dict[str, Any]:
+        """
+        Extract usage dictionary from a response object.
+        
+        Attempts multiple strategies to extract usage information:
+        1. Direct access to resp_obj.usage if it's a dict
+        2. Call model_dump() on usage object if available
+        3. Convert usage object's __dict__ to dict if available
+        4. Extract from full response dump if available
+        
+        Parameters:
+            resp_obj (Any): The response object to extract usage from.
+        
+        Returns:
+            Dict[str, Any]: The usage dictionary, or empty dict if extraction fails.
+        """
         usage_obj = getattr(resp_obj, "usage", None)
         usage_dict: Optional[Dict[str, Any]] = None
+        
         if isinstance(usage_obj, dict):
             usage_dict = usage_obj
         elif usage_obj is not None:
             if hasattr(usage_obj, "model_dump"):
                 try:
                     usage_dict = usage_obj.model_dump()  # type: ignore[attr-defined]
-                except Exception:
+                except (AttributeError, TypeError, ValueError) as e:
+                    print(f"[JUDGE] Failed to extract usage via model_dump: {e}", file=_sys.stderr, flush=True)
                     usage_dict = None
             if usage_dict is None and hasattr(usage_obj, "__dict__"):
                 try:
                     usage_dict = dict(usage_obj.__dict__)
-                except Exception:
+                except (TypeError, AttributeError) as e:
+                    print(f"[JUDGE] Failed to extract usage via __dict__: {e}", file=_sys.stderr, flush=True)
                     usage_dict = None
+        
+        # Fallback: try extracting from full response dump
+        if usage_dict is None:
+            try:
+                dump_full = resp_obj.model_dump() if hasattr(resp_obj, "model_dump") else None
+            except (AttributeError, TypeError, ValueError) as e:
+                print(f"[JUDGE] Failed to dump response object: {e}", file=_sys.stderr, flush=True)
+                dump_full = None
+            
+            if isinstance(dump_full, dict):
+                usage_candidate = dump_full.get("usage")
+                if isinstance(usage_candidate, dict):
+                    usage_dict = usage_candidate
+        
+        return usage_dict if isinstance(usage_dict, dict) else {}
+
+    def _extract_finish_reason(resp_obj: Any) -> Optional[str]:
+        """
+        Extract finish reason from a response object.
+        
+        Looks for finish_reason or status in the output/outputs list of the response.
+        
+        Parameters:
+            resp_obj (Any): The response object to extract finish reason from.
+        
+        Returns:
+            Optional[str]: The finish reason as a lowercase string, or None if not found.
+        """
         try:
             dump_full = resp_obj.model_dump() if hasattr(resp_obj, "model_dump") else None
-        except Exception:
-            dump_full = None
-        if usage_dict is None and isinstance(dump_full, dict):
-            usage_candidate = dump_full.get("usage")
-            if isinstance(usage_candidate, dict):
-                usage_dict = usage_candidate
-        finish_reason: Optional[str] = None
-        if isinstance(dump_full, dict):
-            outputs_list = dump_full.get("output") or dump_full.get("outputs")
-            if isinstance(outputs_list, list):
-                for out in outputs_list:
-                    if isinstance(out, dict):
-                        candidate = out.get("finish_reason") or out.get("status")
-                        if isinstance(candidate, str) and candidate:
-                            finish_reason = candidate.lower()
-                            break
-        if not isinstance(usage_dict, dict):
-            usage_dict = {}
+        except (AttributeError, TypeError, ValueError) as e:
+            print(f"[JUDGE] Failed to extract finish_reason: {e}", file=_sys.stderr, flush=True)
+            return None
+        
+        if not isinstance(dump_full, dict):
+            return None
+        
+        outputs_list = dump_full.get("output") or dump_full.get("outputs")
+        if not isinstance(outputs_list, list):
+            return None
+        
+        for out in outputs_list:
+            if isinstance(out, dict):
+                candidate = out.get("finish_reason") or out.get("status")
+                if isinstance(candidate, str) and candidate:
+                    return candidate.lower()
+        
+        return None
+
+    def _log_truncation_if_needed(resp_obj: Any, max_tokens: Optional[int]) -> None:
+        """
+        Check if the response was truncated and log warnings if so.
+        
+        Checks both output token count and finish_reason to detect truncation.
+        
+        Parameters:
+            resp_obj (Any): The response object to check.
+            max_tokens (Optional[int]): The maximum output tokens limit.
+        """
+        if not max_tokens or max_tokens <= 0 or resp_obj is None:
+            return
+        
+        usage_dict = _extract_usage_dict(resp_obj)
         out_tokens = usage_dict.get("output_tokens")
+        
+        # Handle nested output_tokens structure
         if isinstance(out_tokens, dict):
             out_tokens = out_tokens.get("total_tokens") or out_tokens.get("used")
+        
         if isinstance(out_tokens, (int, float)) and out_tokens >= max_tokens:
             print(
                 f"[JUDGE] output tokens reached max_output_tokens={max_tokens}; response may be truncated",
                 file=_sys.stderr,
                 flush=True,
             )
+        
+        finish_reason = _extract_finish_reason(resp_obj)
         if isinstance(finish_reason, str) and finish_reason in {"max_output_tokens", "length"}:
             print(
                 f"[JUDGE] finish_reason={finish_reason} indicates judge output hit the token cap ({max_tokens}).",
