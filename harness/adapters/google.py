@@ -133,6 +133,39 @@ class GoogleAdapter(BaseAdapter):
                         return 0.0
                 return 0.0
             
+            def _unpack_config_to_top_level(params: Dict[str, Any]) -> bool:
+                """
+                Extract temperature and max_output_tokens from config parameter
+                and move them to top-level params. Returns True if adaptation occurred.
+                """
+                if "config" not in params:
+                    return False
+                
+                config = params.get("config")
+                
+                # Handle dict config
+                if isinstance(config, dict):
+                    config_dict = params.pop("config", {})
+                    if "temperature" in config_dict:
+                        params["temperature"] = config_dict["temperature"]
+                    if "max_output_tokens" in config_dict:
+                        params["max_output_tokens"] = config_dict.get("max_output_tokens")
+                    return True
+                
+                # Handle object config (e.g., types.GenerateContentConfig)
+                if hasattr(config, "__dict__"):
+                    config_obj = params.pop("config")
+                    adapted = False
+                    if hasattr(config_obj, "temperature") and config_obj.temperature is not None:
+                        params["temperature"] = config_obj.temperature
+                        adapted = True
+                    if hasattr(config_obj, "max_output_tokens") and config_obj.max_output_tokens is not None:
+                        params["max_output_tokens"] = config_obj.max_output_tokens
+                        adapted = True
+                    return adapted
+                
+                return False
+            
             max_attempts = int(os.getenv("GOOGLE_MAX_RETRIES", 8))
             base_delay = float(os.getenv("GOOGLE_BACKOFF_BASE", 1.0))
             attempt = 0
@@ -166,21 +199,7 @@ class GoogleAdapter(BaseAdapter):
                         if "unexpected keyword argument" in txt:
                             if "config" in txt and "config" in params:
                                 # Try falling back to top-level parameters if config not supported
-                                if isinstance(params.get("config"), dict):
-                                    config_dict = params.pop("config", {})
-                                    if "temperature" in config_dict:
-                                        params["temperature"] = config_dict["temperature"]
-                                    if "max_output_tokens" in config_dict:
-                                        params["max_output_tokens"] = config_dict["max_output_tokens"]
-                                    adapted = True
-                                elif hasattr(params.get("config"), "__dict__"):
-                                    # Handle types.GenerateContentConfig object
-                                    config_obj = params.pop("config")
-                                    if hasattr(config_obj, "temperature") and config_obj.temperature is not None:
-                                        params["temperature"] = config_obj.temperature
-                                    if hasattr(config_obj, "max_output_tokens") and config_obj.max_output_tokens is not None:
-                                        params["max_output_tokens"] = config_obj.max_output_tokens
-                                    adapted = True
+                                adapted = _unpack_config_to_top_level(params)
                             elif "temperature" in txt and "temperature" in params:
                                 params.pop("temperature", None)
                                 adapted = True
@@ -191,13 +210,7 @@ class GoogleAdapter(BaseAdapter):
                         elif "temperature" in txt or "max_output_tokens" in txt or "config" in txt:
                             if "config" in txt and "config" in params:
                                 # Try falling back to top-level parameters
-                                if isinstance(params.get("config"), dict):
-                                    config_dict = params.pop("config", {})
-                                    if "temperature" in config_dict:
-                                        params["temperature"] = config_dict.get("temperature")
-                                    if "max_output_tokens" in config_dict:
-                                        params["max_output_tokens"] = config_dict.get("max_output_tokens")
-                                    adapted = True
+                                adapted = _unpack_config_to_top_level(params)
                             if "temperature" in txt and ("unsupported" in txt or "does not support" in txt or "only the default" in txt):
                                 if "config" in params and isinstance(params["config"], dict):
                                     params["config"].pop("temperature", None)

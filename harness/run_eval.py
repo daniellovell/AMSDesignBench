@@ -1329,7 +1329,7 @@ def main():
                 pred = ""
                 error_msg = str(getattr(e, "message", e)) or str(e)
                 # Print error to stderr so it's visible to the user - CRITICAL: never fail silently
-                print(f"[ERROR] Prediction failed for {it.item_dir.name}/{q.id}: {error_msg}", file=sys.stderr, flush=True)
+                print(f"[ERROR] Prediction failed for {Path(it.item_dir).name}/{q.id}: {error_msg}", file=sys.stderr, flush=True)
                 print(f"[ERROR] Full traceback:", file=sys.stderr, flush=True)
                 traceback.print_exc(file=sys.stderr)
             finally:
@@ -1597,7 +1597,7 @@ def main():
 
             if profiling.is_enabled() and item_timer is not None:
                 total_ms = (perf_counter() - item_timer) * 1000
-                profiling.log("worker", "item_total", total_ms, context=f"item={it.item_dir.name} question={q.id}")
+                profiling.log("worker", "item_total", total_ms, context=f"item={Path(it.item_dir).name} question={q.id}")
 
         import time as _time
         item_timeout = float(os.getenv("EVAL_ITEM_TIMEOUT", "300.0"))  # 5 min per item default

@@ -59,6 +59,27 @@ def _sem() -> threading.Semaphore:
     return _SEM
 
 
+def _evaluate_arithmetic_expression(expr: str) -> Optional[float]:
+    """
+    Safely evaluate a simple arithmetic expression string.
+    Only allows numbers, operators (+, -, *, /), parentheses, and whitespace.
+    Returns None if evaluation fails or contains disallowed characters.
+    """
+    # Remove whitespace
+    expr = expr.strip()
+    # Only allow numbers, operators, parentheses, decimal points, and whitespace
+    if not re.match(r'^[\d+\-*/().\s]+$', expr):
+        return None
+    try:
+        # Use eval with restricted builtins (only allow basic math operations)
+        result = eval(expr, {"__builtins__": {}}, {})
+        if isinstance(result, (int, float)):
+            return float(result)
+    except Exception:
+        pass
+    return None
+
+
 def judge_answer(
     answer_to_evaluate: str,
     rubric_markdown: str,
@@ -108,7 +129,8 @@ def judge_answer(
     sys_prompt = (
         f"You are an impartial grading assistant for analog/mixed-signal circuit {track_display}. "
         "You ONLY output JSON and never prose. Score the answer using the rubric and inventory. "
-        "The `overall` field must be a computed numeric value (0-1), not a formula."
+        "The `overall` field must be a computed numeric value between 0 and 1 (e.g., 0.45, 0.75, 1.0). "
+        "DO NOT output formulas or expressions in the `overall` field—you must calculate and output the final numeric result."
     )
 
     # Single user message: rubric markdown + serialized context
@@ -256,183 +278,223 @@ def judge_answer(
         if total_timer is not None:
             profiling.log("judge", "score", (perf_counter() - total_timer) * 1000, context=f"model={judge_model}")
 
-    with _sem():
-        while attempt < max_attempts and resp is None:
-            attempt += 1
-            # Re-read TPM in case it was auto-detected during error handling
-            tpm = float(os.getenv("OPENAI_JUDGE_TPM", os.getenv("OPENAI_TPM", 0)) or 0)
-            # Cross-thread rate limiting for judge (checked before each API attempt)
-            if rpm > 0 or tpm > 0:
-                try:
-                    get_limiter("openai_judge", rpm=rpm, tpm=tpm).acquire(
-                        token_cost=est_tokens,
-                        req_cost=1.0,
-                        enable_profiling=profiling.is_enabled(),
-                    )
-                except Exception as rate_err:
-                    print(f"[JUDGE] rate limiter error (attempt {attempt}/{max_attempts}): {rate_err}", file=_sys.stderr, flush=True)
-            try:
-                # OpenAI client timeout is set in _client(), but add explicit timeout as backup
-                api_timeout = float(os.getenv("OPENAI_JUDGE_TIMEOUT", os.getenv("OPENAI_TIMEOUT", "60.0")))
-                api_timer = perf_counter() if profiling.is_enabled() else None
-                if use_responses_api:
-                    resp = client.responses.create(timeout=api_timeout, **params)
-                else:
-                    resp = client.chat.completions.create(**params, timeout=api_timeout)
-                    # Validate response before breaking
-                    if resp is None or not hasattr(resp, "choices") or not resp.choices:
-                        raise ValueError(f"Invalid response from API: {type(resp).__name__}")
-                if api_timer is not None:
-                    endpoint = "responses" if use_responses_api else "chat"
-                    profiling.log(
-                        "judge_api",
-                        "call",
-                        (perf_counter() - api_timer) * 1000,
-                        context=f"endpoint={endpoint} model={judge_model}",
-                    )
-                break
-            except APITimeoutError as e:
-                emsg = f"API call timed out after {api_timeout}s"
-                last_err = emsg
-                print(f"[JUDGE] timeout (attempt {attempt}/{max_attempts}): {emsg}", file=_sys.stderr, flush=True)
-                # Retry on timeout unless max attempts reached
-                if attempt < max_attempts:
-                    delay = base_delay * (2 ** (attempt - 1))
-                    delay += _rnd.uniform(0.1, 0.5)
-                    print(f"[JUDGE] retrying after timeout; delay {delay:.1f}s", file=_sys.stderr, flush=True)
-                    time.sleep(min(delay, 10.0))
-                    continue
-                break
-            except Exception as e:
-                # Capture error message more robustly
-                emsg = str(getattr(e, "message", ""))
-                if not emsg:
-                    emsg = str(e)
-                if not emsg:
-                    emsg = f"{type(e).__name__}: {repr(e)}"
-                last_err = emsg
-                # Log full exception for debugging on first attempt
-                if attempt == 1:
-                    print(f"[JUDGE] Exception details: {traceback.format_exc()}", file=_sys.stderr, flush=True)
-                txt = emsg.lower()
-                adapted = False
-                # Adapt for models that need max_completion_tokens instead of max_tokens
-                if not use_responses_api:
-                    if ("max_tokens" in txt or "max_completion_tokens" in txt) and ("does not support" in txt or "unsupported" in txt or "invalid" in txt):
-                        if "max_tokens" in params:
-                            params.pop("max_tokens", None)
-                            params["max_completion_tokens"] = judge_max
-                            adapted = True
-                else:
-                    if ("max_output_tokens" in txt or "max_tokens" in txt) and ("does not support" in txt or "unsupported" in txt or "invalid" in txt):
-                        params["max_output_tokens"] = judge_max
-                        adapted = True
-                if "temperature" in txt and ("unsupported" in txt or "does not support" in txt or "only the default" in txt):
-                    params.pop("temperature", None)
-                    adapted = True
-                if adapted:
-                    print(f"[JUDGE] adapting params and retrying (attempt {attempt}/{max_attempts}): {emsg}", file=_sys.stderr, flush=True)
-                    continue
-                is_rate = ("rate limit" in txt) or ("429" in txt) or ("tpm" in txt) or ("rpm" in txt)
-                is_overload = ("service unavailable" in txt) or ("overloaded" in txt) or ("temporarily" in txt) or ("timeout" in txt)
-                if is_rate or is_overload:
-                    if is_rate and "tpm" in txt:
-                        _detect_and_set_tpm(emsg)
-                    parsed = _parse_retry_after(emsg)
-                    delay = parsed if parsed > 0 else (base_delay * (2 ** (attempt - 1)))
-                    delay += _rnd.uniform(0.1, 0.5)
-                    print(f"[JUDGE] rate-limited/overloaded; retry {attempt}/{max_attempts} after {delay:.1f}s: {emsg}", file=_sys.stderr, flush=True)
-                    time.sleep(min(delay, 20.0))
-                    continue
-                # Unhandled error: stop
-                print(f"[JUDGE] error (no retry): {emsg}", file=_sys.stderr, flush=True)
-                break
-    if resp is None:
-        # All retries failed - return error without accessing resp
-        dbg = {
-            "system": sys_prompt,
-            "instructions": instr,
-            "payload": payload,
-            "judge_model": judge_model,
-        }
-        if last_err:
-            print(f"[JUDGE] final failure after {attempt} attempts: {last_err}", file=_sys.stderr, flush=True)
-        else:
-            # This should rarely happen with improved error handling, but provide debug info if it does
-            print(f"[JUDGE] final failure after {attempt} attempts: no response (no exception captured)", file=_sys.stderr, flush=True)
-            print(f"[JUDGE] debug: client={client is not None}, judge_model={judge_model}, params keys={list(params.keys())}", file=_sys.stderr, flush=True)
-        _log_total_duration()
-        return {"error": last_err or "Judge failed without response.", "debug": dbg}
-    txt = _extract_text(resp, "responses" if use_responses_api else "chat")
-    if not txt:
-        _log_empty_response(resp, "responses" if use_responses_api else "chat")
-        if not use_responses_api:
-            # Fallback to Responses API for models that do not return content here
-            try:
-                api_timeout = float(os.getenv("OPENAI_JUDGE_TIMEOUT", os.getenv("OPENAI_TIMEOUT", "60.0")))
-                api_timer2 = perf_counter() if profiling.is_enabled() else None
-                r2 = client.responses.create(
-                    model=judge_model,
-                    instructions=sys_prompt,
-                    input=(instr + "\n\nCONTEXT:\n" + json.dumps(payload)),
-                    max_output_tokens=judge_max,
-                    timeout=api_timeout,
-                )
-                if api_timer2 is not None:
-                    profiling.log(
-                        "judge_api",
-                        "call",
-                        (perf_counter() - api_timer2) * 1000,
-                        context=f"endpoint=responses-fallback model={judge_model}",
-                    )
-                txt = _extract_text(r2, "responses")
-                if not txt:
-                    _log_empty_response(r2, "responses-fallback")
-            except Exception as fallback_err:
-                print(f"[JUDGE] responses fallback failed: {fallback_err}", file=_sys.stderr, flush=True)
-                txt = "{}"
-    
-    # Strip markdown code fences if present (common with Responses API)
-    txt = txt.strip()
-    if txt.startswith("```json"):
-        txt = txt[7:]  # Remove ```json
-    elif txt.startswith("```"):
-        txt = txt[3:]  # Remove ```
-    if txt.endswith("```"):
-        txt = txt[:-3]  # Remove closing ```
-    txt = txt.strip()
-    
     try:
-        data = json.loads(txt)
-        # basic shape check
-        if not isinstance(data, dict) or "scores" not in data:
-            print("[JUDGE] unexpected response shape; no 'scores' in judge output", file=_sys.stderr, flush=True)
-            return {"error": "Judge returned unexpected format.", "raw": txt}
-        # Attach debug info to help diagnose judging disagreements
-        try:
-            data["debug"] = {
+        with _sem():
+            while attempt < max_attempts and resp is None:
+                attempt += 1
+                # Re-read TPM in case it was auto-detected during error handling
+                tpm = float(os.getenv("OPENAI_JUDGE_TPM", os.getenv("OPENAI_TPM", 0)) or 0)
+                # Cross-thread rate limiting for judge (checked before each API attempt)
+                if rpm > 0 or tpm > 0:
+                    try:
+                        get_limiter("openai_judge", rpm=rpm, tpm=tpm).acquire(
+                            token_cost=est_tokens,
+                            req_cost=1.0,
+                            enable_profiling=profiling.is_enabled(),
+                        )
+                    except Exception as rate_err:
+                        print(f"[JUDGE] rate limiter error (attempt {attempt}/{max_attempts}): {rate_err}", file=_sys.stderr, flush=True)
+                try:
+                    # OpenAI client timeout is set in _client(), but add explicit timeout as backup
+                    api_timeout = float(os.getenv("OPENAI_JUDGE_TIMEOUT", os.getenv("OPENAI_TIMEOUT", "60.0")))
+                    api_timer = perf_counter() if profiling.is_enabled() else None
+                    if use_responses_api:
+                        resp = client.responses.create(timeout=api_timeout, **params)
+                    else:
+                        resp = client.chat.completions.create(**params, timeout=api_timeout)
+                        # Validate response before breaking
+                        if resp is None or not hasattr(resp, "choices") or not resp.choices:
+                            raise ValueError(f"Invalid response from API: {type(resp).__name__}")
+                    if api_timer is not None:
+                        endpoint = "responses" if use_responses_api else "chat"
+                        profiling.log(
+                            "judge_api",
+                            "call",
+                            (perf_counter() - api_timer) * 1000,
+                            context=f"endpoint={endpoint} model={judge_model}",
+                        )
+                    break
+                except APITimeoutError as e:
+                    emsg = f"API call timed out after {api_timeout}s"
+                    last_err = emsg
+                    print(f"[JUDGE] timeout (attempt {attempt}/{max_attempts}): {emsg}", file=_sys.stderr, flush=True)
+                    # Retry on timeout unless max attempts reached
+                    if attempt < max_attempts:
+                        delay = base_delay * (2 ** (attempt - 1))
+                        delay += _rnd.uniform(0.1, 0.5)
+                        print(f"[JUDGE] retrying after timeout; delay {delay:.1f}s", file=_sys.stderr, flush=True)
+                        time.sleep(min(delay, 10.0))
+                        continue
+                    break
+                except Exception as e:
+                    # Capture error message more robustly
+                    emsg = str(getattr(e, "message", ""))
+                    if not emsg:
+                        emsg = str(e)
+                    if not emsg:
+                        emsg = f"{type(e).__name__}: {repr(e)}"
+                    last_err = emsg
+                    # Log full exception for debugging on first attempt
+                    if attempt == 1:
+                        print(f"[JUDGE] Exception details: {traceback.format_exc()}", file=_sys.stderr, flush=True)
+                    txt = emsg.lower()
+                    adapted = False
+                    # Adapt for models that need max_completion_tokens instead of max_tokens
+                    if not use_responses_api:
+                        if ("max_tokens" in txt or "max_completion_tokens" in txt) and ("does not support" in txt or "unsupported" in txt or "invalid" in txt):
+                            if "max_tokens" in params:
+                                params.pop("max_tokens", None)
+                                params["max_completion_tokens"] = judge_max
+                                adapted = True
+                    else:
+                        if ("max_output_tokens" in txt or "max_tokens" in txt) and ("does not support" in txt or "unsupported" in txt or "invalid" in txt):
+                            params["max_output_tokens"] = judge_max
+                            adapted = True
+                    if "temperature" in txt and ("unsupported" in txt or "does not support" in txt or "only the default" in txt):
+                        params.pop("temperature", None)
+                        adapted = True
+                    if adapted:
+                        print(f"[JUDGE] adapting params and retrying (attempt {attempt}/{max_attempts}): {emsg}", file=_sys.stderr, flush=True)
+                        continue
+                    is_rate = ("rate limit" in txt) or ("429" in txt) or ("tpm" in txt) or ("rpm" in txt)
+                    is_overload = ("service unavailable" in txt) or ("overloaded" in txt) or ("temporarily" in txt) or ("timeout" in txt)
+                    if is_rate or is_overload:
+                        if is_rate and "tpm" in txt:
+                            _detect_and_set_tpm(emsg)
+                        parsed = _parse_retry_after(emsg)
+                        delay = parsed if parsed > 0 else (base_delay * (2 ** (attempt - 1)))
+                        delay += _rnd.uniform(0.1, 0.5)
+                        print(f"[JUDGE] rate-limited/overloaded; retry {attempt}/{max_attempts} after {delay:.1f}s: {emsg}", file=_sys.stderr, flush=True)
+                        time.sleep(min(delay, 20.0))
+                        continue
+                    # Unhandled error: stop
+                    print(f"[JUDGE] error (no retry): {emsg}", file=_sys.stderr, flush=True)
+                    break
+        if resp is None:
+            # All retries failed - return error without accessing resp
+            dbg = {
                 "system": sys_prompt,
                 "instructions": instr,
                 "payload": payload,
                 "judge_model": judge_model,
             }
-        except Exception:
-            pass
-        return data
-    except Exception as parse_err:
-        # Return a structured error with debug payload for renderer
-        print(f"[JUDGE] JSON parse error: {parse_err}", file=_sys.stderr, flush=True)
-        print(f"[JUDGE] Raw text (first 500 chars): {txt[:500]}", file=_sys.stderr, flush=True)
-        dbg = {
-            "system": sys_prompt,
-            "instructions": instr,
-            "payload": payload,
-            "judge_model": judge_model,
-        }
-        if last_err:
-            print(f"[JUDGE] final failure after {attempt} attempts: {last_err}", file=_sys.stderr, flush=True)
-        else:
-            print(f"[JUDGE] final failure after {attempt} attempts: no response", file=_sys.stderr, flush=True)
-        out = {"error": last_err or "Judge failed without response.", "debug": dbg}
+            if last_err:
+                print(f"[JUDGE] final failure after {attempt} attempts: {last_err}", file=_sys.stderr, flush=True)
+            else:
+                # This should rarely happen with improved error handling, but provide debug info if it does
+                print(f"[JUDGE] final failure after {attempt} attempts: no response (no exception captured)", file=_sys.stderr, flush=True)
+                print(f"[JUDGE] debug: client={client is not None}, judge_model={judge_model}, params keys={list(params.keys())}", file=_sys.stderr, flush=True)
+            return {"error": last_err or "Judge failed without response.", "debug": dbg}
+        txt = _extract_text(resp, "responses" if use_responses_api else "chat")
+        if not txt:
+            _log_empty_response(resp, "responses" if use_responses_api else "chat")
+            if not use_responses_api:
+                # Fallback to Responses API for models that do not return content here
+                try:
+                    api_timeout = float(os.getenv("OPENAI_JUDGE_TIMEOUT", os.getenv("OPENAI_TIMEOUT", "60.0")))
+                    api_timer2 = perf_counter() if profiling.is_enabled() else None
+                    r2 = client.responses.create(
+                        model=judge_model,
+                        instructions=sys_prompt,
+                        input=(instr + "\n\nCONTEXT:\n" + json.dumps(payload)),
+                        max_output_tokens=judge_max,
+                        timeout=api_timeout,
+                    )
+                    if api_timer2 is not None:
+                        profiling.log(
+                            "judge_api",
+                            "call",
+                            (perf_counter() - api_timer2) * 1000,
+                            context=f"endpoint=responses-fallback model={judge_model}",
+                        )
+                    txt = _extract_text(r2, "responses")
+                    if not txt:
+                        _log_empty_response(r2, "responses-fallback")
+                except Exception as fallback_err:
+                    print(f"[JUDGE] responses fallback failed: {fallback_err}", file=_sys.stderr, flush=True)
+                    txt = "{}"
+        
+        # Strip markdown code fences if present (common with Responses API)
+        txt = txt.strip()
+        if txt.startswith("```json"):
+            txt = txt[7:]  # Remove ```json
+        elif txt.startswith("```"):
+            txt = txt[3:]  # Remove ```
+        if txt.endswith("```"):
+            txt = txt[:-3]  # Remove closing ```
+        txt = txt.strip()
+        
+        try:
+            data = json.loads(txt)
+            # basic shape check
+            if not isinstance(data, dict) or "scores" not in data:
+                print("[JUDGE] unexpected response shape; no 'scores' in judge output", file=_sys.stderr, flush=True)
+                return {"error": "Judge returned unexpected format.", "raw": txt}
+            # Attach debug info to help diagnose judging disagreements
+            try:
+                data["debug"] = {
+                    "system": sys_prompt,
+                    "instructions": instr,
+                    "payload": payload,
+                    "judge_model": judge_model,
+                }
+            except Exception:
+                pass
+            return data
+        except Exception as parse_err:
+            # Try to fix arithmetic expressions in the "overall" field
+            # Pattern: "overall": <expression> where expression contains arithmetic operators
+            # Match "overall": followed by whitespace and then capture until we hit a comma, closing brace, or bracket
+            overall_pattern = r'"overall"\s*:\s*([^,}\]]+?)(?=\s*[,}\]])'
+            match = re.search(overall_pattern, txt, re.MULTILINE | re.DOTALL)
+            if match:
+                expr = match.group(1).strip()
+                # Remove quotes if present
+                if expr.startswith('"') and expr.endswith('"'):
+                    expr = expr[1:-1]
+                # Try to evaluate if it looks like an arithmetic expression
+                if any(op in expr for op in ['+', '-', '*', '/']) and not expr.startswith('"'):
+                    evaluated = _evaluate_arithmetic_expression(expr)
+                    if evaluated is not None:
+                        # Replace the expression with the evaluated value
+                        fixed_txt = re.sub(
+                            overall_pattern,
+                            f'"overall": {evaluated}',
+                            txt,
+                            count=1,
+                            flags=re.MULTILINE | re.DOTALL
+                        )
+                        try:
+                            # Try parsing again with the fixed JSON
+                            data = json.loads(fixed_txt)
+                            if isinstance(data, dict) and "scores" in data:
+                                print(f"[JUDGE] Fixed arithmetic expression in 'overall' field: {expr} -> {evaluated}", file=_sys.stderr, flush=True)
+                                try:
+                                    data["debug"] = {
+                                        "system": sys_prompt,
+                                        "instructions": instr,
+                                        "payload": payload,
+                                        "judge_model": judge_model,
+                                    }
+                                except Exception:
+                                    pass
+                                return data
+                        except Exception:
+                            pass  # Fall through to error handling
+            
+            # Return a structured error with debug payload for renderer
+            print(f"[JUDGE] JSON parse error: {parse_err}", file=_sys.stderr, flush=True)
+            print(f"[JUDGE] Raw text (first 500 chars): {txt[:500]}", file=_sys.stderr, flush=True)
+            dbg = {
+                "system": sys_prompt,
+                "instructions": instr,
+                "payload": payload,
+                "judge_model": judge_model,
+            }
+            if last_err:
+                print(f"[JUDGE] final failure after {attempt} attempts: {last_err}", file=_sys.stderr, flush=True)
+            else:
+                print(f"[JUDGE] final failure after {attempt} attempts: no response", file=_sys.stderr, flush=True)
+            return {"error": last_err or "Judge failed without response.", "debug": dbg}
+    finally:
         _log_total_duration()
-        return out
