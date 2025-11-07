@@ -3,6 +3,7 @@ import argparse
 import json
 import os
 import sys
+import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -75,6 +76,16 @@ def get_adapter(name: str, **kwargs):
                 ADAPTERS["openrouter"] = build_openrouter
             except Exception:
                 pass
+        # Optional Google adapter
+        try:
+            mod5 = importlib.import_module("harness.adapters.google")
+            ADAPTERS["google"] = getattr(mod5, "build")
+        except Exception:
+            try:
+                from .adapters.google import build as build_google
+                ADAPTERS["google"] = build_google
+            except Exception:
+                pass
     if name not in ADAPTERS:
         raise ValueError(f"Unknown adapter: {name}")
     build_fn = ADAPTERS[name]
@@ -103,6 +114,9 @@ def parse_model_spec(spec: str) -> tuple[str, Dict[str, Any]]:
         # For OpenRouter, pass model name through
         if name == "openrouter" and rest:
             return name, {"model": rest}
+        # For Google, map to underlying model name
+        if name == "google" and rest:
+            return name, {"model": rest}
         # Future adapters can parse additional kv-pairs here
         return name, {}
     return spec.strip(), {}
@@ -120,7 +134,7 @@ def normalize_judge_model(spec: Optional[str]) -> Optional[str]:
         return None
     if ":" in cleaned:
         prefix, rest = cleaned.split(":", 1)
-        if prefix.strip().lower() in {"openai", "anthropic", "openrouter"}:
+        if prefix.strip().lower() in {"openai", "anthropic", "openrouter", "google"}:
             return rest.strip() or None
     return cleaned
 
@@ -1296,7 +1310,11 @@ def main():
                 ])[0]
             except Exception as e:
                 pred = ""
-                error_msg = str(getattr(e, "message", e))
+                error_msg = str(getattr(e, "message", e)) or str(e)
+                # Print error to stderr so it's visible to the user - CRITICAL: never fail silently
+                print(f"[ERROR] Prediction failed for {it.item_dir.name}/{q.id}: {error_msg}", file=sys.stderr, flush=True)
+                print(f"[ERROR] Full traceback:", file=sys.stderr, flush=True)
+                traceback.print_exc(file=sys.stderr)
 
             # Judge prompt (Markdown) and variables
             if not q.judge_prompt:
