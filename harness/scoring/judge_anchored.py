@@ -35,6 +35,14 @@ _DETECTED_TPM_LOCK = threading.Lock()
 
 
 def _sem() -> threading.Semaphore:
+    """
+    Return the module-wide semaphore that controls judge concurrency.
+    
+    Reads the environment variable OPENAI_JUDGE_CONCURRENCY and creates a singleton threading.Semaphore sized to that value if it is a positive integer; otherwise creates a semaphore with a default count of 3. Subsequent calls return the same semaphore instance.
+    
+    Returns:
+        threading.Semaphore: The module-global semaphore used to limit concurrent judge operations.
+    """
     global _SEM
     if _SEM is None:
         try:
@@ -56,6 +64,21 @@ def judge_answer(
     inventory: Optional[Dict[str, Any]] = None,
     model: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
+    """
+    Evaluate an answer against a Markdown rubric using an OpenAI-based grading judge and return the parsed scoring result.
+    
+    Sends the rubric, answer, and optional inventory context to an OpenAI model (chat or Responses API depending on model), applies retries, rate-limiting, and parameter adaptation as needed, and parses the model's JSON output.
+    
+    Parameters:
+        answer_to_evaluate (str): The answer text to be judged.
+        rubric_markdown (str): The rubric in Markdown that the judge should use to score the answer.
+        track (str): Evaluation track label (e.g., "design", "analysis", "debugging") used to shape the system prompt.
+        inventory (Optional[Dict[str, Any]]): Optional contextual information to include in the evaluation payload.
+        model (Optional[str]): Optional model identifier to override environment-configured judge model.
+    
+    Returns:
+        Optional[Dict[str, Any]]: On success, a dict parsed from the judge's JSON output containing at minimum a "scores" key and an attached "debug" field. On failure, a dict with an "error" message and often a "debug" payload and/or "raw" text for diagnosis. Returns None only in unexpected runtime scenarios.
+    """
     client = _client()
     if client is None:
         print("[JUDGE] OpenAI client not configured (set OPENAI_API_KEY)", file=_sys.stderr, flush=True)
@@ -118,7 +141,12 @@ def judge_answer(
             params.pop("temperature", None)
 
     def _parse_retry_after(msg: str) -> float:
-        """Parse retry delay from error message, handling both seconds and milliseconds."""
+        """
+        Parse a retry-after duration from a text message, accepting values in seconds or milliseconds.
+        
+        Returns:
+            float: The parsed delay in seconds, or 0.0 if no parseable duration is found.
+        """
         m = re.search(r"try again in\s*([0-9]+\.?[0-9]*)\s*(ms|s)", msg, flags=re.I)
         if m:
             try:
@@ -129,6 +157,16 @@ def judge_answer(
         return 0.0
     
     def _extract_text(resp_obj: Any, source: str) -> str:
+        """
+        Extract textual content from an OpenAI API response object produced by either the Responses API or the Chat Completions API.
+        
+        Parameters:
+            resp_obj (Any): The response object returned by the OpenAI client (Responses API output or chat/completions result).
+            source (str): Hint for which API surface to parse; use "responses" to force Responses-API parsing, otherwise chat parsing is attempted.
+        
+        Returns:
+            str: The extracted text content trimmed of surrounding whitespace, or an empty string if no usable text is found.
+        """
         if resp_obj is None:
             return ""
         if use_responses_api or source == "responses":
@@ -156,6 +194,15 @@ def judge_answer(
         return ""
 
     def _log_empty_response(resp_obj: Any, source: str) -> None:
+        """
+        Log a short diagnostic snippet for an empty or invalid API response.
+        
+        Attempts to obtain a serializable representation of resp_obj (using model_dump() if available, falling back to repr), truncates the resulting payload to 600 characters, and writes a single-line diagnostic message to stderr prefixed with "[JUDGE] empty {source} response:".
+        
+        Parameters:
+            resp_obj (Any): The response object returned by the OpenAI client (or similar). May be any type; the function will try to serialize it safely.
+            source (str): A short label describing the API surface or origin of the response (for example "responses" or "chat"), included in the logged message.
+        """
         try:
             dump = resp_obj.model_dump() if hasattr(resp_obj, "model_dump") else {}
         except Exception:
@@ -168,7 +215,14 @@ def judge_answer(
         print(f"[JUDGE] empty {source} response: {snippet}", file=_sys.stderr, flush=True)
 
     def _detect_and_set_tpm(emsg: str) -> None:
-        """Auto-detect TPM limit from rate limit error and set it automatically."""
+        """
+        Detects a transactions-per-minute (TPM) limit from an OpenAI rate-limit error message and applies it to the process.
+        
+        If a "Limit <number>" pattern is found in `emsg` and no TPM has been detected yet, sets the module-level `_DETECTED_TPM` to 90% of the reported value, sets the `OPENAI_JUDGE_TPM` environment variable to that value, and clears the "openai_judge" limiter so it will be recreated with the new TPM. If parsing or application fails, a diagnostic message is printed to stderr.
+        
+        Parameters:
+            emsg (str): Error message text to search for a "Limit <number>" pattern.
+        """
         global _DETECTED_TPM
         with _DETECTED_TPM_LOCK:
             if _DETECTED_TPM is not None:
