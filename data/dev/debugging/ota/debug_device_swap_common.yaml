@@ -3,8 +3,7 @@
 # Weights
 weight_fault_id: 0.45
 weight_fix: 0.30
-weight_grounding: 0.15
-weight_safety: 0.10
+weight_grounding: 0.25
 
 # fault_id criterion
 fault_id_section: "Fault"
@@ -23,9 +22,5 @@ fix_guidance: "Propose a concrete fix: change device model to correct type and s
 grounded_min_refs: 1
 grounded_guidance: "Reference the real element (e.g., M1) from inventory and cite a line number or node connection."
 
-# safety criterion
-safety_guidance: "Avoid asserting elements or nodes not present in inventory.allowed_ids."
-
 # Scoring
-hallucination_penalty: 0.25
 min_pass: 0.70

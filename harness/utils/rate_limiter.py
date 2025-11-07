@@ -12,15 +12,29 @@ class TokenBucketLimiter:
     """
 
     def __init__(self, rpm: float = 0.0, tpm: float = 0.0, name: str | None = None):
+        """
+        Initialize the limiter with requests-per-minute (RPM) and tokens-per-minute (TPM) capacities and set up thread synchronization.
+        
+        Parameters:
+            rpm (float): Maximum requests per minute; negative values treated as zero (disabled).
+            tpm (float): Maximum tokens per minute; negative values treated as zero (disabled).
+            name (str | None): Optional human-readable name for the limiter; defaults to "limiter".
+        
+        Notes:
+            - Both capacities are stored as non-negative floats.
+            - Each bucket's current tokens start at 50% of its capacity to reduce an initial burst.
+            - Refill rates are computed per second from the minute capacities.
+            - A lock and associated condition variable are created for cross-thread coordination, and an initial timestamp is recorded for refilling.
+        """
         self.lock = threading.Lock()
         self.cond = threading.Condition(self.lock)
         self.name = name or "limiter"
         # capacities per minute
         self.req_capacity = float(max(rpm, 0.0))
         self.tok_capacity = float(max(tpm, 0.0))
-        # current tokens start full (burst allowed up to capacity)
-        self.req_tokens = self.req_capacity
-        self.tok_tokens = self.tok_capacity
+        # current tokens start at 50% capacity to reduce initial burst
+        self.req_tokens = self.req_capacity * 0.5
+        self.tok_tokens = self.tok_capacity * 0.5
         # refill rates per second
         self.req_rate = self.req_capacity / 60.0
         self.tok_rate = self.tok_capacity / 60.0
@@ -37,9 +51,13 @@ class TokenBucketLimiter:
 
     def acquire(self, token_cost: float, req_cost: float = 1.0) -> None:
         """
-        Block until both buckets have enough tokens for this request.
-        token_cost: estimated tokens for prompt + completion
-        req_cost: number of request units (default 1)
+        Block until both token and request buckets have enough capacity, then consume the requested amounts.
+        
+        If a bucket's configured capacity is less than or equal to zero, that bucket is ignored (no limiting for that dimension). This method may sleep while waiting for tokens to refill.
+        
+        Parameters:
+            token_cost (float): Estimated number of tokens required for the operation (e.g., prompt + completion).
+            req_cost (float): Number of request units to consume (defaults to 1.0).
         """
         with self.cond:
             while True:
@@ -65,17 +83,17 @@ class TokenBucketLimiter:
                     else 0.0
                 )
                 wait_s = max(wait_req, wait_tok, 0.01)
-                # Log expected wait time before we block
-                # Example: [rate-limit] openai: sleeping ~1.11s (need req=0.0 tok=556.0; caps rpm=30000/m tpm=30000/m)
-                try:
-                    print(
-                        f"[rate-limit] {self.name}: sleeping ~{wait_s:.2f}s "
-                        f"(need req={need_req:.1f} tok={need_tok:.1f}; "
-                        f"caps rpm={self.req_capacity:.0f}/m tpm={self.tok_capacity:.0f}/m)"
-                    )
-                except Exception:
-                    pass
-                self.cond.wait(timeout=min(max(wait_req, 0.01), max(wait_tok, 0.01), 5.0))
+                # Only log significant waits (>5s) to reduce spam
+                if wait_s > 5.0:
+                    try:
+                        print(
+                            f"[rate-limit] {self.name}: sleeping ~{wait_s:.1f}s "
+                            f"(need tok={need_tok:.0f}; cap tpm={self.tok_capacity:.0f}/m)",
+                            flush=True
+                        )
+                    except Exception:
+                        pass
+                self.cond.wait(timeout=min(max(wait_req, 0.01), max(wait_tok, 0.01), 30.0))
 
 
 _LIMITERS: Dict[str, TokenBucketLimiter] = {}

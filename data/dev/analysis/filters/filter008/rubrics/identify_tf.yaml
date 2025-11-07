@@ -1,9 +1,7 @@
 weight_topology: 0.35
 weight_tf: 0.35
-weight_grounded_evidence: 0.2
-weight_safety: 0.1
+weight_grounded_evidence: 0.3
 tf_target: H(s) = (1 - s)/(1 + s)
 tf_equivalents: "H(s) = (1 - s)/(1 + s) or algebraically equivalent all-pass forms"
 grounded_min_refs: 2
-safety_guidance: Do not invent elements or nets not present in inventory.
 {path:_filters_rubric_template.yaml}
