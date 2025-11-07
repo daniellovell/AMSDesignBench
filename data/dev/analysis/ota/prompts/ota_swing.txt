@@ -1,45 +1,20 @@
-Analyze the output swing limits and headroom budgets near the power rails.
+You are an expert analog IC designer.
+From the {modality} artifact, answer the question about output swing limits and headroom budgets for the given circuit.
 
-**Required Analysis**:
-1. **Output swing limits**: State the maximum and minimum output voltages the circuit can achieve
-2. **Headroom budgets**: Identify voltage headroom needed at each rail to maintain proper device operation
-3. **Operating conditions**: Provide inequalities ensuring all devices remain in saturation
+Required sections (use these exact headers):
+- Topology
+- Key relation
+- Device identification
+- Grounded evidence
+- Answer
 
-**Expected Format and Notation**:
-
-Use symbolic expressions with the following conventions:
-
-**Symbolic Notation**:
-- Use "Vov" for overdrive voltage (Vov = Vgs - Vth), NOT "VDS(sat)" or raw threshold voltages
-- Express swing limits in terms of Vov, NOT numeric estimates
-
-**Device Naming**:
-- Use device role names in expressions:
-  * "M_in" or "input" for input/differential pair devices
-  * "load" for active load devices
-  * "cas" for cascode devices
-  * "tail" for tail current source
-- Example: "Vov_load" means overdrive of the load device
-- Example: "Vov_M_in" means overdrive of the input device
-
-**Format Example** (simple common-source stage):
-```
-High-side: VDD - Vov_load
-Low-side: Vov_M_in
-```
-
-**Format Example** (cascode stage):
-```
-High-side: VDD - Vov_cas_p - Vov_load
-Low-side: Vov_M_in + Vov_cas_n
-```
-
-**Additional Guidance**:
-- Identify the limiting device(s) at each rail
-- State saturation conditions (e.g., "Vov_load > 0", "VDS_M_in > Vov_M_in")
-- Explain which device constrains each swing limit and why
-
-**Grounding Requirement**:
-Cite specific device IDs and node names from the artifact to support your analysis (e.g., M1, M2, vout, VDD, net names).
+Guidance:
+- In Topology: explicitly name the topology and justify in 1 sentence using observed elements. Identify single-ended vs differential OTA.
+- In Key relation: provide symbolic expressions for output swing limits using Vov notation (overdrive voltage, where Vov = Vgs - Vth). Express as "High-side: VDD - [overdrive terms]" and "Low-side: [overdrive terms]". DO NOT use "VDS(sat)" or numeric estimates.
+- In Device identification: EXPLICITLY identify which specific devices (by their IDs like M1, M2, etc.) limit the swing at each rail and explain why each device constrains the swing.
+- In Grounded evidence: cite specific device IDs and node names from the artifact.
+- In Answer: provide the final swing limit expressions using SPECIFIC device IDs and their overdrives (e.g., "High-side: VDD - Vov_M3 - Vov_M5" where M3 and M5 are actual device IDs). Include saturation conditions for key devices.
+- Use device role names in your explanation (input, load, cascode, tail) but use ACTUAL device IDs in final expressions.
+- Avoid generic statements without conditions.
 
 Return markdown only. NEVER use LaTeX or MathJax formatting in your response.
