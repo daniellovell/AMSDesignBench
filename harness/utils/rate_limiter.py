@@ -12,6 +12,20 @@ class TokenBucketLimiter:
     """
 
     def __init__(self, rpm: float = 0.0, tpm: float = 0.0, name: str | None = None):
+        """
+        Initialize the limiter with requests-per-minute (RPM) and tokens-per-minute (TPM) capacities and set up thread synchronization.
+        
+        Parameters:
+            rpm (float): Maximum requests per minute; negative values treated as zero (disabled).
+            tpm (float): Maximum tokens per minute; negative values treated as zero (disabled).
+            name (str | None): Optional human-readable name for the limiter; defaults to "limiter".
+        
+        Notes:
+            - Both capacities are stored as non-negative floats.
+            - Each bucket's current tokens start at 50% of its capacity to reduce an initial burst.
+            - Refill rates are computed per second from the minute capacities.
+            - A lock and associated condition variable are created for cross-thread coordination, and an initial timestamp is recorded for refilling.
+        """
         self.lock = threading.Lock()
         self.cond = threading.Condition(self.lock)
         self.name = name or "limiter"
@@ -37,9 +51,13 @@ class TokenBucketLimiter:
 
     def acquire(self, token_cost: float, req_cost: float = 1.0) -> None:
         """
-        Block until both buckets have enough tokens for this request.
-        token_cost: estimated tokens for prompt + completion
-        req_cost: number of request units (default 1)
+        Block until both token and request buckets have enough capacity, then consume the requested amounts.
+        
+        If a bucket's configured capacity is less than or equal to zero, that bucket is ignored (no limiting for that dimension). This method may sleep while waiting for tokens to refill.
+        
+        Parameters:
+            token_cost (float): Estimated number of tokens required for the operation (e.g., prompt + completion).
+            req_cost (float): Number of request units to consume (defaults to 1.0).
         """
         with self.cond:
             while True:
