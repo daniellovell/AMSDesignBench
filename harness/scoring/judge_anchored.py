@@ -3,6 +3,7 @@ import json
 import os
 from typing import Any, Dict, Optional
 import time
+from time import perf_counter
 import random as _rnd
 import re
 import traceback
@@ -10,6 +11,7 @@ from ..utils.rate_limiter import get_limiter, _LIMITERS, _LIM_LOCK
 import threading
 import os as _os
 import sys as _sys
+from ..utils import profiling
 
 try:
     from openai import OpenAI, APITimeoutError
@@ -248,6 +250,12 @@ def judge_answer(
     est_tokens = int((len(sys_prompt) + len(instr) + len(json.dumps(payload, indent=2))) / float(os.getenv("OPENAI_JUDGE_TOKEN_DIVISOR", 3.5))) + int(judge_max)
     rpm = float(os.getenv("OPENAI_JUDGE_RPM", os.getenv("OPENAI_RPM", 0)) or 0)
     last_err = None
+    total_timer = perf_counter() if profiling.is_enabled() else None
+
+    def _log_total_duration() -> None:
+        if total_timer is not None:
+            profiling.log("judge", "score", (perf_counter() - total_timer) * 1000, context=f"model={judge_model}")
+
     with _sem():
         while attempt < max_attempts and resp is None:
             attempt += 1
@@ -256,12 +264,17 @@ def judge_answer(
             # Cross-thread rate limiting for judge (checked before each API attempt)
             if rpm > 0 or tpm > 0:
                 try:
-                    get_limiter("openai_judge", rpm=rpm, tpm=tpm).acquire(token_cost=est_tokens, req_cost=1.0)
+                    get_limiter("openai_judge", rpm=rpm, tpm=tpm).acquire(
+                        token_cost=est_tokens,
+                        req_cost=1.0,
+                        enable_profiling=profiling.is_enabled(),
+                    )
                 except Exception as rate_err:
                     print(f"[JUDGE] rate limiter error (attempt {attempt}/{max_attempts}): {rate_err}", file=_sys.stderr, flush=True)
             try:
                 # OpenAI client timeout is set in _client(), but add explicit timeout as backup
                 api_timeout = float(os.getenv("OPENAI_JUDGE_TIMEOUT", os.getenv("OPENAI_TIMEOUT", "60.0")))
+                api_timer = perf_counter() if profiling.is_enabled() else None
                 if use_responses_api:
                     resp = client.responses.create(timeout=api_timeout, **params)
                 else:
@@ -269,6 +282,14 @@ def judge_answer(
                     # Validate response before breaking
                     if resp is None or not hasattr(resp, "choices") or not resp.choices:
                         raise ValueError(f"Invalid response from API: {type(resp).__name__}")
+                if api_timer is not None:
+                    endpoint = "responses" if use_responses_api else "chat"
+                    profiling.log(
+                        "judge_api",
+                        "call",
+                        (perf_counter() - api_timer) * 1000,
+                        context=f"endpoint={endpoint} model={judge_model}",
+                    )
                 break
             except APITimeoutError as e:
                 emsg = f"API call timed out after {api_timeout}s"
@@ -340,6 +361,7 @@ def judge_answer(
             # This should rarely happen with improved error handling, but provide debug info if it does
             print(f"[JUDGE] final failure after {attempt} attempts: no response (no exception captured)", file=_sys.stderr, flush=True)
             print(f"[JUDGE] debug: client={client is not None}, judge_model={judge_model}, params keys={list(params.keys())}", file=_sys.stderr, flush=True)
+        _log_total_duration()
         return {"error": last_err or "Judge failed without response.", "debug": dbg}
     txt = _extract_text(resp, "responses" if use_responses_api else "chat")
     if not txt:
@@ -348,6 +370,7 @@ def judge_answer(
             # Fallback to Responses API for models that do not return content here
             try:
                 api_timeout = float(os.getenv("OPENAI_JUDGE_TIMEOUT", os.getenv("OPENAI_TIMEOUT", "60.0")))
+                api_timer2 = perf_counter() if profiling.is_enabled() else None
                 r2 = client.responses.create(
                     model=judge_model,
                     instructions=sys_prompt,
@@ -355,6 +378,13 @@ def judge_answer(
                     max_output_tokens=judge_max,
                     timeout=api_timeout,
                 )
+                if api_timer2 is not None:
+                    profiling.log(
+                        "judge_api",
+                        "call",
+                        (perf_counter() - api_timer2) * 1000,
+                        context=f"endpoint=responses-fallback model={judge_model}",
+                    )
                 txt = _extract_text(r2, "responses")
                 if not txt:
                     _log_empty_response(r2, "responses-fallback")
@@ -404,4 +434,5 @@ def judge_answer(
         else:
             print(f"[JUDGE] final failure after {attempt} attempts: no response", file=_sys.stderr, flush=True)
         out = {"error": last_err or "Judge failed without response.", "debug": dbg}
+        _log_total_duration()
         return out
