@@ -40,6 +40,17 @@ def _resolve_judge_path(item_dir: Path, judge_prompt: str) -> Tuple[Path, str]:
     return jpath, rel.stem
 
 
+def _has_template_variables(content: str) -> bool:
+    """Check if template has variables that require YAML (excluding {path:...}, {modmux:...}, {runtime:...})."""
+    # Remove includes, modmux, and runtime directives to check for regular variables
+    # Pattern matches {var} but not {path:...}, {modmux:...}, or {runtime:...}
+    var_pattern = re.compile(r"\{([a-zA-Z0-9_]+)\}")
+    # Find all simple variable references
+    vars_found = var_pattern.findall(content)
+    # Filter out any that might be part of directives (though regex above shouldn't match those)
+    return len(vars_found) > 0
+
+
 def validate_template_includes(template_path: Path, base_dir: Path, visited: set[Path] | None = None, depth: int = 0) -> List[str]:
     """Validate that all {path:...} includes exist. Recursively validates nested includes."""
     errors = []
@@ -132,14 +143,22 @@ def validate_family(split_root: Path, family: str, family_subdir: str | None = N
                 include_errors = validate_template_includes(jpath, jpath.parent)
                 errors.extend(include_errors)
                 
+                # Check if template has variables that require YAML
+                template_content = jpath.read_text(encoding="utf-8")
+                has_vars = _has_template_variables(template_content)
+                
                 rubrics_dir = item_dir / "rubrics"
                 if not rubrics_dir.exists():
-                    errors.append(f"{item_dir}: missing rubrics directory")
+                    if has_vars:
+                        errors.append(f"{item_dir}: missing rubrics directory (template has variables)")
                     continue
                 yaml_path = rubrics_dir / f"{stem}.yaml"
                 if not yaml_path.exists():
-                    errors.append(f"{yaml_path}: missing YAML for judge prompt {stem}")
-                    continue
+                    if has_vars:
+                        errors.append(f"{yaml_path}: missing YAML for judge prompt {stem} (template has variables)")
+                    else:
+                        # Template has no variables, YAML not needed - skip YAML validation
+                        continue
                 try:
                     # First, validate YAML syntax by rendering any template variables in the YAML itself
                     # Note: Runtime variables in YAML are expected at runtime, so we provide mock values for validation

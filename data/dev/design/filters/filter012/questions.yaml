@@ -2,8 +2,8 @@ questions:
 - id: filter012_design
   track: design
   modality: spice_netlist
-  rubric_id: design_filter
-  rubric_path: rubrics/design_filter.json
+  judge_prompt: ../judge_prompts/design_filter.md
+  judge_id: design_filter
   prompt_template: ../prompts/design_filter.txt
   artifact_path: netlist_template.sp
   attachments:
