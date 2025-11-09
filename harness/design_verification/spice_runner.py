@@ -104,8 +104,16 @@ class SpiceRunner:
                            result.stderr]
                 )
             
-            # Parse results
+            # Parse results from stdout and results file
             metrics = self._parse_results(result.stdout, sim_dir)
+            
+            # Also parse results.txt if it exists
+            results_file = sim_dir / "results.txt"
+            if results_file.exists():
+                results_content = results_file.read_text()
+                file_metrics = self._parse_results(results_content, sim_dir)
+                metrics.update(file_metrics)
+            
             warnings = self._extract_warnings(result.stdout)
             
             return SimulationResults(

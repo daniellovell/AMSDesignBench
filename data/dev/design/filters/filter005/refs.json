@@ -1,0 +1,5 @@
+{
+  "filter_type": "cascaded biquad low-pass",
+  "order": 4,
+  "frequency": "10-15 kHz"
+}

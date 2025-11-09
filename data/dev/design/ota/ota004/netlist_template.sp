@@ -18,7 +18,8 @@
 .param L7=BLANK W7=BLANK
 
 * Input voltage sources (DESIGN the DC common-mode voltage):
-Vin vin 0 DC BLANK AC 1.0
+Vinp vinp 0 DC 0.9 AC 0.5
+Vinn vinn 0 DC 0.9 AC -0.5
 
 
 

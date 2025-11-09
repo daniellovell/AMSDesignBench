@@ -1,0 +1,33 @@
+**TASK:** Fill in ALL component values marked with BLANK in the provided SPICE netlist template.
+
+**DESIGN BRIEF:** {design_brief}
+
+**INSTRUCTIONS:**
+
+1. **Review the attached netlist template** which contains BLANK placeholders for component values
+
+2. **Calculate appropriate component values** to meet the specifications in the design brief:
+   - Use standard component values (e.g., 1k, 10n, 100m, 1u)
+   - Include proper units: R (Ω, k, M), C (f, n, p), L (h, m, u)
+   - Apply filter design formulas (e.g., fc = 1/(2πRC) for RC filters)
+
+3. **Replace each BLANK with your calculated value**:
+   - Example: `R1 vin vout BLANK` becomes `R1 vin vout 1k`
+   - Example: `C1 vout 0 BLANK` becomes `C1 vout 0 10n`
+
+4. **Output the complete netlist** with:
+   - NO BLANK keywords remaining
+   - ALL component values filled in
+   - Device lines EXACTLY as in template
+   - Keep `Vin`, `Rload`, and `OPAMP` subcircuit references as shown
+
+**OUTPUT FORMAT:**
+Provide ONLY the filled-in SPICE netlist in a code block (see the attached template below for the exact structure).
+
+**CRITICAL RULES:**
+- ✅ Replace ALL BLANK with calculated values
+- ✅ Use realistic, standard component values
+- ✅ Keep all device lines exactly as shown in template
+- ✅ Ensure your design meets the target specifications
+- ❌ Do NOT leave any BLANK keywords
+- ❌ Do NOT add .lib, .option, .control, or .end statements

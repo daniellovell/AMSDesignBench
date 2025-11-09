@@ -73,6 +73,8 @@ CL vout 0 20p
 
 .control
 op
+let power_w = 1.8 * abs(i(vdd))
+print power_w > {output_file}
 echo "DC Operating Point Analysis Complete"
 
 ac dec 100 1 1G
@@ -97,14 +99,12 @@ meas ac dc_gain_db find vout_db at=10
 meas ac unity_gain_freq_hz when vout_db=0 cross=1
 meas ac phase_at_ugf find vout_phase when vout_db=0 cross=1
 
-let power_w = 1.8 * abs(vdd#branch)
 
 echo ""
 echo "=== BENCHMARK RESULTS ==="
 print phase_at_ugf
 print unity_gain_freq_hz
 print dc_gain_db
-print power_w
 echo ""
 
 quit

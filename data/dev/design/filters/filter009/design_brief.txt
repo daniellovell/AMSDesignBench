@@ -1,0 +1,1 @@
+Design a passive twin-T notch filter (band-stop) with notch frequency f0 = 15.9 kHz and quality factor Q ≈ 0.5. Typically: R1=R2=R, C1=C2=C, Rmid=R/2, Cmid=2C, where f0 = 1/(2πRC).

@@ -1,0 +1,1 @@
+Design an active band-pass filter using MFB (multiple feedback) topology with center frequency f0 = 10 kHz, quality factor Q = 5, and gain H0 = -2. Use ideal op-amp (OPAMP subcircuit). f0 = 1/(2π√(R2*R3*C1*C2)).

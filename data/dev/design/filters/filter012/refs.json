@@ -1,0 +1,5 @@
+{
+  "filter_type": "state-variable biquad",
+  "order": 2,
+  "frequency": "10 kHz"
+}

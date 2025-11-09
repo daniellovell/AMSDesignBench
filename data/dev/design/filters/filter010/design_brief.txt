@@ -1,0 +1,1 @@
+Design a second-order high-pass filter with cutoff frequency fc = 15.9 kHz and quality factor Q = 1.0. Use ideal op-amp (OPAMP subcircuit).

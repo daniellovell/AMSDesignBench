@@ -85,6 +85,8 @@ CLN voutn 0 10p
 .control
 * Run DC operating point analysis first
 op
+let power_w = 1.8 * abs(i(vdd))
+print power_w > {output_file}
 echo "DC Operating Point Analysis Complete"
 
 * Run AC analysis for gain, GBW, phase margin
@@ -109,14 +111,12 @@ meas ac unity_gain_freq_hz when vout_diff_db=0 cross=1
 meas ac phase_at_ugf find vout_diff_phase when vout_diff_db=0 cross=1
 
 * Power Measurement (from DC operating point)
-let power_w = 1.8 * abs(vdd#branch)
 
 echo ""
 echo "=== BENCHMARK RESULTS ==="
 print phase_at_ugf
 print unity_gain_freq_hz
 print dc_gain_db
-print power_w
 echo ""
 
 quit
