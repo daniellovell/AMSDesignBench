@@ -161,10 +161,11 @@ def judge_answer(
                 effort = "low"
             if effort not in {"", "default", "auto"}:
                 params["reasoning"] = {"effort": effort}
+        else:
+            if judge_temp:
+                params["temperature"] = judge_temp
         if judge_max:
             params["max_output_tokens"] = judge_max
-        if judge_temp and not is_gpt5:
-            params["temperature"] = judge_temp
     else:
         params = {
             "model": judge_model,
