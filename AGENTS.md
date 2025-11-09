@@ -36,6 +36,7 @@ The evaluation uses an LLM judge (via OpenAI API) to score model responses. File
 - Quick smoke run (dummy model): `python scripts/smoke_test.py`.
 - Manual eval: `python -m harness.run_eval --model dummy --split dev`.
 - Multi‑model: `python -m harness.run_eval --models openai:gpt-4o-mini dummy --split dev --model-workers 2`.
+- Performance profiling: append `--enable-profiling` to emit `[PROFILE]` timing logs (adapters, rate limiting, judge, thread pools) to stderr and persist `profiling/` logs + summary under the run directory.
 - Summarize JSONL: `python harness/reporting/summarize.py outputs/latest/results.jsonl`.
 - Report location: `outputs/latest/report/index.html`.
 

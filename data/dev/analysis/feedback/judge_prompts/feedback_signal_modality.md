@@ -4,7 +4,7 @@
 
 {path:feedback_common_instructions.md}
 
-Scoring: compute `overall = {weight_signal_modality}*scores.signal_modality + {weight_grounded_evidence}*scores.grounded_evidence + {weight_format}*scores.format`.
+Scoring: compute the overall score as a weighted sum: `overall = {weight_signal_modality}*scores.signal_modality + {weight_grounded_evidence}*scores.grounded_evidence + {weight_format}*scores.format`. **IMPORTANT: Output the computed numeric result (e.g., 0.75) in the `overall` field, NOT the formula itself.**
 
 ## Criteria
 - **signal_modality** — Credit explicit identification of the input/output modality defined in the Answer Key; partial credit for implied but incomplete statements.
