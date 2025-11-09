@@ -4,7 +4,7 @@
 
 {path:feedback_common_instructions.md}
 
-Scoring: compute `overall = {weight_beta_expression}*scores.beta_expression + {weight_grounded_evidence}*scores.grounded_evidence`.
+Scoring: compute the overall score as a weighted sum: `overall = {weight_beta_expression}*scores.beta_expression + {weight_grounded_evidence}*scores.grounded_evidence`. **IMPORTANT: Output the computed numeric result (e.g., 0.75) in the `overall` field, NOT the formula itself.**
 
 ## Criteria
 - **beta_expression** — Award credit when the answer states the feedback factor described in the Answer Key; allow partial credit for conceptually correct but imprecise wording. Penalize contradictions or incorrect beta statements.

@@ -4,19 +4,49 @@ This folder contains SPICE templates for the `feedback` family used as artifacts
 
 Summary
 
-| Feedback ID | Topology | Closed-Loop Gain | Signal Modality |
-|-------------|----------|------------------|-----------------|
-| feedback001 | Single-Ended TIA with Feedback Resistor | $-R_f$ | I-V |
-| feedback002 | Single-Ended TIA with Feedback Capacitor | $-\frac{1}{sC_f}$ | I-V |
-| feedback003 | Noninverting Voltage Amplifier | $1 + \frac{R_2}{R_1}$ | V-V |
-| feedback004 | Inverting Voltage Amplifier | $-\frac{R_1}{R_2}$ | V-V |
+| Feedback ID | Topology | Closed-Loop Gain | Signal Modality | Beta Factor | Loop Gain |
+|-------------|----------|------------------|-----------------|-------------|-----------|
+| feedback001 | Single-Ended TIA with Feedback Resistor | $-R_f$ | I→V | $\beta = 1$ | $T = A_{ol}$ |
+| feedback002 | Single-Ended TIA with Feedback Capacitor | $-\frac{1}{sC_f}$ | I→V | $\beta = 1$ | $T = A_{ol}$ |
+| feedback003 | Noninverting Voltage Amplifier | $1 + \frac{R_2}{R_1}$ | V→V | $\beta = \frac{R_1}{R_1+R_2}$ | $T = A_{ol}$ |
+| feedback004 | Inverting Voltage Amplifier | $-\frac{R_2}{R_1}$ | V→V | $\beta = \frac{R_2}{R_1+R_2}$ | $T = A_{ol}$ |
 
 **Notation:**
 - $R_f$ — feedback resistor (transimpedance)
 - $C_f$ — feedback capacitor
 - $R_1, R_2$ — resistive feedback network elements
-- I-V — current input, voltage output (transimpedance)
-- V-V — voltage input, voltage output
+- I→V — current input, voltage output (transimpedance)
+- V→V — voltage input, voltage output
+- $\beta$ — feedback factor (fraction of output fed back)
+- $A_{ol}$ — open-loop gain of op-amp
+- $T$ — loop gain
+
+Analysis Questions
+
+Each feedback amplifier topology is evaluated with the following analysis questions (track: `analysis`):
+
+| Question Aspect | Description | Example Answer Key (feedback001) |
+|----------------|-------------|-----------------------------------|
+| **Closed-Loop Gain** | Derive the closed-loop gain expression | $V_{out}/I_{in} = -R_1$ (transimpedance) |
+| **Beta Factor** | Determine feedback factor $\beta$ | $\beta = 1$ (unity feedback) |
+| **Loop Gain** | Calculate loop gain $T$ | $T = A_{ol}$ (open-loop gain) |
+| **Signal Modality** | Identify input/output signal types | Current input to voltage output (I→V) |
+
+**Answer keys by topology**:
+- **feedback001** (TIA, R): Gain = -R₁, β = 1, Modality = I→V
+- **feedback002** (TIA, C): Gain = -1/(sC₁), β = 1, Modality = I→V  
+- **feedback003** (Non-inverting): Gain = 1 + R₂/R₁, β = R₁/(R₁+R₂), Modality = V→V
+- **feedback004** (Inverting): Gain = -R₂/R₁, β = R₂/(R₁+R₂), Modality = V→V
+
+Debugging Questions
+
+Each feedback amplifier topology includes a debugging task (track: `debugging`):
+
+| Question Aspect | Description | Answer Key |
+|----------------|-------------|------------|
+| **Feedback Polarity** | Identify incorrect feedback polarity and propose fix | Detect positive vs. negative feedback configuration, identify problematic connections (op-amp inputs, resistor nodes), propose concrete fix (swap inputs or correct node connections) |
+
+**Example debugging fault**: Op-amp inputs are swapped or feedback resistor is connected incorrectly, creating positive feedback instead of negative feedback. This causes instability, oscillation, or saturation. Models must identify the fault and specify the correct configuration for stable negative feedback operation.
 
 Topology Details
 

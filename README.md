@@ -75,6 +75,7 @@ Models can also be specified in `bench_config.yaml` under the `eval.models` key.
 | `--max-items`     | Limit the number of items to run for each model (useful for testing).          | `None`     |
 | `--model-workers` | The number of models to run in parallel.                                       | `0` (all)  |
 | `--item-workers`  | The number of items to process in parallel for each model.                     | `8`        |
+| `--enable-profiling` | Emit `[PROFILE]` timing logs for adapters, workers, rate limiting, and judge calls. Write them to stderr for diagnosing bottlenecks. | `False` |
 | `--family`        | Limit to a specific evaluation family under `data/<split>` (`analysis`, `debugging`, `design`). | `None`     |
 | `--item-index`    | 1-based item index within the selected scope (after family filter). `0` = all. | `0`        |
 | `--judge-model`   | The model to use for the LLM judge.                                            | `gpt-4o`   |
@@ -97,6 +98,34 @@ You can also generate summaries, plots, or re-render the report manually:
 *   **Re-render the HTML report:**
     ```bash
     python3 -m harness.reporting.render outputs/latest/combined_results.jsonl
+
+### Profiling Execution Time
+
+Add `--enable-profiling` to any run to capture detailed timing for each stage of the harness. When enabled, the runner writes `[PROFILE] <component> <operation> <duration_ms>ms …` lines to stderr covering:
+
+- Adapter call boundaries (`adapter.predict`, `api.call`) — measure raw model latency.
+- Rate limiter waits (`rate_limiter.acquire`) — highlight throttling delays.
+- Worker/thread-pool waits (`worker.item_total`, `thread_pool.*`) — surface scheduler contention.
+- Judge evaluations (`judge.score`, `judge_api.call`).
+
+A typical invocation for inspecting Gemini vs. OpenAI latency:
+
+```bash
+python -m harness.run_eval \
+  --models google:gemini-2.5-flash openai:gpt-4o-mini \
+  --split dev/analysis/ota \
+  --max-items 1 \
+  --item-workers 4 \
+  --enable-profiling 2>&1 | tee profile.log
+```
+
+Analyze the captured log to localize slow stages:
+
+```bash
+grep "\[PROFILE\]" profile.log | sort -t' ' -k3 -rn | head
+```
+
+The harness also saves `profiling/profiling_log.jsonl` plus a tabular `profiling_summary.txt` inside each run directory so you can review results later. Disable profiling simply by omitting the flag (no overhead when off).
 
 ### Plots
 

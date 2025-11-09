@@ -4,7 +4,7 @@
 
 {path:../../judge_prompts/debug_common_instructions.md}
 
-Scoring: compute `overall = {weight_fault_id}*scores.fault_id + {weight_fix}*scores.fix + {weight_grounding}*scores.grounding`.
+Scoring: compute the overall score as a weighted sum: `overall = {weight_fault_id}*scores.fault_id + {weight_fix}*scores.fix + {weight_grounding}*scores.grounding`. **IMPORTANT: Output the computed numeric result (e.g., 0.45) in the `overall` field, NOT the formula itself.**
 
 ## Criteria
 
