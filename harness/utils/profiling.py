@@ -57,7 +57,7 @@ def log(component: str, operation: str, duration_ms: float, context: Optional[st
     with _LOCK:
         _ENTRIES.append(entry)
     suffix = f" {context}" if context else ""
-    print(f"[PROFILE] {component} {operation} {duration_ms:.0f}ms{suffix}", file=sys.stderr, flush=True)
+    print(f"[PROFILE] {component} {operation} {duration_ms:.1f}ms{suffix}", file=sys.stderr, flush=True)
 
 
 def write_reports(output_dir: Path) -> Tuple[Optional[Path], Optional[Path]]:
