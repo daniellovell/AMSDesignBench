@@ -2,8 +2,8 @@ questions:
 - id: ota006_design_telescopic_se_hs
   track: design
   modality: auto
-  rubric_id: design_telescopic_single_end_high_swing
-  rubric_path: rubrics/design_telescopic_single_end_high_swing.json
+  judge_prompt: ../judge_prompts/design_telescopic_single_end_high_swing.md
+  judge_id: design_telescopic_single_end_high_swing
   prompt_template: ../prompts/design_ota.txt
   meta:
     topology: telescopic_cascode_single_end_high_swing

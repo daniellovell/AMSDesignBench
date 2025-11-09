@@ -1,0 +1,66 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches the reference for this modality (SPICE/casIR/ADL) — diff pair + tail + PMOS mirror to VDD, single-ended output."
+topology_patterns_any: "five-transistor; 5T; single-stage"
+topology_min_any: 2
+safety_anti_patterns: "cascode; cascoded; second stage; two-stage"
+
+hallucination_penalty: 0.15
+min_pass: 0.70
+answer_key_SPICE: |
+  M1 n1 vinp ntail 0 nch W=2u L=0.18u
+  M2 n2 vinn ntail 0 nch W=2u L=0.18u
+  Mtail ntail vbias_n 0 0 nch W=1u L=0.5u
+  Mp1 vout n2 VDD VDD pch W=4u L=0.18u
+  Mp2 n1 n1 VDD VDD pch W=4u L=0.18u
+  VDD VDD 0 1.8
+  Cload vout 0 1p
+  
+answer_key_CASIR: |
+  {
+    "nets": [
+      {"id":"VDD","type":"supply"}, {"id":"GND","type":"supply"},
+      {"id":"vinp"},{"id":"vinn"},{"id":"n1"},{"id":"n2"},
+      {"id":"ntail"},{"id":"vout"},{"id":"vbias_n","type":"bias"}
+    ],
+    "motifs": [
+      {
+        "id":"dp","type":"DiffPairNMOS",
+        "ports":{"in_p":"vinp","in_n":"vinn","out_l":"n1","out_r":"n2","tail":"ntail","gnd":"GND"}
+      },
+      {"id":"tail","type":"TailCurrentSourceNMOS","ports":{"out":"ntail","gate":"vbias_n","gnd":"GND"}},
+  
+      {
+        "id":"pml","type":"PMOSMirrorActiveLoad",
+        "ports":{"sense":"n1","vdd":"VDD"},
+        "taps":[ {"node":"vout","ratio":1} ]
+      },
+  
+      {"id":"cl","type":"Cap","ports":{"p":"vout","n":"GND"},"params":{"C":1e-12}}
+    ],
+    "provenance":{"source":"OTA5T"}
+  }
+answer_key_CASCODE: |
+  package analog.ota; import lib.motifs.*;
+  
+  class OTA5T implements Amplifier {
+    supply VDD=1.8V; ground GND;
+    port in_p vinp, in_n vinn; port out vout; bias vbias_n;
+  
+    use {
+      dp   = new DiffPairNMOS(vinp, vinn) { gnd=GND; tail=ntail; };
+      tail = new TailCurrentSourceNMOS()   { out=ntail; gate=vbias_n; gnd=GND; };
+  
+      // Explicit mirror load: diode at 'sense' (n1), mirror current into vout only.
+      pml = new PMOSMirrorActiveLoad(sense = dp.out_l, vdd = VDD) {
+        taps = { vout:1 };
+      };
+  
+      C(vout, GND, 1pF);
+    }
+  
+    // Preserve node names for analysis tasks
+    alias n1 = dp.out_l; alias n2 = dp.out_r;
+  }

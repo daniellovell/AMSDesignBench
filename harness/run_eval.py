@@ -13,21 +13,21 @@ import yaml
 
 from rich import print
 from rich.progress import Progress, BarColumn, TimeElapsedColumn, TimeRemainingColumn, MofNCompleteColumn
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 import threading
 
 # Allow running as script or module
 if __package__ in (None, ""):
     sys.path.append(str(Path(__file__).resolve().parents[1]))
     from harness.types import Inventory, Question, EvalItem  # type: ignore
-    from harness.scoring.rubric import load_rubric, score_answer  # type: ignore
     from harness.scoring.groundedness import groundedness  # type: ignore
     from harness.reporting.render import generate_report, generate_outputs_index  # type: ignore
+    from harness.utils.template import render_template  # type: ignore
 else:
     from .types import Inventory, Question, EvalItem
-    from .scoring.rubric import load_rubric, score_answer
     from .scoring.groundedness import groundedness
     from .reporting.render import generate_report, generate_outputs_index
+    from .utils.template import render_template
 
 
 import importlib
@@ -226,10 +226,12 @@ def load_questions(item_dir: Path) -> List[Question]:
     prompts_dir = item_dir.parent / "prompts"
 
     def _extract_sections_from_prompt(prompt_name: str) -> List[str]:
-        ppath = prompts_dir / prompt_name
+        # Resolve prompt_name relative to item_dir (e.g., ../prompts/design_ota.txt)
+        ppath = (item_dir / prompt_name).resolve()
         try:
             lines = ppath.read_text(encoding='utf-8').splitlines()
         except Exception:
+            # If file not found, return empty list (sections extraction is optional)
             return []
         sections: List[str] = []
         capture = False
@@ -265,16 +267,18 @@ def load_questions(item_dir: Path) -> List[Question]:
                     qdict["require_sections"] = sections
         if not qdict.get("require_sections"):
             qdict["require_sections"] = ["Answer"]
-        # If rubric path is provided but id missing, read it from file
-        if qdict.get("rubric_path") and not qdict.get("rubric_id"):
-            rpath = (item_dir / str(qdict["rubric_path"]))
-            if rpath.exists():
-                try:
-                    rid = json.loads(rpath.read_text(encoding='utf-8')).get("rubric_id")
-                    if rid:
-                        qdict["rubric_id"] = str(rid)
-                except Exception:
-                    pass
+        # Judge prompt defaults: map prompt_template stem to ../judge_prompts/<stem>.md
+        if not qdict.get("judge_prompt"):
+            try:
+                stem = Path(str(qdict["prompt_template"]).strip()).stem
+            except Exception:
+                stem = "rubric"
+            qdict["judge_prompt"] = (Path("../judge_prompts") / f"{stem}.md").as_posix()
+        if not qdict.get("judge_id"):
+            try:
+                qdict["judge_id"] = Path(qdict["judge_prompt"]).stem
+            except Exception:
+                qdict["judge_id"] = str(qdict.get("id") or "judge")
         # Default answer format to markdown for legacy items
         if not qdict.get("answer_format"):
             qdict["answer_format"] = "markdown"
@@ -339,14 +343,6 @@ def load_questions(item_dir: Path) -> List[Question]:
                     # No explicit path provided; use canonical filename for modality
                     qdict["artifact_path"] = _default_artifact_for(ap)
                 qdict = _apply_defaults(qdict)
-                if not qdict.get("rubric_id"):
-                    raise SystemExit(
-                        f"Question {qdict.get('id')} in {item_dir} is missing rubric_id."
-                    )
-                if not qdict.get("rubric_path"):
-                    raise SystemExit(
-                        f"Question {qdict.get('id')} in {item_dir} is missing rubric_path."
-                    )
                 out.append(Question.model_validate(qdict))
         else:
             # Normalize modality and artifact path if missing
@@ -366,14 +362,6 @@ def load_questions(item_dir: Path) -> List[Question]:
                     pass
             raw["modality"] = m
             raw = _apply_defaults(raw)
-            if not raw.get("rubric_id"):
-                raise SystemExit(
-                    f"Question {raw.get('id')} in {item_dir} is missing rubric_id."
-                )
-            if not raw.get("rubric_path"):
-                raise SystemExit(
-                    f"Question {raw.get('id')} in {item_dir} is missing rubric_path."
-                )
             out.append(Question.model_validate(raw))
             # Special-case: For debugging items authored as spice_netlist only,
             # auto-add parallel questions for any additional available modalities
@@ -459,6 +447,230 @@ def iter_items(split_dir: Path) -> List[EvalItem]:
     return items
 
 
+# Utility: randomize SPICE netlist
+def _unit_scale_to_float(val: str) -> float:
+    s = val.strip().lower()
+    # Try plain float
+    try:
+        return float(s)
+    except Exception:
+        pass
+    # SPICE common suffix multipliers
+    muls = {
+        't': 1e12,
+        'g': 1e9,
+        'meg': 1e6,
+        'k': 1e3,
+        'm': 1e-3,
+        'u': 1e-6,
+        'n': 1e-9,
+        'p': 1e-12,
+        'f': 1e-15,
+    }
+    # handle 'meg' specially
+    if s.endswith('meg'):
+        try:
+            return float(s[:-3]) * muls['meg']
+        except Exception:
+            return 0.0
+    # last char as suffix
+    if s[-1] in muls:
+        try:
+            return float(s[:-1]) * muls[s[-1]]
+        except Exception:
+            return 0.0
+    return 0.0
+
+
+def _float_to_unit(val: float, like: str, sig_digits: Optional[int] = None) -> str:
+    # Render with the same unit suffix as 'like' if present. sig_digits limits precision.
+    fmt = (lambda x: f"{x:g}") if sig_digits is None else (lambda x: f"{x:.{sig_digits}g}")
+    s = like.strip()
+    if not s:
+        return fmt(val)
+    suf = s[-1]
+    lower = s.lower()
+    if lower.endswith('meg'):
+        return f"{fmt(val/1e6)}{s[-3:]}"
+    muls = {
+        't': 1e12,
+        'g': 1e9,
+        'k': 1e3,
+        'm': 1e-3,
+        'u': 1e-6,
+        'n': 1e-9,
+        'p': 1e-12,
+        'f': 1e-15,
+    }
+    suf_lower = suf.lower()
+    if suf_lower in muls:
+        scaled = val / muls[suf_lower]
+        return f"{fmt(scaled)}{suf}"
+    return fmt(val)
+
+
+def randomize_spice(text: str, seed: int) -> str:
+    rnd = random.Random(seed)
+    raw_lines = text.splitlines()
+    # identify .SUBCKT blocks and keep intact; also treat continuation lines '+' as part of previous statement
+    out_lines: List[str] = []
+    devices: List[List[str]] = []  # each device may have continuations
+    headers: List[str] = []
+    footers: List[str] = []  # terminal deck controls like .end, .backanno
+    tails: List[str] = []
+    in_subckt = False
+    subckt_buf: List[str] = []
+    subckts: List[List[str]] = []
+    current_stmt: List[str] = []
+    for ln in raw_lines:
+        raw = ln.rstrip('\n')
+        s = raw.strip()
+        low = s.lower()
+        if low.startswith('.subckt'):
+            # flush any pending statement before entering subckt
+            if current_stmt:
+                devices.append(current_stmt)
+                current_stmt = []
+            in_subckt = True
+            subckt_buf = [raw]
+            continue
+        if in_subckt:
+            # Include blank lines inside subcircuit blocks to preserve structure
+            subckt_buf.append(raw)
+            if low.startswith('.ends'):
+                in_subckt = False
+                subckts.append(subckt_buf)
+            continue
+        if not s:
+            # keep blank lines in tails for aesthetics later (only for main netlist)
+            tails.append(raw)
+            continue
+        if s[0] in ('*', ';'):
+            # flush pending
+            if current_stmt:
+                devices.append(current_stmt)
+                current_stmt = []
+            headers.append(raw)
+            continue
+        if s[0] == '.':
+            # flush pending
+            if current_stmt:
+                devices.append(current_stmt)
+                current_stmt = []
+            # Classify dot-directives: footer directives go to footers, others to headers
+            low_cmd = low.split()[0] if low else ""
+            # Footer directives (terminal deck controls)
+            footer_commands = {'.end', '.backanno', '.eof'}
+            if low_cmd in footer_commands:
+                footers.append(raw)
+            else:
+                # Header directives (.model, .param, .include, .lib, .options, etc.)
+                headers.append(raw)
+            continue
+        if s[0] == '+':
+            # continuation of previous
+            if current_stmt:
+                current_stmt.append(raw)
+            else:
+                # orphan continuation -> treat as header to be safe
+                headers.append(raw)
+            continue
+        # start of a device/source statement
+        if current_stmt:
+            devices.append(current_stmt)
+        current_stmt = [raw]
+    # flush at end
+    if current_stmt:
+        devices.append(current_stmt)
+
+    # Jitter sizes on MOS and C devices
+    def _quantize_like(value: float, reference: float, rel_step: float, min_step: float) -> float:
+        if reference <= 0.0:
+            return value
+        step = max(abs(reference) * rel_step, min_step)
+        if step <= 0:
+            return value
+        quanta = int(round(value / step))
+        if quanta < 1:
+            quanta = 1
+        return quanta * step
+
+    def jitter_device(dev_lines: List[str]) -> List[str]:
+        line0 = dev_lines[0]
+        s = line0.strip()
+        if not s:
+            return dev_lines
+        # MOS: starts with M/m
+        if s[0].lower() == 'm':
+            # Scale W by factor and L by small jitter, preserve unit suffix
+            parts = s.split()
+            # Find W= and L= tokens
+            new_parts = []
+            w_like = None
+            l_like = None
+            for tok in parts:
+                if tok.upper().startswith('W='):
+                    w_like = tok.split('=',1)[1]
+                if tok.upper().startswith('L='):
+                    l_like = tok.split('=',1)[1]
+            # Heuristic: NMOS vs PMOS by model token (5th token typical)
+            # Fallback: if contains 'pch' treat as PMOS
+            is_p = ' pch ' in f' {s.lower()} '
+            base_w = _unit_scale_to_float(w_like) if w_like else 0.0
+            base_l = _unit_scale_to_float(l_like) if l_like else 0.0
+            w_new: Optional[float] = None
+            if base_w > 0.0:
+                heavy_tail = rnd.random() < 0.18  # Occasionally sample much larger analog devices
+                low = max(base_w * 0.5, 0.2e-6)
+                high = 100e-6  # Allow widths up to ~100 µm
+                if heavy_tail and high > low:
+                    w_candidate = math.exp(rnd.uniform(math.log(low), math.log(high)))
+                else:
+                    heavy_tail = False
+                    w_candidate = base_w * rnd.triangular(0.6, 1.9, 1.1 if is_p else 0.95)
+                w_candidate = min(max(w_candidate, 0.12e-6), 100e-6)
+                ref = w_candidate if heavy_tail else base_w
+                w_new = _quantize_like(w_candidate, ref, 0.005, 5e-9)
+            l_new: Optional[float] = None
+            if base_l > 0.0:
+                l_candidate = max(base_l * rnd.triangular(0.9, 1.2, 1.03), 1e-9)
+                l_new = _quantize_like(l_candidate, base_l, 0.002, 2e-9)
+            for tok in parts:
+                up = tok.upper()
+                if up.startswith('W=') and w_like and w_new is not None:
+                    tok = f"W={_float_to_unit(w_new, w_like, sig_digits=3)}"
+                elif up.startswith('L=') and l_like and l_new is not None:
+                    tok = f"L={_float_to_unit(l_new, l_like, sig_digits=3)}"
+                new_parts.append(tok)
+            dev_lines[0] = ' '.join(new_parts)
+            return dev_lines
+        # Capacitor: starts with C/c, format: Cname n1 n2 value [...]
+        if s[0].lower() == 'c':
+            parts = s.split()
+            if len(parts) >= 4:
+                like = parts[3]
+                base = _unit_scale_to_float(like)
+                if base > 0.0:
+                    scale = rnd.uniform(0.7, 1.3)
+                    newv = max(base * scale, 1e-18)
+                    parts[3] = _float_to_unit(newv, like, sig_digits=3)
+            dev_lines[0] = ' '.join(parts)
+            return dev_lines
+        return dev_lines
+
+    devices = [jitter_device(d) for d in devices]
+    # Shuffle devices order to reduce memorization (shuffle whole statement blocks)
+    rnd.shuffle(devices)
+    out_lines.extend(headers)
+    for blk in subckts:
+        out_lines.extend(blk)
+    for stmt in devices:
+        out_lines.extend(stmt)
+    out_lines.extend(tails)
+    out_lines.extend(footers)
+    return '\n'.join(out_lines) + ('\n' if text.endswith('\n') else '')
+
+
 def main():
     ap = argparse.ArgumentParser()
     # Back-compat: --model can be a single name or comma-separated list; prefer --models
@@ -480,6 +692,12 @@ def main():
         choices=["analysis", "debugging", "design"],
         default=None,
         help="Limit to a specific evaluation family under data/<split>/<family>.",
+    )
+    ap.add_argument(
+        "--family-subdir",
+        dest="family_subdir",
+        default=None,
+        help="Optional subdirectory under the chosen family (e.g., feedback, filters, ota).",
     )
     ap.add_argument(
         "--item-index",
@@ -595,11 +813,11 @@ def main():
 
     # Combined results file for convenience/back-compat
     results_path = out_dir / "combined_results.jsonl"
-    rubrics_cache: Dict[str, Any] = {}
-    knowledge_cache: Dict[str, str] = {}
 
     # Scope items by optional family (e.g., debugging, analysis, design)
     search_root = split_dir if not args.family else (split_dir / args.family)
+    if args.family_subdir:
+        search_root = search_root / args.family_subdir
     if not search_root.exists():
         raise SystemExit(f"Scope not found: {search_root}")
     items = iter_items(search_root)
@@ -625,224 +843,15 @@ def main():
     scope_msg = f" split=[bold]{args.split}[/bold]"
     if args.family:
         scope_msg += f" family=[bold]{args.family}[/bold]"
+    if args.family_subdir:
+        scope_msg += f" subdir=[bold]{args.family_subdir}[/bold]"
     if args.item_index and args.item_index > 0:
         scope_msg += f" item-index=[bold]{args.item_index}[/bold]"
     print(f"[cyan]Evaluating[/cyan]{scope_msg} on models: {', '.join(model_slugs)}")
 
     write_lock = threading.Lock()
     progress_lock = threading.Lock()
-    rubric_lock = threading.Lock()
-    knowledge_lock = threading.Lock()
-
-    # Utility: randomize SPICE netlist
-    def _unit_scale_to_float(val: str) -> float:
-        s = val.strip().lower()
-        # Try plain float
-        try:
-            return float(s)
-        except Exception:
-            pass
-        # SPICE common suffix multipliers
-        muls = {
-            't': 1e12,
-            'g': 1e9,
-            'meg': 1e6,
-            'k': 1e3,
-            'm': 1e-3,
-            'u': 1e-6,
-            'n': 1e-9,
-            'p': 1e-12,
-            'f': 1e-15,
-        }
-        # handle 'meg' specially
-        if s.endswith('meg'):
-            try:
-                return float(s[:-3]) * muls['meg']
-            except Exception:
-                return 0.0
-        # last char as suffix
-        if s[-1] in muls:
-            try:
-                return float(s[:-1]) * muls[s[-1]]
-            except Exception:
-                return 0.0
-        return 0.0
-
-    def _float_to_unit(val: float, like: str, sig_digits: Optional[int] = None) -> str:
-        # Render with the same unit suffix as 'like' if present. sig_digits limits precision.
-        fmt = (lambda x: f"{x:g}") if sig_digits is None else (lambda x: f"{x:.{sig_digits}g}")
-        s = like.strip()
-        if not s:
-            return fmt(val)
-        suf = s[-1]
-        lower = s.lower()
-        if lower.endswith('meg'):
-            return f"{fmt(val/1e6)}{s[-3:]}"
-        muls = {
-            't': 1e12,
-            'g': 1e9,
-            'k': 1e3,
-            'm': 1e-3,
-            'u': 1e-6,
-            'n': 1e-9,
-            'p': 1e-12,
-            'f': 1e-15,
-        }
-        suf_lower = suf.lower()
-        if suf_lower in muls:
-            scaled = val / muls[suf_lower]
-            return f"{fmt(scaled)}{suf}"
-        return fmt(val)
-
-    def randomize_spice(text: str, seed: int) -> str:
-        rnd = random.Random(seed)
-        raw_lines = text.splitlines()
-        # identify .SUBCKT blocks and keep intact; also treat continuation lines '+' as part of previous statement
-        out_lines: List[str] = []
-        devices: List[List[str]] = []  # each device may have continuations
-        headers: List[str] = []
-        tails: List[str] = []
-        in_subckt = False
-        subckt_buf: List[str] = []
-        subckts: List[List[str]] = []
-        current_stmt: List[str] = []
-        for ln in raw_lines:
-            raw = ln.rstrip('\n')
-            s = raw.strip()
-            if not s:
-                # keep blank lines in tails for aesthetics later
-                tails.append(raw)
-                continue
-            low = s.lower()
-            if low.startswith('.subckt'):
-                # flush any pending statement before entering subckt
-                if current_stmt:
-                    devices.append(current_stmt)
-                    current_stmt = []
-                in_subckt = True
-                subckt_buf = [raw]
-                continue
-            if in_subckt:
-                subckt_buf.append(raw)
-                if low.startswith('.ends'):
-                    in_subckt = False
-                    subckts.append(subckt_buf)
-                continue
-            if s[0] in ('*', ';'):
-                # flush pending
-                if current_stmt:
-                    devices.append(current_stmt)
-                    current_stmt = []
-                headers.append(raw)
-                continue
-            if s[0] == '.':
-                # flush pending
-                if current_stmt:
-                    devices.append(current_stmt)
-                    current_stmt = []
-                headers.append(raw)
-                continue
-            if s[0] == '+':
-                # continuation of previous
-                if current_stmt:
-                    current_stmt.append(raw)
-                else:
-                    # orphan continuation -> treat as header to be safe
-                    headers.append(raw)
-                continue
-            # start of a device/source statement
-            if current_stmt:
-                devices.append(current_stmt)
-            current_stmt = [raw]
-        # flush at end
-        if current_stmt:
-            devices.append(current_stmt)
-
-        # Jitter sizes on MOS and C devices
-        def _quantize_like(value: float, reference: float, rel_step: float, min_step: float) -> float:
-            if reference <= 0.0:
-                return value
-            step = max(abs(reference) * rel_step, min_step)
-            if step <= 0:
-                return value
-            quanta = int(round(value / step))
-            if quanta < 1:
-                quanta = 1
-            return quanta * step
-
-        def jitter_device(dev_lines: List[str]) -> List[str]:
-            line0 = dev_lines[0]
-            s = line0.strip()
-            if not s:
-                return dev_lines
-            # MOS: starts with M/m
-            if s[0].lower() == 'm':
-                # Scale W by factor and L by small jitter, preserve unit suffix
-                parts = s.split()
-                # Find W= and L= tokens
-                new_parts = []
-                w_like = None
-                l_like = None
-                for tok in parts:
-                    if tok.upper().startswith('W='):
-                        w_like = tok.split('=',1)[1]
-                    if tok.upper().startswith('L='):
-                        l_like = tok.split('=',1)[1]
-                # Heuristic: NMOS vs PMOS by model token (5th token typical)
-                # Fallback: if contains 'pch' treat as PMOS
-                is_p = ' pch ' in f' {s.lower()} '
-                base_w = _unit_scale_to_float(w_like) if w_like else 0.0
-                base_l = _unit_scale_to_float(l_like) if l_like else 0.0
-                w_new: Optional[float] = None
-                if base_w > 0.0:
-                    heavy_tail = rnd.random() < 0.18  # Occasionally sample much larger analog devices
-                    low = max(base_w * 0.5, 0.2e-6)
-                    high = 100e-6  # Allow widths up to ~100 µm
-                    if heavy_tail and high > low:
-                        w_candidate = math.exp(rnd.uniform(math.log(low), math.log(high)))
-                    else:
-                        heavy_tail = False
-                        w_candidate = base_w * rnd.triangular(0.6, 1.9, 1.1 if is_p else 0.95)
-                    w_candidate = min(max(w_candidate, 0.12e-6), 100e-6)
-                    ref = w_candidate if heavy_tail else base_w
-                    w_new = _quantize_like(w_candidate, ref, 0.005, 5e-9)
-                l_new: Optional[float] = None
-                if base_l > 0.0:
-                    l_candidate = max(base_l * rnd.triangular(0.9, 1.2, 1.03), 1e-9)
-                    l_new = _quantize_like(l_candidate, base_l, 0.002, 2e-9)
-                for tok in parts:
-                    up = tok.upper()
-                    if up.startswith('W=') and w_like and w_new is not None:
-                        tok = f"W={_float_to_unit(w_new, w_like, sig_digits=3)}"
-                    elif up.startswith('L=') and l_like and l_new is not None:
-                        tok = f"L={_float_to_unit(l_new, l_like, sig_digits=3)}"
-                    new_parts.append(tok)
-                dev_lines[0] = ' '.join(new_parts)
-                return dev_lines
-            # Capacitor: starts with C/c, format: Cname n1 n2 value [...]
-            if s[0].lower() == 'c':
-                parts = s.split()
-                if len(parts) >= 4:
-                    like = parts[3]
-                    base = _unit_scale_to_float(like)
-                    if base > 0.0:
-                        scale = rnd.uniform(0.7, 1.3)
-                        newv = max(base * scale, 1e-18)
-                        parts[3] = _float_to_unit(newv, like, sig_digits=3)
-                dev_lines[0] = ' '.join(parts)
-                return dev_lines
-            return dev_lines
-
-        devices = [jitter_device(d) for d in devices]
-        # Shuffle devices order to reduce memorization (shuffle whole statement blocks)
-        rnd.shuffle(devices)
-        out_lines.extend(headers)
-        for blk in subckts:
-            out_lines.extend(blk)
-        for stmt in devices:
-            out_lines.extend(stmt)
-        out_lines.extend(tails)
-        return '\n'.join(out_lines) + ('\n' if text.endswith('\n') else '')
+    # No rubric lock: deterministic rubric scoring removed
 
     def inject_device_swap_spice(text: str, seed: int):
         """Randomly swap one MOSFET device type: NMOS<->PMOS or nch<->pch.
@@ -1024,7 +1033,7 @@ def main():
         """
         lines = text.splitlines()
         import re
-        ident_pat = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*?(?:NMOS|PMOS)[A-Za-z0-9_]*)\b")
+        ident_pat = re.compile(r"\b((?:[A-Za-z_][A-Za-z0-9_]*?)?(?:NMOS|PMOS)(?:[A-Za-z0-9_]*)?)\b")
         candidates = []  # (line_idx, span, full_token)
         for i, raw in enumerate(lines):
             # Ignore everything after '//' (treat as comment)
@@ -1082,17 +1091,17 @@ def main():
             item_dir = Path(it.item_dir)
             inv_ids = it.inventory.all_ids()
             # Prompt
-            if q.prompt_path:
-                # Direct path to prompt file (relative to item_dir)
-                ppath = item_dir / q.prompt_path
-                if not ppath.exists():
-                    raise SystemExit(f"Prompt file not found for {q.id}: {ppath}")
-            elif q.prompt_template:
-                ppath = (item_dir.parent / "prompts" / q.prompt_template)
-                if not ppath.exists():
-                    raise SystemExit(f"Prompt template not found for {q.id}: {ppath}")
-            else:
-                raise SystemExit(f"Question {q.id} must specify either prompt_template or prompt_path: {item_dir}")
+            if not q.prompt_template:
+                raise SystemExit(f"Question {q.id} must specify prompt_template (relative path, e.g., ../prompts/design_ota.txt): {item_dir}")
+            # Resolve prompt_template relative to item_dir (e.g., ../prompts/design_ota.txt from item_dir)
+            ppath = (item_dir / q.prompt_template).resolve()
+            if not ppath.exists():
+                raise SystemExit(
+                    f"Prompt template not found for {q.id}:\n"
+                    f"  Expected path: {ppath}\n"
+                    f"  Resolved from: {item_dir} / {q.prompt_template}\n"
+                    f"  Item directory: {item_dir}"
+                )
             def _display_modality(mod: str) -> str:
                 # Human-friendly modality name for prompts to avoid confusion
                 if mod == "cascode":
@@ -1193,143 +1202,100 @@ def main():
             if str(q.track).lower() == "design":
                 artifact_used = ""
             rand_info: Dict[str, Any] = {}
-            # Debugging support: generate bugged artifact from template if requested
-            bug_info: Dict[str, Any] = {}
-            if str(q.track).lower() == "debugging":
-                if q.modality == "spice_netlist":
-                    meta_path = item_dir / "meta.json"
-                    tpl_net = None
-                    if meta_path.exists():
+            
+            # Helper functions for template loading and seed computation
+            def _load_template_text(modality: str, fallback: str) -> str:
+                """Load template text from meta.json template_path, or return fallback."""
+                meta_path = item_dir / "meta.json"
+                if not meta_path.exists():
+                    return fallback
+                try:
+                    m = json.loads(meta_path.read_text(encoding='utf-8'))
+                    tpath = m.get("template_path") or m.get("template")
+                    if not isinstance(tpath, str) or not tpath.strip():
+                        return fallback
+                    tdir = (item_dir / tpath).resolve()
+                    ext_map = {"spice_netlist": "sp", "casIR": "cir", "cascode": "cas"}
+                    template_file = tdir / f"netlist.{ext_map.get(modality, 'sp')}"
+                    if template_file.exists():
+                        # Try UTF-8 first, then UTF-16 if that fails
                         try:
-                            m = json.loads(meta_path.read_text(encoding='utf-8'))
-                            tpath = m.get("template_path") or m.get("template")
-                            if isinstance(tpath, str) and tpath.strip():
-                                tdir = (item_dir / tpath).resolve()
-                                tnet = tdir / "netlist.sp"
-                                if tnet.exists():
-                                    tpl_net = tnet.read_text(encoding='utf-8')
-                        except Exception:
-                            tpl_net = None
-                    base_text = tpl_net or artifact_text
-                    meta_seed = None
-                    mpath = item_dir / "meta.json"
-                    if mpath.exists():
-                        try:
-                            mm = json.loads(mpath.read_text(encoding='utf-8'))
-                            ms = mm.get("gen_seed")
-                            if isinstance(ms, int):
-                                meta_seed = ms
-                        except Exception:
-                            meta_seed = None
-                    if meta_seed is None:
-                        meta_seed = int.from_bytes(hashlib.sha256(str(item_dir).encode()).digest()[:8], 'big')
-                    bug_seed = int.from_bytes(hashlib.sha256(f"{meta_seed}:{Path(it.item_dir).name}:{q.id}:bug".encode()).digest()[:8], 'big')
-                    mutated, dev_id, from_t, to_t = inject_device_swap_spice(base_text or "", bug_seed)
-                    if dev_id:
-                        artifact_used = mutated
-                        bug_info = {"bug_type": "device_polarity_swap", "swapped_id": dev_id, "from_type": from_t, "to_type": to_t}
-                    else:
-                        artifact_used = base_text
-                    try:
-                        bug_path = item_dir / "netlist_bug.sp"
-                        bug_path.write_text(artifact_used, encoding='utf-8')
-                        art_path = bug_path
-                    except Exception:
-                        pass
-                elif q.modality == "casIR":
-                    meta_path = item_dir / "meta.json"
-                    tpl_cir = None
-                    if meta_path.exists():
-                        try:
-                            m = json.loads(meta_path.read_text(encoding='utf-8'))
-                            tpath = m.get("template_path") or m.get("template")
-                            if isinstance(tpath, str) and tpath.strip():
-                                tdir = (item_dir / tpath).resolve()
-                                tcir = tdir / "netlist.cir"
-                                if tcir.exists():
-                                    tpl_cir = tcir.read_text(encoding='utf-8')
-                        except Exception:
-                            tpl_cir = None
-                    base_text = tpl_cir or artifact_text
-                    meta_seed = None
-                    mpath = item_dir / "meta.json"
-                    if mpath.exists():
-                        try:
-                            mm = json.loads(mpath.read_text(encoding='utf-8'))
-                            ms = mm.get("gen_seed")
-                            if isinstance(ms, int):
-                                meta_seed = ms
-                        except Exception:
-                            meta_seed = None
-                    if meta_seed is None:
-                        meta_seed = int.from_bytes(hashlib.sha256(str(item_dir).encode()).digest()[:8], 'big')
-                    bug_seed = int.from_bytes(hashlib.sha256(f"{meta_seed}:{Path(it.item_dir).name}:{q.id}:bug".encode()).digest()[:8], 'big')
-                    mutated, dev_id, from_t, to_t = inject_device_swap_casir(base_text or "", bug_seed)
-                    if dev_id:
-                        artifact_used = mutated
-                        bug_info = {"bug_type": "device_polarity_swap", "swapped_id": dev_id, "from_type": from_t, "to_type": to_t}
-                    else:
-                        artifact_used = base_text
-                    try:
-                        bug_path = item_dir / "netlist_bug.cir"
-                        bug_path.write_text(artifact_used, encoding='utf-8')
-                        art_path = bug_path
-                    except Exception:
-                        pass
-                elif q.modality == "cascode":
-                    meta_path = item_dir / "meta.json"
-                    tpl_cas = None
-                    if meta_path.exists():
-                        try:
-                            m = json.loads(meta_path.read_text(encoding='utf-8'))
-                            tpath = m.get("template_path") or m.get("template")
-                            if isinstance(tpath, str) and tpath.strip():
-                                tdir = (item_dir / tpath).resolve()
-                                tcas = tdir / "netlist.cas"
-                                if tcas.exists():
-                                    tpl_cas = tcas.read_text(encoding='utf-8')
-                        except Exception:
-                            tpl_cas = None
-                    base_text = tpl_cas or artifact_text
-                    meta_seed = None
-                    mpath = item_dir / "meta.json"
-                    if mpath.exists():
-                        try:
-                            mm = json.loads(mpath.read_text(encoding='utf-8'))
-                            ms = mm.get("gen_seed")
-                            if isinstance(ms, int):
-                                meta_seed = ms
-                        except Exception:
-                            meta_seed = None
-                    if meta_seed is None:
-                        meta_seed = int.from_bytes(hashlib.sha256(str(item_dir).encode()).digest()[:8], 'big')
-                    bug_seed = int.from_bytes(hashlib.sha256(f"{meta_seed}:{Path(it.item_dir).name}:{q.id}:bug".encode()).digest()[:8], 'big')
-                    mutated, dev_id, from_t, to_t = inject_device_swap_cascode(base_text or "", bug_seed)
-                    if dev_id:
-                        artifact_used = mutated
-                        bug_info = {"bug_type": "device_polarity_swap", "swapped_id": dev_id, "from_type": from_t, "to_type": to_t}
-                    else:
-                        artifact_used = base_text
-                    try:
-                        bug_path = item_dir / "netlist_bug.cas"
-                        bug_path.write_text(artifact_used, encoding='utf-8')
-                        art_path = bug_path
-                    except Exception:
-                        pass
-
-            if q.modality == "spice_netlist" and artifact_used:
-                meta_seed = None
+                            return template_file.read_text(encoding='utf-8')
+                        except UnicodeDecodeError:
+                            return template_file.read_text(encoding='utf-16')
+                except Exception:
+                    pass
+                return fallback
+            
+            def _get_meta_seed() -> int:
+                """Get gen_seed from meta.json or compute from item_dir hash."""
                 mpath = item_dir / "meta.json"
                 if mpath.exists():
                     try:
-                        m = json.loads(mpath.read_text(encoding='utf-8'))
-                        ms = m.get("gen_seed")
+                        mm = json.loads(mpath.read_text(encoding='utf-8'))
+                        ms = mm.get("gen_seed")
                         if isinstance(ms, int):
-                            meta_seed = ms
+                            return ms
                     except Exception:
-                        meta_seed = None
-                if meta_seed is None:
-                    meta_seed = int.from_bytes(hashlib.sha256(str(item_dir).encode()).digest()[:8], 'big')
+                        pass
+                return int.from_bytes(hashlib.sha256(str(item_dir).encode()).digest()[:8], 'big')
+            
+            # Debugging support: generate bugged artifact from template if requested
+            bug_info: Dict[str, Any] = {}
+            if str(q.track).lower() == "debugging" and q.judge_id == "debug_device_swap":
+                def _inject_device_swap(
+                    modality: str,
+                    inject_func,
+                    error_guidance: str
+                ) -> None:
+                    """Inject device swap bug and update artifact_used/bug_info."""
+                    nonlocal artifact_used, bug_info, art_path
+                    ext_map = {"spice_netlist": "sp", "casIR": "cir", "cascode": "cas"}
+                    ext = ext_map.get(modality, "sp")
+                    
+                    base_text = _load_template_text(modality, artifact_text)
+                    meta_seed = _get_meta_seed()
+                    bug_seed = int.from_bytes(
+                        hashlib.sha256(f"{meta_seed}:{Path(it.item_dir).name}:{q.id}:bug".encode()).digest()[:8],
+                        'big'
+                    )
+                    mutated, dev_id, from_t, to_t = inject_func(base_text or "", bug_seed)
+                    if dev_id:
+                        artifact_used = mutated
+                        bug_info = {"bug_type": "device_polarity_swap", "swapped_id": dev_id, "from_type": from_t, "to_type": to_t}
+                        try:
+                            bug_path = item_dir / f"netlist_bug.{ext}"
+                            bug_path.write_text(artifact_used, encoding='utf-8')
+                            art_path = bug_path
+                        except Exception:
+                            pass
+                    else:
+                        raise SystemExit(
+                            f"No eligible devices found for device swap injection in {q.id} "
+                            f"(modality: {modality}, item: {item_dir}). {error_guidance}"
+                        )
+                
+                if q.modality == "spice_netlist":
+                    _inject_device_swap(
+                        q.modality,
+                        inject_device_swap_spice,
+                        "Check that the template/netlist contains MOS devices with NMOS/PMOS or nch/pch model types."
+                    )
+                elif q.modality == "casIR":
+                    _inject_device_swap(
+                        q.modality,
+                        inject_device_swap_casir,
+                        "Check that the template/netlist contains motifs with NMOS/PMOS types."
+                    )
+                elif q.modality == "cascode":
+                    _inject_device_swap(
+                        q.modality,
+                        inject_device_swap_cascode,
+                        "Check that the template/netlist contains NMOS/PMOS identifiers in code contexts."
+                    )
+
+            if q.modality == "spice_netlist" and artifact_used:
+                meta_seed = _get_meta_seed()
                 per_item_seed = int.from_bytes(
                     hashlib.sha256(f"{meta_seed}:{Path(it.item_dir).name}:{q.id}".encode()).digest()[:8],
                     'big',
@@ -1354,17 +1320,17 @@ def main():
                 pred = ""
                 error_msg = str(getattr(e, "message", e))
 
-            # Rubric
-            if not q.rubric_path:
-                raise SystemExit(f"Question {q.id} must specify rubric_path relative to item_dir: {item_dir}")
-            rpath = (item_dir / q.rubric_path)
-            if not rpath.exists():
-                raise SystemExit(f"Rubric file not found for {q.id}: {rpath}")
-            rkey = str(rpath.resolve())
-            with rubric_lock:
-                rubric = rubrics_cache.get(rkey)
-                if rubric is None:
-                    rubrics_cache[rkey] = rubric = load_rubric(rpath)
+            # Judge prompt (Markdown) and variables
+            if not q.judge_prompt:
+                raise SystemExit(f"Question {q.id} must specify judge_prompt relative to item_dir: {item_dir}")
+            jpath = (item_dir / q.judge_prompt)
+            if not jpath.exists():
+                alt = (item_dir.parent / "judge_prompts" / Path(q.judge_prompt).name)
+                if alt.exists():
+                    jpath = alt
+                else:
+                    raise SystemExit(f"Judge prompt not found for {q.id}: {jpath}")
+            rubric_md = jpath.read_text(encoding='utf-8')
             # Build an effective inventory depending on modality
             def _inventory_from_casir(text: str) -> Inventory:
                 try:
@@ -1421,7 +1387,7 @@ def main():
                 if artifact_used:
                     src_text_for_inv = artifact_used
                 else:
-                    # try template answer key (loaded below into refs)
+                    # Answer keys are loaded from YAML files (see rubric rendering below)
                     try:
                         mpath = item_dir / "meta.json"
                         if mpath.exists():
@@ -1443,23 +1409,48 @@ def main():
                     from harness.types import Inventory as Inv  # type: ignore
                 eff_inv = Inv(elements={}, nets=[], blocks={})
 
-            # Adapt rubric for modalities that should not score grounding
-            rjson = rubric.model_dump()
-            if q.modality == "cascode":
-                for c in rjson.get("criteria", []) or []:
-                    if bool(c.get("requires_grounding")):
-                        c["weight"] = 0.0
-                s = rjson.get("scoring", {}) or {}
-                if "hallucination_penalty" in s:
-                    s["hallucination_penalty"] = 0.0
-                rjson["scoring"] = s
-            try:
-                from .scoring.rubric import Rubric as RubricModel  # type: ignore
-            except Exception:
-                from harness.scoring.rubric import Rubric as RubricModel  # type: ignore
-            rubric_eff = RubricModel.model_validate(rjson)
+            # Render judge prompt with YAML variables under item_dir/rubrics/<stem>.yaml
+            stem = Path(jpath).stem
+            vars_yaml = item_dir / "rubrics" / f"{stem}.yaml"
+            vars_map: Dict[str, Any] = {}
 
-            scores = score_answer(pred, rubric_eff, eff_inv)
+            # Build runtime_vars from bug_info for template rendering
+            # Only emit runtime vars when a mutation actually occurred
+            # If no mutation happened, runtime_vars will be empty
+            runtime_vars = {k: str(v) for k, v in bug_info.items()} if bug_info else {}
+            
+            if vars_yaml.exists():
+                try:
+                    # Render YAML as a template to allow includes and runtime vars
+                    vars_yaml_text = vars_yaml.read_text(encoding='utf-8')
+                    rendered_yaml = render_template(vars_yaml_text, runtime_vars, base_dir=vars_yaml.parent)
+                    vars_map = yaml.safe_load(rendered_yaml) or {}
+                except Exception as e:
+                    print(f"[yellow]Warning: Failed to render/parse {vars_yaml}: {e}[/yellow]")
+                    vars_map = {}
+            # unwrap namespaced
+            if isinstance(vars_map, dict) and stem in vars_map and isinstance(vars_map[stem], dict):
+                vars_map = vars_map[stem]
+
+            # Inject bug_info into vars_map for template rendering (debugging tasks)
+            if bug_info:
+                vars_map.update({k: str(v) for k, v in bug_info.items()})
+                # Derive expected_type and actual_type from bug_info if not present
+                if "from_type" in bug_info and "expected_type" not in vars_map:
+                    vars_map["expected_type"] = str(bug_info["from_type"])
+                if "to_type" in bug_info and "actual_type" not in vars_map:
+                    vars_map["actual_type"] = str(bug_info["to_type"])
+
+            # Merge runtime_vars and vars_map for judge prompt rendering
+            all_vars = {**runtime_vars, **{k: str(v) for k, v in vars_map.items()}}
+
+            # Note: For design tasks, answer keys are resolved via {modmux:answer_key} in templates
+            # No need to manually inject answer_key variable anymore
+
+            try:
+                rubric_md_rendered = render_template(rubric_md, all_vars, base_dir=jpath.parent, modality=q.modality)
+            except Exception as e:
+                raise SystemExit(f"Failed to render judge prompt for {q.id} at {jpath}: {e}")
 
             # SPICE Verification (if enabled)
             verification_results = None
@@ -1579,53 +1570,6 @@ def main():
 
             # Judge
             judge = None
-            kpath = Path("knowledge") / f"{q.rubric_id}.md"
-            if not kpath.exists():
-                alt = Path("knowledge") / "const_gm_currents.md"
-                ktext = alt.read_text(encoding='utf-8') if alt.exists() else ""
-            else:
-                with knowledge_lock:
-                    ktext = knowledge_cache.get(q.rubric_id)
-                    if ktext is None:
-                        ktext = kpath.read_text(encoding='utf-8')
-                        knowledge_cache[q.rubric_id] = ktext
-            refs_path = item_dir / "refs.json"
-            refs: Dict[str, Any] = {}
-            if refs_path.exists():
-                try:
-                    refs = json.loads(refs_path.read_text(encoding='utf-8'))
-                except Exception:
-                    refs = {}
-            if bug_info:
-                refs = {**(refs or {}), **bug_info}
-            # For design tasks: attach per-modality answer keys to refs for the judge
-            if str(q.track).lower() == "design":
-                try:
-                    mpath = item_dir / "meta.json"
-                    if mpath.exists():
-                        m = json.loads(mpath.read_text(encoding='utf-8'))
-                        tpath = m.get("template_path") or m.get("template")
-                        if isinstance(tpath, str) and tpath.strip():
-                            tdir = (item_dir / tpath).resolve()
-                            if q.modality == "spice_netlist":
-                                ak = tdir / "netlist.sp"
-                                if ak.exists():
-                                    refs = {**(refs or {}), "answer_key_spice": ak.read_text(encoding='utf-8')}
-                            if q.modality == "casIR":
-                                ak = tdir / "netlist.cir"
-                                if ak.exists():
-                                    refs = {**(refs or {}), "answer_key_casir": ak.read_text(encoding='utf-8')}
-                            elif q.modality == "cascode":
-                                ak = tdir / "netlist.cas"
-                                if ak.exists():
-                                    refs = {**(refs or {}), "answer_key_cas": ak.read_text(encoding='utf-8')}
-                except Exception:
-                    pass
-            # Always include minimal context for judge
-            refs = {**(refs or {}),
-                    "expected_modality": q.modality,
-                    "track": q.track,
-                    "aspect": (q.meta or {}).get("aspect")}
             try:
                 from .scoring.judge_anchored import judge_answer as judge_call  # type: ignore
             except Exception:
@@ -1656,15 +1600,47 @@ def main():
 
             inv_summary = _inventory_summary()
             if args.judge_model == "dummy":
-                zero_scores = {}
-                for crit in getattr(rubric_eff, "criteria", []) or []:
-                    cid = getattr(crit, "id", None)
-                    if isinstance(cid, str) and cid.strip():
-                        zero_scores[cid] = 0.0
-                judge = {"scores": zero_scores, "overall": 0.0, "debug": {"judge_model": "dummy"}}
+                # Build a debug payload; keep concise, track-aware system prompt only
+                track_l = str(q.track or "").strip().lower()
+                if track_l == "design":
+                    sys_prompt = (
+                        "You are an impartial grading assistant for analog/mixed-signal circuit DESIGN. "
+                        "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
+                    )
+                elif track_l == "analysis":
+                    sys_prompt = (
+                        "You are an impartial grading assistant for analog/mixed-signal circuit ANALYSIS. "
+                        "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
+                    )
+                elif track_l == "debugging":
+                    sys_prompt = (
+                        "You are an impartial grading assistant for analog/mixed-signal circuit DEBUGGING. "
+                        "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
+                    )
+                else:
+                    sys_prompt = (
+                        "You are an impartial grading assistant for analog/mixed-signal design/analysis/debugging. "
+                        "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
+                    )
+                instr_flat = rubric_md_rendered
+                payload_dbg = {
+                    "answer_to_evaluate": pred,
+                    "inventory": inv_summary,
+                }
+                judge = {
+                    "scores": {},
+                    "overall": 0.0,
+                    "debug": {
+                        "system": sys_prompt,
+                        "instructions": instr_flat,
+                        "payload": payload_dbg,
+                        "judge_model": "dummy",
+                        "rubric_markdown": rubric_md_rendered,
+                    },
+                }
             elif pred:
                 try:
-                    judge = judge_call(pred, rjson, ktext, refs, inv_summary, model=args.judge_model)
+                    judge = judge_call(pred, rubric_md_rendered, q.track, inv_summary, model=args.judge_model)
                 except Exception:
                     judge = None
             if judge and isinstance(judge.get("scores"), dict):
@@ -1672,10 +1648,18 @@ def main():
                 if "overall" not in judge:
                     judge["overall"] = sum(j_scores.values())/len(j_scores) if j_scores else 0.0
 
-            try:
-                topic_str = str(Path(it.item_dir).resolve().relative_to(split_dir.resolve()).parent).replace(os.sep, "/")
-            except Exception:
-                topic_str = Path(it.item_dir).parent.name
+            # Normalize family/topic labeling
+            if "/" in str(args.split):
+                parts = Path(str(args.split)).parts
+                # Drop split head (e.g., 'dev') when present
+                topic_str = "/".join(parts[1:]) if len(parts) > 1 else (parts[0] if parts else "")
+            else:
+                try:
+                    rel = Path(it.item_dir).resolve().relative_to(split_dir.resolve())
+                    parent = rel.parent
+                    topic_str = parent.as_posix() if str(parent) != "." else Path(args.split).as_posix()
+                except (ValueError, OSError):
+                    topic_str = Path(it.item_dir).parent.name
 
             rec = {
                 "model": slug,
@@ -1684,8 +1668,8 @@ def main():
                 "topic": topic_str,
                 "question_id": q.id,
                 "track": q.track,
-                "rubric_id": q.rubric_id,
-                "rubric_path": str(rpath),
+                "judge_id": q.judge_id,
+                "judge_prompt": str(jpath),
                 "modality": q.modality,
                 "split": args.split,
                 "aspect": (q.meta or {}).get("aspect"),
@@ -1694,7 +1678,6 @@ def main():
                 "artifact": artifact_used,
                 "artifact_randomization": rand_info or None,
                 "answer": pred,
-                "scores": scores,
                 "judge": judge,
             }
             
@@ -1713,24 +1696,50 @@ def main():
             
             if error_msg:
                 rec["error"] = error_msg
-            if judge and isinstance(judge.get("overall", None), (int, float)):
-                rec["raw_blended"] = 0.8 * scores["raw"] + 0.2 * float(judge["overall"])
+            # No deterministic scoring; judge-only
 
             with write_lock:
                 f_combined.write(json.dumps(rec) + "\n")
                 model_files[slug].write(json.dumps(rec) + "\n")
+                # Flush immediately to prevent data loss on crash
+                f_combined.flush()
+                model_files[slug].flush()
                 total += 1
             with progress_lock:
                 progress.update(task_id, advance=1)
 
-        from concurrent.futures import ThreadPoolExecutor as _TPE
-        with _TPE(max_workers=max(1, int(args.item_workers))) as item_pool:
+        import time as _time
+        item_timeout = float(os.getenv("EVAL_ITEM_TIMEOUT", "300.0"))  # 5 min per item default
+        with ThreadPoolExecutor(max_workers=max(1, int(args.item_workers))) as item_pool:
             futs = []
             for it in items:
                 for q in it.questions:
                     futs.append(item_pool.submit(process_q, it, q))
-            for f in futs:
-                f.result()
+            for i, f in enumerate(futs):
+                try:
+                    # Add timeout to prevent indefinite hangs
+                    f.result(timeout=item_timeout)
+                except FutureTimeoutError:
+                    print(f"[ERROR] Item {i+1}/{len(futs)} timed out after {item_timeout}s - continuing with remaining items", file=sys.stderr, flush=True)
+                    # Write error record for timeout
+                    try:
+                        # Try to identify which item timed out (may not be perfect)
+                        rec = {
+                            "model": slug,
+                            "error": f"Item processing timed out after {item_timeout}s",
+                            "timeout": True,
+                        }
+                        with write_lock:
+                            f_combined.write(json.dumps(rec) + "\n")
+                            model_files[slug].write(json.dumps(rec) + "\n")
+                            f_combined.flush()
+                            model_files[slug].flush()
+                    except Exception:
+                        pass
+                except Exception as e:
+                    print(f"[ERROR] Item {i+1}/{len(futs)} failed: {e}", file=sys.stderr, flush=True)
+                    # Continue processing other items
+                    pass
 
     with results_path.open("w") as f_combined:
         # Progress setup: one task per model
@@ -1748,10 +1757,21 @@ def main():
             }
 
             max_workers = args.model_workers or len(model_slugs)
+            model_timeout = float(os.getenv("EVAL_MODEL_TIMEOUT", "3600.0"))  # 1 hour per model default
             with ThreadPoolExecutor(max_workers=max_workers) as ex:
                 futures = [ex.submit(run_for_model, slug) for slug in model_slugs]
-                for _ in futures:
-                    _.result()
+                for i, f in enumerate(futures):
+                    try:
+                        # Add timeout to prevent indefinite hangs
+                        f.result(timeout=model_timeout)
+                    except FutureTimeoutError:
+                        slug_affected = model_slugs[i] if i < len(model_slugs) else "unknown"
+                        print(f"[ERROR] Model {slug_affected} timed out after {model_timeout}s - continuing with remaining models", file=sys.stderr, flush=True)
+                        # Continue with other models
+                    except Exception as e:
+                        slug_affected = model_slugs[i] if i < len(model_slugs) else "unknown"
+                        print(f"[ERROR] Model {slug_affected} failed: {e}", file=sys.stderr, flush=True)
+                        # Continue with other models
 
     def _force_remove(path: Path) -> None:
         """Forcefully remove a file, directory, or symlink, handling broken symlinks and Windows quirks."""
@@ -1759,7 +1779,7 @@ def main():
         import shutil
         import subprocess
         import sys
-        
+
         # Try multiple methods to remove the existing item
         removed = False
         try:
@@ -1772,7 +1792,7 @@ def main():
         except OSError:
             # Broken symlink or access issue
             pass
-        
+
         if not removed:
             try:
                 # Try is_symlink without exists check
@@ -1781,7 +1801,7 @@ def main():
                     removed = True
             except OSError:
                 pass
-        
+
         if not removed:
             # Last resort: Windows-specific rmdir command for broken symlinks
             if sys.platform == 'win32':

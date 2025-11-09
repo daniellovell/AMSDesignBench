@@ -1,0 +1,83 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches the two-stage reference (stage 1 mirror OTA into stage 2 NMOS CS with PMOS gate-biased load)."
+topology_patterns_any: "two-stage; second stage"
+topology_min_any: 1
+safety_anti_patterns: "cascode; cascoded"
+
+hallucination_penalty: 0.15
+min_pass: 0.70
+answer_key_SPICE: |
+  
+  VDD vdd 0 1.8
+  VBP vbp 0 0.9
+  VBN vbn 0 0.7
+  VINP vinp 0 0
+  VINN vinn 0 0
+  
+  Cload vout 0 1p
+  
+  M1 n1   vinp ntail 0 NMOS W=10u L=0.18u
+  M2 vint vinn ntail 0 NMOS W=10u L=0.18u   
+  M3 n1   n1   vdd   vdd PMOS W=20u L=0.18u   
+  M4 vint n1   vdd   vdd PMOS W=20u L=0.18u   
+  M5 ntail vbn  0     0 NMOS W=5u  L=0.18u    
+  
+  M6 vout vint 0     0 NMOS W=40u L=0.18u
+  M7 vout vbp vdd   vdd PMOS W=40u L=0.18u
+  
+answer_key_CASIR: |
+  {
+    "nets": [
+      {"id":"vdd","type":"supply"},{"id":"GND","type":"supply"},
+      {"id":"vinp"},{"id":"vinn"},
+      {"id":"n1"},{"id":"vint"},{"id":"ntail"},
+      {"id":"vout"},{"id":"vbp","type":"bias"},{"id":"vbn","type":"bias"}
+    ],
+    "motifs": [
+      {
+        "id":"dp","type":"DiffPairNMOS",
+        "ports":{"in_p":"vinp","in_n":"vinn","out_l":"n1","out_r":"vint","tail":"ntail","gnd":"GND"}
+      },
+      {"id":"tail","type":"TailCurrentSourceNMOS","ports":{"out":"ntail","gate":"vbn","gnd":"GND"}},
+  
+      {
+        "id":"pml1","type":"PMOSMirrorActiveLoad",
+        "ports":{"sense":"n1","vdd":"vdd"},
+        "taps":[ {"node":"vint","ratio":1} ]
+      },
+  
+      {"id":"cs2","type":"CS_Stage_NMOS","ports":{"in":"vint","out":"vout","gnd":"GND"}},
+      {"id":"pld","type":"PMOSGateBiasedLoad","ports":{"node":"vout","gate":"vbp","vdd":"vdd"}},
+  
+      {"id":"cl","type":"Cap","ports":{"p":"vout","n":"GND"},"params":{"C":1e-12}}
+    ],
+    "provenance":{"source":"OTA2Stage_Uncomp"}
+  }
+answer_key_CASCODE: |
+  package analog.ota; import lib.motifs::*;
+  
+  class OTA2Stage_Uncomp implements Amplifier {
+    supply vdd=1.8V; ground GND;
+    port in_p vinp, in_n vinn; port out vout;
+    bias vbn, vbp;
+  
+    use {
+      // Stage 1: NMOS diff pair + mirror active load to intermediate node 'vint'
+      dp   = new DiffPairNMOS(vinp, vinn) { gnd=GND; tail=ntail; };
+      tail = new TailCurrentSourceNMOS()   { out=ntail; gate=vbn; gnd=GND; };
+  
+      pml1 = new PMOSMirrorActiveLoad(sense = dp.out_l, vdd = vdd) {
+        taps = { vint:1 };
+      };
+      alias n1 = dp.out_l; alias vint = dp.out_r;   // preserve names
+  
+      // Stage 2: NMOS primitive input with ActiveLoad
+      M_cs2 = new NMOS() { gate<-vint; drain<-vout; source<-GND; bulk<-GND; };
+      load2 = new ActiveLoad(polarity=PMOS) { node<-vout; bias<-vbp; vref<-vdd; };
+  
+      C(vout, GND, 1pF);
+    }
+  }

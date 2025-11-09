@@ -2,9 +2,9 @@ questions:
 - id: ota012_design_folded_single_end_two_diode_tailcas_pmos_in
   track: design
   modality: auto
-  rubric_id: design_folded_single_end_two_diode_tailcas_pmos_in
-  rubric_path: rubrics/design_folded_single_end_two_diode_tailcas_pmos_in.json
-  prompt_template: design_ota.txt
+  judge_prompt: ../judge_prompts/design_folded_single_end_two_diode_tailcas_pmos_in.md
+  judge_id: design_folded_single_end_two_diode_tailcas_pmos_in
+  prompt_template: ../prompts/design_ota.txt
   meta:
     topology: folded_cascode_two_diode_tailcas_single_end_pmos_in
     bench_version: 0.1.0

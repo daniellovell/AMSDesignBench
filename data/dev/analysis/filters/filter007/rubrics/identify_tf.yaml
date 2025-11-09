@@ -1,0 +1,7 @@
+weight_topology: 0.35
+weight_tf: 0.35
+weight_grounded_evidence: 0.3
+tf_target: H(s) = R/(R + sL)
+tf_equivalents: "H(s) = R/(R + sL) or algebraically equivalent forms"
+grounded_min_refs: 2
+{path:_filters_rubric_template.yaml}

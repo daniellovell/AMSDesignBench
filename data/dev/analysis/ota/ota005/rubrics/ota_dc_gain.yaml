@@ -1,0 +1,6 @@
+weight_topology: 0.1
+weight_key_relation: 0.4
+weight_device_specificity: 0.2
+weight_grounded_evidence: 0.3
+relation_target: "DC Gain ≈ (gm * ro)² for single-ended telescopic cascode OTA"
+{path:_ota_rubric_template.yaml}

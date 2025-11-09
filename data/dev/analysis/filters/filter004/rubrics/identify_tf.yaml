@@ -1,0 +1,7 @@
+weight_topology: 0.35
+weight_tf: 0.35
+weight_grounded_evidence: 0.3
+tf_target: H(s) = s/(s^2 + s/Q + 1) or normalized band-pass form
+tf_equivalents: "H(s) = (s/ω₀)/((s/ω₀)^2 + (s/ω₀)/Q + 1) with ω₀ normalized"
+grounded_min_refs: 2
+{path:_filters_rubric_template.yaml}

@@ -1,0 +1,101 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches an NMOS common-source with PMOS active load (single transistor gain device to vout, PMOS gate-biased current source from VDD into vout, single-ended output)."
+topology_patterns_any: "common-source; CS; active load; PMOS load; single-ended; single end"
+topology_min_any: 2
+safety_anti_patterns: "telescopic; folded; gain-boost; fully differential; two-stage"
+
+hallucination_penalty: 0.15
+min_pass: 0.70
+answer_key_SPICE: |
+  
+  M2 vout vin 0 0 NMOS l=0.18u w=2u
+  M1 VDD vb1 vout VDD PMOS l=0.18u w=4u
+  VDD VDD 0 1.8
+  Cload vout 0 1p
+answer_key_CASIR: |
+  {
+    "ir_version": 1,
+    "format": "casir-json-1",
+    "level": "EL",
+    "meta": {"tool": "cascode-0.2.0", "when": "2025-10-09T00:00:00Z"},
+  
+    "nets": [
+      {"id": "VDD",  "domain": "supply",    "rail": "VDD"},
+      {"id": "GND",  "domain": "ground",    "rail": "GND"},
+      {"id": "vin",  "domain": "electrical"},
+      {"id": "vout", "domain": "electrical"},
+      {"id": "vb1",  "domain": "bias"}
+    ],
+  
+    "motifs": [
+      {
+        "id": "M_in",
+        "type": "NMOS",
+        "ports": {"gate": "vin", "drain": "vout", "source": "GND", "bulk": "GND"},
+        "params": {
+          "W": {"value": 2.0e-6, "unit": "m"},
+          "L": {"value": 1.8e-7, "unit": "m"},
+          "m": {"value": 1}
+        },
+        "impl": { "primitive": true, "pdk_device": "nfet_01v8" }
+      },
+      {
+        "id": "load",
+        "type": "ActiveLoad",
+        "traits": ["LoadDevice"],
+        "ports": {"node": "vout", "bias": "vb1", "vref": "VDD"},
+        "params": {"polarity": "PMOS"},
+        "impl": { "char_ref": "lib.motifs/active_load@1.0" }
+      },
+      {
+        "id": "Cload",
+        "type": "Cap",
+        "ports": {"p": "vout", "n": "GND"},
+        "params": {"C": {"value": 1.0e-12, "unit": "F"}}
+      }
+    ],
+  
+    "constraints": {
+      "numeric": [
+        {"id": "c_gbw",  "kind": "ineq", "lhs": {"metric": "gbw"},     "op": ">=", "rhs": {"value": 5.0e7, "unit": "Hz"}, "scope": {"node": "vout"}},
+        {"id": "c_gain", "kind": "ineq", "lhs": {"metric": "gain_db"}, "op": ">=", "rhs": {"value": 40,    "unit": "dB"}, "scope": {"node": "vout"}},
+        {"id": "c_pm",   "kind": "ineq", "lhs": {"metric": "pm_deg"},  "op": ">=", "rhs": {"value": 60,    "unit": "deg"}, "scope": {"node": "vout"}},
+        {"id": "c_pwr",  "kind": "ineq", "lhs": {"metric": "power"},   "op": "<=", "rhs": {"value": 5.0e-3, "unit": "W"}}
+      ],
+      "tech": [ {"id": "t_lmin", "kind": "limit", "on": "*", "rule": "L>=", "value": 1.8e-7, "unit": "m"} ],
+      "measure": [ {"id": "m_gbw", "bench": "AC_OpenLoop", "metric": "gbw", "node": "vout"} ]
+    },
+  
+    "harness": {
+      "supplies": [ {"net": "VDD", "value": 1.8, "unit": "V"} ],
+      "loads":    [ {"node": "vout", "C": 1.0e-12, "unit": "F"} ],
+      "sources":  [ {"node": "vin", "Z": 50.0, "unit": "Ohm"} ],
+      "pvt":      {"corners": ["TT@27C"]}
+    },
+  
+    "benches": ["AC_OpenLoop", "Step"],
+    "provenance": {"sources": [ {"file": "templates/ota/ota007/netlist.cas", "span": {"from": 1, "to": 20}} ]}
+  }
+answer_key_CASCODE: |
+  package analog.ota; import lib.motifs.*;
+  
+  class OTAOneStage_SE_NMOSIn_ActivePMOS_Bound implements Amplifier {
+    supply VDD=1.8V; ground GND;
+    port in vin; port out vout;
+    // vb1: PMOS active-load gate bias
+    bias vb1;
+  
+    use {
+      // Primitive NMOS input transistor (synthesis sizes W/L from specs)
+      M_in = new NMOS() { gate<-vin; drain<-vout; source<-GND; bulk<-GND; };  // M1
+  
+      // Generic active load motif with polarity
+      load = new ActiveLoad(polarity=PMOS) { node<-vout; bias<-vb1; vref<-VDD; };  // M2
+  
+      // Load capacitor
+      C(vout, GND, 1pF);                                                           // Cload
+    }
+  }

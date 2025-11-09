@@ -1,0 +1,20 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches TIA with capacitive feedback — opamp with inverting input connected to signal input, non-inverting to ground, output fed back through capacitor."
+topology_patterns_any: "transimpedance; TIA; integrator; I-V; current-to-voltage"
+topology_min_any: 1
+safety_anti_patterns: "positive feedback; resistive feedback; resistor feedback"
+
+hallucination_penalty: 0.15
+min_pass: 0.70
+answer_key_SPICE: |
+  .subckt opamp in_n in_p out
+  	* opamp implementation
+  .ends opamp
+  XU2 S_in 0 S_out opamp Aol=100K GBW=10Meg
+  C1 S_out S_in C
+  .backanno
+  .end
+  

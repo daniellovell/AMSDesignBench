@@ -2,8 +2,8 @@ questions:
 - id: ota007_design_one_stage_single_end_active_load
   track: design
   modality: auto
-  rubric_id: design_one_stage_single_end_active_load
-  rubric_path: rubrics/design_one_stage_single_end_active_load.json
+  judge_prompt: ../judge_prompts/design_one_stage_single_end_active_load.md
+  judge_id: design_one_stage_single_end_active_load
   prompt_template: ../prompts/design_ota.txt
   meta:
     topology: one_stage_common_source_single_end

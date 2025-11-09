@@ -2,8 +2,8 @@ questions:
 - id: ota002_design_telescopic
   track: design
   modality: auto
-  rubric_id: design_telescopic_cascode
-  rubric_path: rubrics/design_telescopic_cascode.json
+  judge_prompt: ../judge_prompts/design_telescopic_cascode.md
+  judge_id: design_telescopic_cascode
   prompt_template: ../prompts/design_ota.txt
   meta:
     topology: telescopic_cascode_ota

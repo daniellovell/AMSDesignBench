@@ -2,8 +2,8 @@ questions:
 - id: ota003_design_high_swing
   track: design
   modality: auto
-  rubric_id: design_high_swing_single_stage
-  rubric_path: rubrics/design_high_swing_single_stage.json
+  judge_prompt: ../judge_prompts/design_high_swing_single_stage.md
+  judge_id: design_high_swing_single_stage
   prompt_template: ../prompts/design_ota.txt
   meta:
     topology: one_stage_ota

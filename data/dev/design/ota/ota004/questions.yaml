@@ -2,8 +2,8 @@ questions:
 - id: ota004_design_two_stage
   track: design
   modality: auto
-  rubric_id: design_two_stage
-  rubric_path: rubrics/design_two_stage.json
+  judge_prompt: ../judge_prompts/design_two_stage.md
+  judge_id: design_two_stage
   prompt_template: ../prompts/design_ota.txt
   meta:
     topology: two_stage

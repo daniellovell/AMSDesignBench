@@ -1,0 +1,6 @@
+weight_topology: 0.1
+weight_key_relation: 0.4
+weight_device_specificity: 0.2
+weight_grounded_evidence: 0.3
+relation_target: "Gain-boosted cascode: THREE branches (main signal + NMOS boost bias + PMOS boost bias). Must sum ALL."
+{path:_ota_rubric_template.yaml}

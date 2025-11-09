@@ -1,0 +1,76 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches the high-swing single-stage reference (PMOS mirror to VDD, NMOS mirror to ground, single-ended output)."
+topology_patterns_any: "high-swing; current mirror; single-stage"
+topology_min_any: 2
+safety_anti_patterns: "cascode; cascoded; two-stage; second stage"
+
+hallucination_penalty: 0.15
+min_pass: 0.70
+answer_key_SPICE: |
+  M1 n1 vinp ntail 0 nch W=2u L=0.18u
+  M2 n2 vinn ntail 0 nch W=2u L=0.18u
+  Mtail ntail vbias_n 0 0 nch W=1u L=0.5u
+  M3 n1 n1 VDD VDD pch W=2u L=0.18u      
+  M4 n2 n1 VDD VDD pch W=2u L=0.18u
+  M5 nmir n1 VDD VDD pch W=4u L=0.18u
+  M6 vout n1 VDD VDD pch W=4u L=0.18u
+  M7 nmir nmir 0 0 nch W=2u L=0.18u  
+  M8 vout nmir 0 0 nch W=2u L=0.18u  
+  
+  VDD VDD 0 1.8
+  Cload vout 0 1p
+  
+answer_key_CASIR: |
+  {
+    "nets": [
+      {"id":"VDD","type":"supply"},{"id":"GND","type":"supply"},
+      {"id":"vinp"},{"id":"vinn"},
+      {"id":"n1"},{"id":"n2"},{"id":"nmir"},{"id":"ntail"},
+      {"id":"vout"},{"id":"vbias_n","type":"bias"}
+    ],
+    "motifs": [
+      {
+        "id":"dp","type":"DiffPairNMOS",
+        "ports":{"in_p":"vinp","in_n":"vinn","out_l":"n1","out_r":"n2","tail":"ntail","gnd":"GND"}
+      },
+      {"id":"tail","type":"TailCurrentSourceNMOS","ports":{"out":"ntail","gate":"vbias_n","gnd":"GND"}},
+  
+      // PMOS multi-tap mirror (includes the diode at 'sense')
+      {
+        "id":"pmgrp","type":"PMOSMirrorGroup",
+        "ports":{"sense":"n1","vdd":"VDD"},
+        "taps":[ {"node":"n2","ratio":1}, {"node":"nmir","ratio":2}, {"node":"vout","ratio":2} ]
+      },
+  
+      // NMOS mirror to ground (includes the diode at 'sense')
+      {
+        "id":"nmgrp","type":"NMOSMirrorGroup",
+        "ports":{"sense":"nmir","gnd":"GND"},
+        "taps":[ {"node":"vout","ratio":1} ]
+      }
+    ],
+    "provenance":{"source":"OTACurrentMirror"}
+  }
+answer_key_CASCODE: |
+  package analog.ota; import lib.motifs.*;
+  
+  class OTACurrentMirror implements Amplifier {
+    supply VDD=1.8V; ground GND;
+    port in_p vinp, in_n vinn; port out vout; bias vbias_n;
+  
+    use {
+      dp   = new DiffPairNMOS(vinp, vinn) { gnd=GND; tail=ntail; };
+      tail = new TailCurrentSourceNMOS() { out=ntail; gate=vbias_n; gnd=GND; };
+  
+      // PMOS mirror group: diode @ n1 (sense), taps to n2, nmir, vout
+      pm = mirror.PMOS(sense = dp.out_l, vdd = VDD, taps = { n2:1, nmir:2, vout:2 });
+  
+      // NMOS mirror group to ground: diode @ nmir, tap to vout
+      nm = mirror.NMOS(sense = nmir, gnd = GND, taps = { vout:1 });
+    }
+  
+    alias n1 = dp.out_l; alias n2 = dp.out_r;
+  }

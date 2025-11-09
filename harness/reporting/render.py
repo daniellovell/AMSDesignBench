@@ -24,6 +24,14 @@ def color_for_score(x: float | None) -> str:
     return f"rgb({r},{g},{b})"
 
 
+def _render_judge_cell(score: float | None) -> str:
+    """Renders a colored table cell for a score."""
+    color = color_for_score(score)
+    if score is not None:
+        return f'<td style="background:{color}">{score:.3f}</td>'
+    return '<td>-</td>'
+
+
 def load_results(path: Path) -> List[Dict[str, Any]]:
     recs: List[Dict[str, Any]] = []
     for line in path.read_text().splitlines():
@@ -39,16 +47,12 @@ def load_results(path: Path) -> List[Dict[str, Any]]:
 def aggregates(recs: List[Dict[str, Any]]):
     per_model = defaultdict(lambda: {
         "n": 0,
-        "pass": 0,
-        "raw_sum": 0.0,
         "judge_sum": 0.0,
         "judge_n": 0,
-        "blended_sum": 0.0,
-        "blended_n": 0,
     })
     # Nested dicts keyed by [group][model]
     def _mk():
-        return {"n": 0, "raw_sum": 0.0, "judge_sum": 0.0, "judge_n": 0}
+        return {"n": 0, "judge_sum": 0.0, "judge_n": 0}
     per_family = defaultdict(lambda: defaultdict(_mk))
     per_modality = defaultdict(lambda: defaultdict(_mk))
 
@@ -56,26 +60,18 @@ def aggregates(recs: List[Dict[str, Any]]):
         m = r.get("model", "unknown")
         fam = r.get("topic") or r.get("family", "?")
         mod = r.get("modality", "?")
-        raw = float(r.get("scores", {}).get("raw", 0.0))
         per_model[m]["n"] += 1
-        per_model[m]["raw_sum"] += raw
-        if r.get("scores", {}).get("pass"):
-            per_model[m]["pass"] += 1
         j = r.get("judge")
         if isinstance(j, dict) and isinstance(j.get("overall"), (int, float)):
             per_model[m]["judge_sum"] += float(j["overall"])
             per_model[m]["judge_n"] += 1
-        if isinstance(r.get("raw_blended"), (int, float)):
-            per_model[m]["blended_sum"] += float(r["raw_blended"])
-            per_model[m]["blended_n"] += 1
+        # blended score removed in judge-only pipeline
 
         per_family[fam][m]["n"] += 1
-        per_family[fam][m]["raw_sum"] += raw
         if isinstance(j, dict) and isinstance(j.get("overall"), (int, float)):
             per_family[fam][m]["judge_sum"] += float(j["overall"])
             per_family[fam][m]["judge_n"] += 1
         per_modality[mod][m]["n"] += 1
-        per_modality[mod][m]["raw_sum"] += raw
         if isinstance(j, dict) and isinstance(j.get("overall"), (int, float)):
             per_modality[mod][m]["judge_sum"] += float(j["overall"])
             per_modality[mod][m]["judge_n"] += 1
@@ -85,38 +81,23 @@ def aggregates(recs: List[Dict[str, Any]]):
 
 def write_csv(path: Path, recs: List[Dict[str, Any]]):
     fields = [
-        "model", "family", "item_id", "question_id", "rubric_id", "rubric_path", "modality", "split",
-        "raw", "pass", "judge_overall", "raw_blended", "hallucination_penalty", "grounded_ratio",
+        "model", "family", "item_id", "question_id", "judge_id", "judge_prompt", "modality", "split",
+        "judge_overall",
     ]
     with path.open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
         for r in recs:
-            # groundedness ratio: average across criteria that have it
-            ratios: List[float] = []
-            per = r.get("scores", {}).get("per_criterion", {})
-            if isinstance(per, dict):
-                for v in per.values():
-                    if isinstance(v, dict):
-                        g = v.get("groundedness")
-                        if isinstance(g, dict) and isinstance(g.get("ratio"), (int, float)):
-                            ratios.append(float(g.get("ratio")))
-            grounded_ratio = sum(ratios)/len(ratios) if ratios else None
             row = {
                 "model": r.get("model"),
                 "family": r.get("family"),
                 "item_id": r.get("item_id"),
                 "question_id": r.get("question_id"),
-                "rubric_id": r.get("rubric_id"),
-                "rubric_path": r.get("rubric_path"),
+                "judge_id": r.get("judge_id"),
+                "judge_prompt": r.get("judge_prompt"),
                 "modality": r.get("modality"),
                 "split": r.get("split"),
-                "raw": r.get("scores", {}).get("raw"),
-                "pass": r.get("scores", {}).get("pass"),
                 "judge_overall": (r.get("judge") or {}).get("overall"),
-                "raw_blended": r.get("raw_blended"),
-                "hallucination_penalty": (r.get("scores", {}).get("hallucination") or {}).get("penalty"),
-                "grounded_ratio": grounded_ratio,
             }
             w.writerow(row)
 
@@ -178,7 +159,7 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
         a = per_model[m]
         judge_avg = a["judge_sum"] / a["judge_n"] if a["judge_n"] else None
         row = f"<tr><td>{esc(m)}</td><td>{a['n']}</td>"
-        row += f"<td>{judge_avg:.3f}</td>" if judge_avg is not None else "<td>-</td>"
+        row += _render_judge_cell(judge_avg)
         leader_rows.append(row + "</tr>")
 
     # Families table (judge-only)
@@ -194,7 +175,7 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
                 jn = a.get("judge_n", 0)
                 javg = (a.get("judge_sum", 0.0) / jn) if jn else None
                 fam_rows.append(
-                    f"<tr><td>{esc(fam)}</td><td>{esc(m)}</td><td>{n}</td>" + (f"<td>{javg:.3f}</td>" if javg is not None else "<td>-</td>") + "</tr>"
+                    f"<tr><td>{esc(fam)}</td><td>{esc(m)}</td><td>{n}</td>" + _render_judge_cell(javg) + "</tr>"
                 )
         fam_table = (
             "<div class=box><b>Families</b><table class=small>"
@@ -215,7 +196,7 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
                 jn = a.get("judge_n", 0)
                 javg = (a.get("judge_sum", 0.0) / jn) if jn else None
                 mod_rows.append(
-                    f"<tr><td>{esc(mod)}</td><td>{esc(m)}</td><td>{n}</td>" + (f"<td>{javg:.3f}</td>" if javg is not None else "<td>-</td>") + "</tr>"
+                    f"<tr><td>{esc(mod)}</td><td>{esc(m)}</td><td>{n}</td>" + _render_judge_cell(javg) + "</tr>"
                 )
         mod_table = (
             "<div class=box><b>Modalities</b><table class=small>"
@@ -231,9 +212,9 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
         mod = rec_any.get("modality", "?")
         track = rec_any.get("track", "?")
         aspect = rec_any.get("aspect", "-")
-        rub = rec_any.get("rubric_id", "?")
+        judge_id = rec_any.get("judge_id", "?")
         item_rel = f"items/{esc(fam)}/{esc(item_id)}_{esc(qid)}.html"
-        row = f"<tr><td><a href='{item_rel}'>{esc(fam)}/{esc(item_id)}</a></td><td>{esc(qid)}</td><td>{esc(track)}</td><td>{esc(mod)}</td><td>{esc(aspect)}</td><td>{esc(rub)}</td>"
+        row = f"<tr><td><a href='{item_rel}'>{esc(fam)}/{esc(item_id)}</a></td><td>{esc(qid)}</td><td>{esc(track)}</td><td>{esc(mod)}</td><td>{esc(aspect)}</td><td>{esc(judge_id)}</td>"
         row += model_score_cells(key)
         qrows.append(row + "</tr>")
 
@@ -268,9 +249,9 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
     </div>
   </div>
 
-  <h3>Per-Question Scores</h3>
+  <h3>Per-Question Scores (Judge)</h3>
   <table class="small">
-    <tr><th>Item</th><th>QID</th><th>Track</th><th>Modality</th><th>Aspect</th><th>Rubric</th>{model_header_cells()}</tr>
+    <tr><th>Item</th><th>QID</th><th>Track</th><th>Modality</th><th>Aspect</th><th>Judge</th>{model_header_cells()}</tr>
     {''.join(qrows)}
   </table>
 </div>
@@ -311,8 +292,8 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
         modality = any_rec.get("modality", "?")
         track = any_rec.get("track", "?")
         aspect = any_rec.get("aspect", "-")
-        rubric_id = any_rec.get("rubric_id", "?")
-        rubric_path = any_rec.get("rubric_path", "")
+        judge_id = any_rec.get("judge_id", "?")
+        judge_prompt = any_rec.get("judge_prompt", "")
         artifact_text = any_rec.get("artifact") or ""
         artifact_path = any_rec.get("artifact_path") or ""
         rand_info = any_rec.get("artifact_randomization") or {}
@@ -324,7 +305,7 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
             r = by_model.get(m)
             if not r:
                 continue
-            scores = r.get("scores", {})
+            # deterministic scores removed; judge-only
             judge = r.get("judge") or {}
             judge_overall = judge.get("overall")
             # Optional: judge debug prompt
@@ -421,7 +402,7 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
   <div><a href="../index.html">← Back to index</a></div>
   <h3>{esc(fam)}/{esc(item_id)} — {esc(qid)}</h3>
   <table class="small hdr">
-    <tr><td><b>Track</b></td><td>{esc(track)}</td><td><b>Modality</b></td><td>{esc(modality)}</td><td><b>Aspect</b></td><td>{esc(aspect)}</td><td><b>Rubric</b></td><td>{esc(rubric_id)}</td><td><b>Rubric File</b></td><td>{esc(rubric_path) if rubric_path else '-'}</td></tr>
+    <tr><td><b>Track</b></td><td>{esc(track)}</td><td><b>Modality</b></td><td>{esc(modality)}</td><td><b>Aspect</b></td><td>{esc(aspect)}</td><td><b>Judge</b></td><td>{esc(judge_id)}</td><td><b>Judge Prompt</b></td><td>{esc(judge_prompt) if judge_prompt else '-'}</td></tr>
   </table>
   <h4>Artifact</h4>
   <div class="mono">{esc(artifact_text) if artifact_text else '(artifact not recorded)'}</div>

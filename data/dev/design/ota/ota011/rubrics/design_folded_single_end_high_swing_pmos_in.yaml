@@ -1,0 +1,186 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches a PMOS-input folded cascode with a high-swing PMOS side (single-ended output; PMOS high-swing pre-devices and cascodes; folded NMOS branch to vout)."
+topology_patterns_any: "folded cascode; high-swing; PMOS input; single-ended; single end"
+topology_min_any: 3
+safety_anti_patterns: "fully differential; two-stage"
+
+hallucination_penalty: 0.15
+min_pass: 0.70
+answer_key_SPICE: |
+  
+  M1 N002 vinn N006 VDD PMOS l=0.18u w=4u
+  M2 N002 vinp N005 VDD PMOS l=0.18u w=4u
+  M3 VDD vb1 N002 VDD PMOS l=0.18u w=4u
+  M4 VDD N001 N003 VDD PMOS l=0.18u w=4u
+  M5 VDD N001 N004 VDD PMOS l=0.18u w=4u
+  M6 N003 vb4 N001 VDD PMOS l=0.18u w=4u
+  M7 N004 vb4 vout VDD PMOS l=0.18u w=4u
+  M8 vout vb3 N005 0 NMOS l=0.18u w=2u
+  M9 N005 vb2 0 0 NMOS l=0.18u w=2u
+  M10 N001 vb3 N006 0 NMOS l=0.18u w=2u
+  M11 N006 vb2 0 0 NMOS l=0.18u w=2u
+  VDD VDD 0 1.8
+  Cload vout 0 1p
+answer_key_CASIR: |
+  {
+    "ir_version": 1,
+    "format": "casir-json-1",
+    "level": "EL",
+    "meta": {"tool": "cascode-0.2.0", "when": "2025-10-09T00:00:00Z"},
+  
+    "nets": [
+      {"id": "VDD",  "domain": "supply",    "rail": "VDD"},
+      {"id": "GND",  "domain": "ground",    "rail": "GND"},
+      {"id": "vinp", "domain": "electrical"},
+      {"id": "vinn", "domain": "electrical"},
+      {"id": "vout", "domain": "electrical"},
+      {"id": "N001", "domain": "electrical"},
+      {"id": "N002", "domain": "electrical"},
+      {"id": "N003", "domain": "electrical"},
+      {"id": "N004", "domain": "electrical"},
+      {"id": "N005", "domain": "electrical"},
+      {"id": "N006", "domain": "electrical"},
+      {"id": "vb1",  "domain": "bias"},
+      {"id": "vb2",  "domain": "bias"},
+      {"id": "vb3",  "domain": "bias"},
+      {"id": "vb4",  "domain": "bias"}
+    ],
+  
+    "bundles": [
+      {"id": "IN", "type": "Diff", "fields": {"p": "vinp", "n": "vinn"}}
+    ],
+  
+    "motifs": [
+      {
+        "id": "ptail",
+        "type": "TailCurrentSourcePMOS",
+        "ports": {"out": "N002", "gate": "vb1", "vdd": "VDD"},
+        "impl": {"char_ref": "lib.motifs/tail_pmos@1.0"}
+      },
+      {
+        "id": "dp",
+        "type": "DiffPairPMOS",
+        "traits": ["AmplifierStage"],
+        "ports": {"in_p": "vinp", "in_n": "vinn", "tail": "N002", "vdd": "VDD"},
+        "impl": {"char_ref": "lib.motifs/diff_pair_pmos@1.0"}
+      },
+      {
+        "id": "load_p",
+        "type": "ActiveLoad",
+        "traits": ["LoadDevice"],
+        "ports": {"node": "N003", "bias": "N001", "vref": "VDD"},
+        "params": {"polarity": "PMOS"},
+        "impl": {"char_ref": "lib.motifs/active_load@1.0"}
+      },
+      {
+        "id": "load_n",
+        "type": "ActiveLoad",
+        "traits": ["LoadDevice"],
+        "ports": {"node": "N004", "bias": "N001", "vref": "VDD"},
+        "params": {"polarity": "PMOS"},
+        "impl": {"char_ref": "lib.motifs/active_load@1.0"}
+      },
+      {
+        "id": "p_diode",
+        "type": "PMOSDiode",
+        "ports": {"node": "N001", "vdd": "VDD"},
+        "impl": {"char_ref": "lib.motifs/pmos_diode@1.0"}
+      },
+      {
+        "id": "p_cas_p",
+        "type": "PMOSCascodeElement",
+        "ports": {"out": "N003", "gate": "vb4", "src": "N001"},
+        "impl": {"char_ref": "lib.motifs/pmos_cascode_element@1.0"}
+      },
+      {
+        "id": "p_cas_n",
+        "type": "PMOSCascodeElement",
+        "ports": {"out": "N004", "gate": "vb4", "src": "vout"},
+        "impl": {"char_ref": "lib.motifs/pmos_cascode_element@1.0"}
+      },
+      {
+        "id": "n_cas_p",
+        "type": "NMOSCascode",
+        "ports": {"in": "N006", "out": "N001", "bias": "vb3", "gnd": "GND"},
+        "impl": {"char_ref": "lib.motifs/nmos_cascode@1.0"}
+      },
+      {
+        "id": "n_src_p",
+        "type": "TailCurrentSourceNMOS",
+        "ports": {"out": "N006", "gate": "vb2", "gnd": "GND"},
+        "impl": {"char_ref": "lib.motifs/tail_nmos@1.0"}
+      },
+      {
+        "id": "n_cas_n",
+        "type": "NMOSCascode",
+        "ports": {"in": "N005", "out": "vout", "bias": "vb3", "gnd": "GND"},
+        "impl": {"char_ref": "lib.motifs/nmos_cascode@1.0"}
+      },
+      {
+        "id": "n_src_n",
+        "type": "TailCurrentSourceNMOS",
+        "ports": {"out": "N005", "gate": "vb2", "gnd": "GND"},
+        "impl": {"char_ref": "lib.motifs/tail_nmos@1.0"}
+      },
+      {
+        "id": "Cload",
+        "type": "Cap",
+        "ports": {"p": "vout", "n": "GND"},
+        "params": {"C": {"value": 1.0e-12, "unit": "F"}}
+      }
+    ],
+  
+    "constraints": {
+      "numeric": [
+        {"id": "c_gain", "kind": "ineq", "lhs": {"metric": "gain_db"}, "op": ">=", "rhs": {"value": 60, "unit": "dB"}, "scope": {"node": "vout"}}
+      ],
+      "tech": [{"id": "t_lmin", "kind": "limit", "on": "*", "rule": "L>=", "value": 1.8e-7, "unit": "m"}]
+    },
+  
+    "harness": {
+      "supplies": [{"net": "VDD", "value": 1.8, "unit": "V"}],
+      "loads": [{"node": "vout", "C": 1.0e-12, "unit": "F"}],
+      "sources": [{"bundle": "IN", "Z": 50.0, "unit": "Ohm"}],
+      "pvt": {"corners": ["TT@27C"]}
+    },
+  
+    "benches": ["AC_OpenLoop"],
+    "provenance": {"sources": [{"file": "templates/ota/ota011/netlist.cas", "span": {"from": 1, "to": 95}}]}
+  }
+answer_key_CASCODE: |
+  package analog.ota; import lib.motifs.*;
+  
+  class OTAFolded_SE_PMOSIn_HS_Bound implements Amplifier {
+    supply VDD=1.8V; ground GND;
+    port in_p vinp, in_n vinn; port out vout;
+    // vb1: PMOS tail bias; vb2: NMOS source bias; vb3: NMOS cascode bias; vb4: PMOS cascode bias
+    bias vb1, vb2, vb3, vb4;
+  
+    use {
+      // PMOS input differential pair (M1, M2) with PMOS tail source into N002 (M3)
+      ptail = new TailCurrentSourcePMOS() { out=N002; gate=vb1; vdd=VDD; };      // M3
+      dp    = new DiffPairPMOS(vinp, vinn) { tail=N002; vdd=VDD; };              // M1/M2 (abstracted)
+  
+      // High-swing PMOS side: two branches from VDD via N001-gated devices to N003/N004,
+      // then PMOS cascodes gated by vb4; one branch terminates at vout.
+      p_ref_a = new PMOSMirror(from=N001, to=N003, vdd=VDD);                      // M4 source -> N003
+      p_ref_b = new PMOSMirror(from=N001, to=N004, vdd=VDD);                      // M5 source -> N004
+      p_cas_a = new PMOSCascodeElement(out=N003, gate=vb4, src=N001);             // M6: D=N003, S=N001
+      p_cas_b = new PMOSCascodeElement(out=vout, gate=vb4, src=N004);             // M7: D=N004, S=vout
+  
+      // Folded NMOS branches: each has an NMOS current source (vb2) and an NMOS cascode (vb3)
+      // Output branch (to vout): N005 -> cascode(vb3) -> vout; source at N005 (vb2)
+      n_src_out = new TailCurrentSourceNMOS() { out=N005; gate=vb2; gnd=GND; };   // M9
+      n_cas_out = new NMOSCascode(in=N005, out=vout) { bias=vb3; gnd=GND; };      // M8
+  
+      // Reference branch (to N001): N006 -> cascode(vb3) -> N001; source at N006 (vb2)
+      n_src_ref = new TailCurrentSourceNMOS() { out=N006; gate=vb2; gnd=GND; };   // M11
+      n_cas_ref = new NMOSCascode(in=N006, out=N001) { bias=vb3; gnd=GND; };      // M10
+  
+      // Load capacitor
+      C(vout, GND, 1pF);
+    }
+  }

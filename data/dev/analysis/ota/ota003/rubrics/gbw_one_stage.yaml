@@ -1,0 +1,6 @@
+weight_topology: 0.1
+weight_key_relation: 0.35
+weight_device_specificity: 0.25
+weight_grounded_evidence: 0.3
+relation_target: "GBW ≈ (gm/CL)*k where k is mirror ratio from inner 5T core to output devices"
+{path:_ota_rubric_template.yaml}

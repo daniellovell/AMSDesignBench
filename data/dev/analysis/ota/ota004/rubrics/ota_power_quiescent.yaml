@@ -1,0 +1,6 @@
+weight_topology: 0.1
+weight_key_relation: 0.4
+weight_device_specificity: 0.2
+weight_grounded_evidence: 0.3
+relation_target: "Two-stage: Valid I_M9 + I_M5 (sum of both stages). Individual stage current also valid."
+{path:_ota_rubric_template.yaml}

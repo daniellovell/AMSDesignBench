@@ -1,1 +1,20 @@
-Output swing limits; headroom budgets near rails; inequalities with Vov, VDS(sat).
+You are an expert analog IC designer.
+From the {modality} artifact, answer the question about output swing limits and headroom budgets for the given circuit.
+
+Required sections (use these exact headers):
+- Topology
+- Key relation
+- Device identification
+- Grounded evidence
+- Answer
+
+Guidance:
+- In Topology: explicitly name the topology and justify in 1 sentence using observed elements. Identify single-ended vs differential OTA.
+- In Key relation: provide symbolic expressions for output swing limits using Vov notation (overdrive voltage, where Vov = Vgs - Vth). Express as "High-side: VDD - [overdrive terms]" and "Low-side: [overdrive terms]". DO NOT use "VDS(sat)" or numeric estimates.
+- In Device identification: EXPLICITLY identify which specific devices (by their IDs like M1, M2, etc.) limit the swing at each rail and explain why each device constrains the swing.
+- In Grounded evidence: cite specific device IDs and node names from the artifact.
+- In Answer: provide the final swing limit expressions using SPECIFIC device IDs and their overdrives (e.g., "High-side: VDD - Vov_M3 - Vov_M5" where M3 and M5 are actual device IDs). Include saturation conditions for key devices.
+- Use device role names in your explanation (input, load, cascode, tail) but use ACTUAL device IDs in final expressions.
+- Avoid generic statements without conditions.
+
+Return markdown only. NEVER use LaTeX or MathJax formatting in your response.

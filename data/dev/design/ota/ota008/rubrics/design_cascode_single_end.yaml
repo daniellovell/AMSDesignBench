@@ -1,0 +1,121 @@
+weight_structural_correctness: 0.70
+weight_topology_terms: 0.20
+weight_safety: 0.10
+
+structural_correctness_guidance: "Netlist structure matches a cascode single-ended OTA (NMOS input device and NMOS cascode to vout, PMOS cascode load above vout, PMOS current source from VDD)."
+topology_patterns_any: "cascode; single-ended; single end"
+topology_min_any: 2
+safety_anti_patterns: "high-swing; folded; gain-boost; fully differential; two-stage"
+
+hallucination_penalty: 0.15
+min_pass: 0.70
+answer_key_SPICE: |
+  
+  M1 N002 vin 0 0 NMOS l=0.18u w=2u
+  M2 vout vb1 N002 0 NMOS l=0.18u w=2u
+  M3 N001 vb2 vout VDD PMOS l=0.18u w=4u
+  M4 VDD vb3 N001 VDD PMOS l=0.18u w=4u
+  VDD VDD 0 1.8
+  Cload vout 0 1p
+answer_key_CASIR: |
+  {
+    "ir_version": 1,
+    "format": "casir-json-1",
+    "level": "EL",
+    "meta": {"tool": "cascode-0.2.0", "when": "2025-10-09T00:00:00Z"},
+  
+    "nets": [
+      {"id": "VDD",  "domain": "supply",    "rail": "VDD"},
+      {"id": "GND",  "domain": "ground",    "rail": "GND"},
+      {"id": "vin",  "domain": "electrical"},
+      {"id": "vout", "domain": "electrical"},
+      {"id": "N002", "domain": "electrical"},
+      {"id": "N001", "domain": "electrical"},
+      {"id": "vb1",  "domain": "bias"},
+      {"id": "vb2",  "domain": "bias"},
+      {"id": "vb3",  "domain": "bias"}
+    ],
+  
+    "motifs": [
+      {
+        "id": "M_in",
+        "type": "NMOS",
+        "ports": {"gate": "vin", "drain": "N002", "source": "GND", "bulk": "GND"},
+        "params": {
+          "W": {"value": 2.0e-6, "unit": "m"},
+          "L": {"value": 1.8e-7, "unit": "m"},
+          "m": {"value": 1}
+        },
+        "impl": {"primitive": true, "pdk_device": "nfet_01v8"}
+      },
+      {
+        "id": "n_cas",
+        "type": "NMOSCascode",
+        "ports": {"in": "N002", "out": "vout", "bias": "vb1", "gnd": "GND"},
+        "impl": {"char_ref": "lib.motifs/nmos_cascode@1.0"}
+      },
+      {
+        "id": "p_cas",
+        "type": "PMOSCascodeElement",
+        "ports": {"out": "N001", "gate": "vb2", "src": "vout"},
+        "impl": {"char_ref": "lib.motifs/pmos_cascode_element@1.0"}
+      },
+      {
+        "id": "load_top",
+        "type": "ActiveLoad",
+        "traits": ["LoadDevice"],
+        "ports": {"node": "N001", "bias": "vb3", "vref": "VDD"},
+        "params": {"polarity": "PMOS"},
+        "impl": {"char_ref": "lib.motifs/active_load@1.0"}
+      },
+      {
+        "id": "Cload",
+        "type": "Cap",
+        "ports": {"p": "vout", "n": "GND"},
+        "params": {"C": {"value": 1.0e-12, "unit": "F"}}
+      }
+    ],
+  
+    "constraints": {
+      "numeric": [
+        {"id": "c_gain", "kind": "ineq", "lhs": {"metric": "gain_db"}, "op": ">=", "rhs": {"value": 60, "unit": "dB"}, "scope": {"node": "vout"}}
+      ],
+      "tech": [{"id": "t_lmin", "kind": "limit", "on": "*", "rule": "L>=", "value": 1.8e-7, "unit": "m"}]
+    },
+  
+    "harness": {
+      "supplies": [{"net": "VDD", "value": 1.8, "unit": "V"}],
+      "loads": [{"node": "vout", "C": 1.0e-12, "unit": "F"}],
+      "sources": [{"node": "vin", "Z": 50.0, "unit": "Ohm"}],
+      "pvt": {"corners": ["TT@27C"]}
+    },
+  
+    "benches": ["AC_OpenLoop"],
+    "provenance": {"sources": [{"file": "templates/ota/ota008/netlist.cas", "span": {"from": 1, "to": 26}}]}
+  }
+answer_key_CASCODE: |
+  package analog.ota; import lib.motifs.*;
+  
+  class OTATelescopic_SE_Bound implements Amplifier {
+    supply VDD=1.8V; ground GND;
+    port in vin; port out vout;
+    // vb1: NMOS cascode bias; vb2: PMOS cascode bias; vb3: PMOS top current-source bias
+    bias vb1, vb2, vb3;
+  
+    use {
+      // NMOS input primitive -> node N002
+      M_in = new NMOS() { gate<-vin; drain<-N002; source<-GND; bulk<-GND; };        // M1
+  
+      // NMOS cascode from N002 up to vout (gate at vb1)
+      n_cas = new NMOSCascode(in=N002, out=vout) { bias=vb1; gnd=GND; };            // M2
+  
+      // PMOS cascode above vout to N001 (gate at vb2)
+      p_cas = new PMOSCascodeElement(out=N001, gate=vb2, src=vout);                 // M3
+  
+      // PMOS current source from VDD into N001
+      load_top = new ActiveLoad(polarity=PMOS) { node<-N001; bias<-vb3; vref<-VDD; };  // M4
+  
+      // Load capacitor
+      C(vout, GND, 1pF);                                                            // Cload
+    }
+  }
