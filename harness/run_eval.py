@@ -757,6 +757,10 @@ def main():
     outputs_root = Path(cfg.get("paths", {}).get("outputs_root", "outputs"))
     outputs_root.mkdir(parents=True, exist_ok=True)
 
+    judge_reasoning_effort_cfg = eval_cfg.get("judge_reasoning_effort")
+    if judge_reasoning_effort_cfg is not None and not os.getenv("OPENAI_JUDGE_REASONING_EFFORT"):
+        os.environ["OPENAI_JUDGE_REASONING_EFFORT"] = str(judge_reasoning_effort_cfg)
+
     judge_model_cfg = eval_cfg.get("judge_model")
     judge_model_spec = args.judge_model if args.judge_model is not None else judge_model_cfg
     judge_model = normalize_judge_model(judge_model_spec)
