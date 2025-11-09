@@ -520,7 +520,7 @@ class DummyAdapter(BaseAdapter):
             
             # Check if this is a design question with verification
             is_design_verification = (
-                (question.get("track") == "design" and question.get("verification", {}).get("enabled")) or
+                (question.get("track") == "design" and (question.get("verification") or {}).get("enabled")) or
                 ("design" in qid and "verification" in qid) or
                 ("design" in prompt.lower() and ("ota" in prompt.lower() or "filter" in prompt.lower() or "blank" in prompt.lower()))
             )

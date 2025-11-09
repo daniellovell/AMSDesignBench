@@ -1120,6 +1120,7 @@ def main():
         task_id = model_tasks[slug]
 
         def process_q(it: EvalItem, q: Question):
+            import traceback  # Ensure traceback is available in nested function scope
             nonlocal total
             item_timer = perf_counter() if profiling.is_enabled() else None
             item_dir = Path(it.item_dir)
