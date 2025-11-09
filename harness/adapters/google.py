@@ -1,6 +1,6 @@
 from __future__ import annotations
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 import time
 from time import perf_counter
 import random as _rnd
@@ -33,6 +33,7 @@ class GoogleAdapter(BaseAdapter):
     name = "google"
 
     def __init__(self, model: str | None = None, temperature: float = 0.2, max_tokens: int = 800):
+        """Configure the Gemini client used for every request."""
         if genai is None:
             raise RuntimeError("google-genai package not installed. pip install google-genai")
         self.model = model or os.getenv("GOOGLE_MODEL", "gemini-2.5-pro")
@@ -51,6 +52,7 @@ class GoogleAdapter(BaseAdapter):
         self.client = genai.Client(**client_kwargs)
 
     def predict(self, batch: List[Dict[str, Any]]) -> List[str]:
+        """Render prompts, call Gemini, and return plain-text completions."""
         outs: List[str] = []
         for item in batch:
             prompt = item.get("prompt", "")
@@ -80,31 +82,12 @@ class GoogleAdapter(BaseAdapter):
                 f"{prompt}\n"
             )
 
-            # Build Google Gemini request
-            # Combine system prompt and user content
-            full_content = f"{SYS_PROMPT}\n\n{user}"
-            
-            # Get thinking budget (default 0 to disable thinking for speed)
-            thinking_budget = int(os.getenv("GOOGLE_THINKING_BUDGET", "0"))
-            
-            # Build config with proper structure
-            config_params: Dict[str, Any] = {}
-            if self.temperature is not None:
-                config_params["temperature"] = self.temperature
-            if self.max_tokens is not None:
-                config_params["max_output_tokens"] = self.max_tokens
-            
-            # Add thinking config to disable thinking by default for performance
-            if types is not None:
-                config_params["thinking_config"] = types.ThinkingConfig(thinking_budget=thinking_budget)
-                config = types.GenerateContentConfig(**config_params)
-            else:
-                # Fallback if types not available
-                config = config_params if config_params else None
-            
+            contents = self._build_user_contents(user)
+            config = self._build_generation_config()
+
             params: Dict[str, Any] = {
                 "model": self.model,
-                "contents": full_content,
+                "contents": contents,
             }
             if config is not None:
                 params["config"] = config
@@ -123,138 +106,7 @@ class GoogleAdapter(BaseAdapter):
             except Exception:
                 pass
 
-            # Adaptive retries + exponential backoff for rate/overload
-            def _parse_retry_after(msg: str) -> float:
-                m = re.search(r"try again in\s*([0-9]+\.?[0-9]*)s", msg, flags=re.I)
-                if m:
-                    try:
-                        return float(m.group(1))
-                    except Exception:
-                        return 0.0
-                return 0.0
-            
-            def _unpack_config_to_top_level(params: Dict[str, Any]) -> bool:
-                """
-                Extract temperature and max_output_tokens from config parameter
-                and move them to top-level params. Returns True if adaptation occurred.
-                """
-                if "config" not in params:
-                    return False
-                
-                config = params.get("config")
-                
-                # Handle dict config
-                if isinstance(config, dict):
-                    config_dict = params.pop("config", {})
-                    if "temperature" in config_dict:
-                        params["temperature"] = config_dict["temperature"]
-                    if "max_output_tokens" in config_dict:
-                        params["max_output_tokens"] = config_dict.get("max_output_tokens")
-                    return True
-                
-                # Handle object config (e.g., types.GenerateContentConfig)
-                if hasattr(config, "__dict__"):
-                    config_obj = params.pop("config")
-                    adapted = False
-                    if hasattr(config_obj, "temperature") and config_obj.temperature is not None:
-                        params["temperature"] = config_obj.temperature
-                        adapted = True
-                    if hasattr(config_obj, "max_output_tokens") and config_obj.max_output_tokens is not None:
-                        params["max_output_tokens"] = config_obj.max_output_tokens
-                        adapted = True
-                    return adapted
-                
-                return False
-            
-            max_attempts = int(os.getenv("GOOGLE_MAX_RETRIES", 8))
-            base_delay = float(os.getenv("GOOGLE_BACKOFF_BASE", 1.0))
-            attempt = 0
-            last_exc: Exception | None = None
-            
-            while attempt < max_attempts:
-                attempt += 1
-                # Parameter adaptation loop
-                for _ in range(3):
-                    try:
-                        api_timer = perf_counter() if profiling.is_enabled() else None
-                        resp = self.client.models.generate_content(**params)
-                        if api_timer is not None:
-                            profiling.log(
-                                "api",
-                                "call",
-                                (perf_counter() - api_timer) * 1000,
-                                context=f"adapter={self.name} model={self.model}",
-                            )
-                        break
-                    except Exception as e:
-                        emsg = str(getattr(e, "message", e))
-                        txt = (emsg or str(e)).lower()
-                        adapted = False
-                        # Handle timeout errors
-                        is_timeout = ("timeout" in txt) or ("timed out" in txt) or ("deadline exceeded" in txt)
-                        if is_timeout:
-                            last_exc = e
-                            break  # Timeout should trigger retry logic, not parameter adaptation
-                        # Handle "unexpected keyword argument" errors - remove the parameter entirely
-                        if "unexpected keyword argument" in txt:
-                            if "config" in txt and "config" in params:
-                                # Try falling back to top-level parameters if config not supported
-                                adapted = _unpack_config_to_top_level(params)
-                            elif "temperature" in txt and "temperature" in params:
-                                params.pop("temperature", None)
-                                adapted = True
-                            elif "max_output_tokens" in txt and "max_output_tokens" in params:
-                                params.pop("max_output_tokens", None)
-                                adapted = True
-                        # Handle other parameter errors
-                        elif "temperature" in txt or "max_output_tokens" in txt or "config" in txt:
-                            if "config" in txt and "config" in params:
-                                # Try falling back to top-level parameters
-                                adapted = _unpack_config_to_top_level(params)
-                            if "temperature" in txt and ("unsupported" in txt or "does not support" in txt or "only the default" in txt):
-                                if "config" in params and isinstance(params["config"], dict):
-                                    params["config"].pop("temperature", None)
-                                else:
-                                    params.pop("temperature", None)
-                                adapted = True
-                            if "max_output_tokens" in txt and ("unsupported" in txt or "does not support" in txt):
-                                if "config" in params and isinstance(params["config"], dict):
-                                    params["config"].pop("max_output_tokens", None)
-                                else:
-                                    params.pop("max_output_tokens", None)
-                                adapted = True
-                        if not adapted:
-                            last_exc = e
-                            break
-                else:
-                    last_exc = RuntimeError("parameter adaptation failed")
-                
-                if last_exc is None and 'resp' in locals():
-                    # Success
-                    break
-                
-                # Transient/Rate limit/Timeout handling
-                err_txt = str(getattr(last_exc, 'message', last_exc) or '').lower()
-                is_rate = ("rate limit" in err_txt) or ("429" in err_txt) or ("tpm" in err_txt) or ("rpm" in err_txt) or ("quota" in err_txt)
-                is_timeout = ("timeout" in err_txt) or ("timed out" in err_txt) or ("deadline exceeded" in err_txt)
-                is_overload = ("service unavailable" in err_txt) or ("overloaded" in err_txt) or ("temporarily" in err_txt) or ("503" in err_txt)
-                
-                if is_rate or is_overload or is_timeout:
-                    # Compute delay: try parse, else exponential backoff with jitter
-                    parsed = _parse_retry_after(str(getattr(last_exc, 'message', last_exc) or ''))
-                    delay = parsed if parsed > 0 else (base_delay * (2 ** (attempt - 1)))
-                    delay += _rnd.uniform(0.1, 0.5)
-                    # For timeouts, use shorter max delay to fail faster
-                    max_delay = 10.0 if is_timeout else 20.0
-                    time.sleep(min(delay, max_delay))
-                    last_exc = None
-                    continue
-                
-                # Not recoverable
-                raise last_exc
-            
-            if last_exc is not None:
-                raise last_exc
+            resp = self._call_with_retry(params)
             
             # Extract text from response
             text = ""
@@ -287,6 +139,106 @@ class GoogleAdapter(BaseAdapter):
             
             outs.append(text.strip())
         return outs
+
+    def _build_user_contents(self, user_text: str) -> List[Any]:
+        """Return the user message structure expected by the Google SDK."""
+        if types is None:
+            return [{"role": "user", "parts": [{"text": user_text}]}]
+        return [types.Content(role="user", parts=[types.Part(text=user_text)])]
+
+    def _build_system_instruction(self) -> Optional[Any]:
+        """Wrap the benchmark system prompt in the SDK's content object."""
+        if not SYS_PROMPT:
+            return None
+        if types is None:
+            return {"role": "system", "parts": [{"text": SYS_PROMPT}]}
+        return types.Content(role="system", parts=[types.Part(text=SYS_PROMPT)])
+
+    def _build_thinking_config(self, budget: int) -> Optional[Any]:
+        """Create the thinking configuration block when supported."""
+        if types is None:
+            return {"thinking_budget": budget}
+        return types.ThinkingConfig(thinking_budget=budget)
+
+    def _build_generation_config(self) -> Optional[Any]:
+        """Assemble the final GenerateContentConfig with knobs we expose."""
+        thinking_budget = int(os.getenv("GOOGLE_THINKING_BUDGET", "0"))
+        config_kwargs: Dict[str, Any] = {}
+        if self.temperature is not None:
+            config_kwargs["temperature"] = self.temperature
+        if self.max_tokens is not None:
+            config_kwargs["max_output_tokens"] = self.max_tokens
+        system_instruction = self._build_system_instruction()
+        if system_instruction is not None:
+            config_kwargs["system_instruction"] = system_instruction
+        config_kwargs["thinking_config"] = self._build_thinking_config(thinking_budget)
+
+        if not config_kwargs:
+            return None
+        if types is None:
+            return config_kwargs
+        return types.GenerateContentConfig(**config_kwargs)
+
+    def _call_with_retry(self, params: Dict[str, Any]) -> Any:
+        """Invoke the API with lightweight retry logic for transient faults."""
+        max_attempts = int(os.getenv("GOOGLE_MAX_RETRIES", 8))
+        base_delay = float(os.getenv("GOOGLE_BACKOFF_BASE", 1.0))
+        attempt = 0
+        last_exc: Optional[Exception] = None
+
+        while attempt < max_attempts:
+            attempt += 1
+            try:
+                api_timer = perf_counter() if profiling.is_enabled() else None
+                resp = self.client.models.generate_content(**params)
+                if api_timer is not None:
+                    profiling.log(
+                        "api",
+                        "call",
+                        (perf_counter() - api_timer) * 1000,
+                        context=f"adapter={self.name} model={self.model}",
+                    )
+                return resp
+            except Exception as exc:  # pragma: no cover - retry paths tested indirectly
+                last_exc = exc
+                err_txt = str(getattr(exc, "message", exc) or "").lower()
+                is_rate, is_timeout, is_overload = self._classify_retryable_error(err_txt)
+                if not (is_rate or is_timeout or is_overload):
+                    raise
+                delay = self._compute_retry_delay(exc, attempt, base_delay, is_timeout)
+                time.sleep(delay)
+
+        if last_exc is not None:
+            raise last_exc
+        raise RuntimeError("google adapter failed without response")
+
+    @staticmethod
+    def _classify_retryable_error(err_txt: str) -> tuple[bool, bool, bool]:
+        """Classify an error message into rate/time/overload buckets."""
+        is_rate = ("rate limit" in err_txt) or ("429" in err_txt) or ("tpm" in err_txt) or ("rpm" in err_txt) or ("quota" in err_txt)
+        is_timeout = ("timeout" in err_txt) or ("timed out" in err_txt) or ("deadline exceeded" in err_txt)
+        is_overload = ("service unavailable" in err_txt) or ("overloaded" in err_txt) or ("temporarily" in err_txt) or ("503" in err_txt)
+        return is_rate, is_timeout, is_overload
+
+    def _compute_retry_delay(self, exc: Exception, attempt: int, base_delay: float, is_timeout: bool) -> float:
+        """Derive the backoff delay for the current retry attempt."""
+        parsed = self._parse_retry_after(str(getattr(exc, "message", exc) or ""))
+        if parsed > 0:
+            return min(parsed, 10.0 if is_timeout else 20.0)
+        delay = base_delay * (2 ** (attempt - 1))
+        delay += _rnd.uniform(0.1, 0.5)
+        return min(delay, 10.0 if is_timeout else 20.0)
+
+    @staticmethod
+    def _parse_retry_after(msg: str) -> float:
+        """Extract a server-specified retry-after hint when present."""
+        m = re.search(r"try again in\s*([0-9]+\.?[0-9]*)s", msg, flags=re.I)
+        if m:
+            try:
+                return float(m.group(1))
+            except Exception:
+                return 0.0
+        return 0.0
 
 
 def build(model: str | None = None, temperature: float | None = None, max_tokens: int | None = None) -> GoogleAdapter:

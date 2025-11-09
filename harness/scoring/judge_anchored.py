@@ -7,6 +7,8 @@ from time import perf_counter
 import random as _rnd
 import re
 import traceback
+import ast
+import math
 from ..utils.rate_limiter import get_limiter, _LIMITERS, _LIM_LOCK
 import threading
 import os as _os
@@ -61,23 +63,129 @@ def _sem() -> threading.Semaphore:
 
 def _evaluate_arithmetic_expression(expr: str) -> Optional[float]:
     """
-    Safely evaluate a simple arithmetic expression string.
+    Safely evaluate a simple arithmetic expression string using AST parsing.
     Only allows numbers, operators (+, -, *, /), parentheses, and whitespace.
-    Returns None if evaluation fails or contains disallowed characters.
+    Returns None if evaluation fails, contains disallowed nodes, or produces invalid results.
     """
     # Remove whitespace
     expr = expr.strip()
+    if not expr:
+        return None
+    
     # Only allow numbers, operators, parentheses, decimal points, and whitespace
     if not re.match(r'^[\d+\-*/().\s]+$', expr):
         return None
+    
+    # Maximum AST depth and node count to prevent deeply nested expressions
+    MAX_DEPTH = 50
+    MAX_NODES = 100
+    
+    # Allowed node types
+    ALLOWED_BINOP = {ast.Add, ast.Sub, ast.Mult, ast.Div}
+    ALLOWED_UNARYOP = {ast.UAdd, ast.USub}
+    
+    def count_nodes_and_depth(node: ast.AST, depth: int = 0) -> tuple[int, int]:
+        """Count total nodes and maximum depth in the AST."""
+        if depth > MAX_DEPTH:
+            return -1, -1  # Signal depth exceeded
+        node_count = 1
+        max_depth = depth
+        for child in ast.iter_child_nodes(node):
+            child_count, child_depth = count_nodes_and_depth(child, depth + 1)
+            if child_count < 0:  # Depth exceeded
+                return -1, -1
+            node_count += child_count
+            max_depth = max(max_depth, child_depth)
+        return node_count, max_depth
+    
+    def validate_ast(node: ast.AST) -> bool:
+        """Validate that the AST only contains allowed node types."""
+        if isinstance(node, ast.Expression):
+            return validate_ast(node.body)
+        elif isinstance(node, ast.BinOp):
+            if type(node.op) not in ALLOWED_BINOP:
+                return False
+            return validate_ast(node.left) and validate_ast(node.right)
+        elif isinstance(node, ast.UnaryOp):
+            if type(node.op) not in ALLOWED_UNARYOP:
+                return False
+            return validate_ast(node.operand)
+        elif isinstance(node, (ast.Constant, ast.Num)):
+            # ast.Num is deprecated in Python 3.8+ but kept for compatibility
+            return True
+        else:
+            # Explicitly reject: Call, Name, Attribute, Lambda, comprehension nodes, etc.
+            return False
+    
+    def evaluate_ast(node: ast.AST) -> float:
+        """Recursively evaluate the AST node and return a numeric result."""
+        if isinstance(node, ast.Expression):
+            return evaluate_ast(node.body)
+        elif isinstance(node, ast.BinOp):
+            left = evaluate_ast(node.left)
+            right = evaluate_ast(node.right)
+            if isinstance(node.op, ast.Add):
+                return left + right
+            elif isinstance(node.op, ast.Sub):
+                return left - right
+            elif isinstance(node.op, ast.Mult):
+                return left * right
+            elif isinstance(node.op, ast.Div):
+                if right == 0:
+                    raise ZeroDivisionError("Division by zero")
+                return left / right
+            else:
+                raise ValueError(f"Unsupported binary operator: {type(node.op).__name__}")
+        elif isinstance(node, ast.UnaryOp):
+            operand = evaluate_ast(node.operand)
+            if isinstance(node.op, ast.UAdd):
+                return +operand
+            elif isinstance(node.op, ast.USub):
+                return -operand
+            else:
+                raise ValueError(f"Unsupported unary operator: {type(node.op).__name__}")
+        elif isinstance(node, ast.Constant):
+            value = node.value
+            if isinstance(value, (int, float)):
+                return float(value)
+            raise ValueError(f"Constant must be numeric, got {type(value).__name__}")
+        elif isinstance(node, ast.Num):  # Python < 3.8 compatibility
+            value = node.n
+            if isinstance(value, (int, float)):
+                return float(value)
+            raise ValueError(f"Num must be numeric, got {type(value).__name__}")
+        else:
+            raise ValueError(f"Unsupported node type: {type(node).__name__}")
+    
     try:
-        # Use eval with restricted builtins (only allow basic math operations)
-        result = eval(expr, {"__builtins__": {}}, {})
-        if isinstance(result, (int, float)):
-            return float(result)
+        # Parse the expression
+        tree = ast.parse(expr, mode='eval')
+        
+        # Validate AST structure
+        if not validate_ast(tree):
+            return None
+        
+        # Check depth and node count
+        node_count, max_depth = count_nodes_and_depth(tree)
+        if node_count < 0 or node_count > MAX_NODES:
+            return None
+        
+        # Evaluate the expression
+        result = evaluate_ast(tree)
+        
+        # Verify result is finite and within safe magnitude
+        if not math.isfinite(result):
+            return None
+        if abs(result) > 1e308:
+            return None
+        
+        return float(result)
+    except (SyntaxError, ValueError, ZeroDivisionError, TypeError, AttributeError):
+        # Return None for any parse error, disallowed node, division by zero, etc.
+        return None
     except Exception:
-        pass
-    return None
+        # Catch any other unexpected errors
+        return None
 
 
 def judge_answer(
