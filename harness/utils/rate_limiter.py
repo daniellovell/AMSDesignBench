@@ -1,7 +1,10 @@
 from __future__ import annotations
 import time
 import threading
+from time import perf_counter
 from typing import Optional, Dict
+
+from . import profiling
 
 
 class TokenBucketLimiter:
@@ -49,7 +52,7 @@ class TokenBucketLimiter:
         if self.tok_capacity > 0:
             self.tok_tokens = min(self.tok_capacity, self.tok_tokens + dt * self.tok_rate)
 
-    def acquire(self, token_cost: float, req_cost: float = 1.0) -> None:
+    def acquire(self, token_cost: float, req_cost: float = 1.0, enable_profiling: bool = False) -> None:
         """
         Block until both token and request buckets have enough capacity, then consume the requested amounts.
         
@@ -59,6 +62,7 @@ class TokenBucketLimiter:
             token_cost (float): Estimated number of tokens required for the operation (e.g., prompt + completion).
             req_cost (float): Number of request units to consume (defaults to 1.0).
         """
+        timer = perf_counter() if enable_profiling and profiling.is_enabled() else None
         with self.cond:
             while True:
                 self._refill()
@@ -94,6 +98,10 @@ class TokenBucketLimiter:
                     except Exception:
                         pass
                 self.cond.wait(timeout=min(max(wait_req, 0.01), max(wait_tok, 0.01), 30.0))
+        if timer is not None:
+            elapsed_ms = (perf_counter() - timer) * 1000
+            if elapsed_ms > 10:
+                profiling.log("rate_limiter", "acquire", elapsed_ms, context=f"limiter={self.name}")
 
 
 _LIMITERS: Dict[str, TokenBucketLimiter] = {}

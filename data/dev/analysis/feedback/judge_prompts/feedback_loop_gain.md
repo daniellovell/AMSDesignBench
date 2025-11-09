@@ -4,7 +4,7 @@
 
 {path:feedback_common_instructions.md}
 
-Scoring: compute `overall = {weight_loop_gain_expression}*scores.loop_gain_expression + {weight_grounded_evidence}*scores.grounded_evidence`.
+Scoring: compute the overall score as a weighted sum: `overall = {weight_loop_gain_expression}*scores.loop_gain_expression + {weight_grounded_evidence}*scores.grounded_evidence`. **IMPORTANT: Output the computed numeric result (e.g., 0.75) in the `overall` field, NOT the formula itself.**
 
 ## Criteria
 - **loop_gain_expression** — Award credit when the answer states the loop gain described in the Answer Key without leaving symbolic placeholders undefined. Penalize confusion between loop gain and closed-loop gain or contradictions.

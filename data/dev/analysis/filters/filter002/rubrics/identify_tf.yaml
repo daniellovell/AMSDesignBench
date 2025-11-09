@@ -2,6 +2,6 @@ weight_topology: 0.35
 weight_tf: 0.35
 weight_grounded_evidence: 0.3
 tf_target: H(s) = s/(1 + s)
-tf_equivalents: "H(s) = s/(1 + s/\u03C9c) with \u03C9c normalized"
+tf_equivalents: "H(s) = s/(1 + s/w_c) with w_c normalized"
 grounded_min_refs: 2
 {path:_filters_rubric_template.yaml}

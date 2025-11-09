@@ -2,10 +2,12 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List
 import time
+from time import perf_counter
 import random as _rnd
 import re
 from .base import BaseAdapter
 from ..utils.rate_limiter import get_limiter
+from ..utils import profiling
 
 try:
     from openai import OpenAI
@@ -108,7 +110,11 @@ class OpenAIAdapter(BaseAdapter):
                 rpm = float(os.getenv("OPENAI_RPM", 0) or 0)
                 tpm = float(os.getenv("OPENAI_TPM", 0) or 0)
                 if rpm > 0 or tpm > 0:
-                    get_limiter("openai", rpm=rpm, tpm=tpm).acquire(token_cost=est, req_cost=1.0)
+                    get_limiter("openai", rpm=rpm, tpm=tpm).acquire(
+                        token_cost=est,
+                        req_cost=1.0,
+                        enable_profiling=profiling.is_enabled(),
+                    )
             except Exception:
                 pass
             # gpt-5 family can consume the entire completion budget as reasoning
@@ -139,7 +145,15 @@ class OpenAIAdapter(BaseAdapter):
                 # Parameter adaptation loop
                 for _ in range(3):
                     try:
+                        api_timer = perf_counter() if profiling.is_enabled() else None
                         resp = self.client.chat.completions.create(**params)
+                        if api_timer is not None:
+                            profiling.log(
+                                "api",
+                                "call",
+                                (perf_counter() - api_timer) * 1000,
+                                context=f"adapter={self.name} model={self.model}",
+                            )
                         break
                     except Exception as e:
                         emsg = str(getattr(e, "message", e))
@@ -193,12 +207,20 @@ class OpenAIAdapter(BaseAdapter):
                 while attempt < max_attempts and not text:
                     attempt += 1
                     try:
+                        api_timer2 = perf_counter() if profiling.is_enabled() else None
                         r2 = self.client.responses.create(
                             model=self.model,
                             instructions=SYS_PROMPT,
                             input=user,
                             max_output_tokens=self.max_tokens,
                         )
+                        if api_timer2 is not None:
+                            profiling.log(
+                                "api",
+                                "call",
+                                (perf_counter() - api_timer2) * 1000,
+                                context=f"adapter={self.name} model={self.model} endpoint=responses",
+                            )
                         text = (getattr(r2, "output_text", None) or "").strip()
                         if not text:
                             try:

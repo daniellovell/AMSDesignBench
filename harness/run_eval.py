@@ -3,9 +3,11 @@ import argparse
 import json
 import os
 import sys
+import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from time import perf_counter
 import hashlib
 import math
 import random
@@ -23,11 +25,13 @@ if __package__ in (None, ""):
     from harness.scoring.groundedness import groundedness  # type: ignore
     from harness.reporting.render import generate_report, generate_outputs_index  # type: ignore
     from harness.utils.template import render_template  # type: ignore
+    from harness.utils import profiling  # type: ignore
 else:
     from .types import Inventory, Question, EvalItem
     from .scoring.groundedness import groundedness
     from .reporting.render import generate_report, generate_outputs_index
     from .utils.template import render_template
+    from .utils import profiling
 
 
 import importlib
@@ -75,6 +79,16 @@ def get_adapter(name: str, **kwargs):
                 ADAPTERS["openrouter"] = build_openrouter
             except Exception:
                 pass
+        # Optional Google adapter
+        try:
+            mod5 = importlib.import_module("harness.adapters.google")
+            ADAPTERS["google"] = getattr(mod5, "build")
+        except Exception:
+            try:
+                from .adapters.google import build as build_google
+                ADAPTERS["google"] = build_google
+            except Exception:
+                pass
     if name not in ADAPTERS:
         raise ValueError(f"Unknown adapter: {name}")
     build_fn = ADAPTERS[name]
@@ -103,6 +117,9 @@ def parse_model_spec(spec: str) -> tuple[str, Dict[str, Any]]:
         # For OpenRouter, pass model name through
         if name == "openrouter" and rest:
             return name, {"model": rest}
+        # For Google, map to underlying model name
+        if name == "google" and rest:
+            return name, {"model": rest}
         # Future adapters can parse additional kv-pairs here
         return name, {}
     return spec.strip(), {}
@@ -120,7 +137,7 @@ def normalize_judge_model(spec: Optional[str]) -> Optional[str]:
         return None
     if ":" in cleaned:
         prefix, rest = cleaned.split(":", 1)
-        if prefix.strip().lower() in {"openai", "anthropic", "openrouter"}:
+        if prefix.strip().lower() in {"openai", "anthropic", "openrouter", "google"}:
             return rest.strip() or None
     return cleaned
 
@@ -708,6 +725,11 @@ def main():
     ap.add_argument("--judge-model", "--judge_model", dest="judge_model", default=None, help="override judge model name")
     ap.add_argument("--model-workers", type=int, default=0, help="parallel model workers (0 = run all models in parallel)")
     ap.add_argument("--item-workers", type=int, default=8, help="per-model concurrent workers for items/questions")
+    ap.add_argument(
+        "--enable-profiling",
+        action="store_true",
+        help="Enable detailed performance profiling logs",
+    )
     # Judge tuning
     ap.add_argument("--judge-rpm", type=float, default=None, help="Rate limit RPM for judge API (sets OPENAI_JUDGE_RPM)")
     ap.add_argument("--judge-tpm", type=float, default=None, help="Token per minute limit for judge API (sets OPENAI_JUDGE_TPM)")
@@ -715,6 +737,8 @@ def main():
     ap.add_argument("--judge-concurrency", type=int, default=None, help="Max concurrent judge calls (sets OPENAI_JUDGE_CONCURRENCY)")
     args = ap.parse_args()
     # Judge is always enabled; no flag required
+
+    profiling.set_enabled(args.enable_profiling)
 
     # Apply judge tuning via environment for scorer module
     if args.judge_rpm is not None:
@@ -734,6 +758,10 @@ def main():
     # Prompts are referenced per-item: resolved as (item_dir/../prompts/<prompt_template>)
     outputs_root = Path(cfg.get("paths", {}).get("outputs_root", "outputs"))
     outputs_root.mkdir(parents=True, exist_ok=True)
+
+    judge_reasoning_effort_cfg = eval_cfg.get("judge_reasoning_effort")
+    if judge_reasoning_effort_cfg is not None and not os.getenv("OPENAI_JUDGE_REASONING_EFFORT"):
+        os.environ["OPENAI_JUDGE_REASONING_EFFORT"] = str(judge_reasoning_effort_cfg)
 
     judge_model_cfg = eval_cfg.get("judge_model")
     judge_model_spec = args.judge_model if args.judge_model is not None else judge_model_cfg
@@ -1084,10 +1112,16 @@ def main():
     def run_for_model(slug: str):
         nonlocal total
         adapter = adapters[slug]
+        # Validate adapter is actually an adapter object, not a string
+        if not hasattr(adapter, 'predict'):
+            raise TypeError(f"Expected adapter object for '{slug}', got {type(adapter).__name__}: {adapter}")
+        if not hasattr(adapter, 'name'):
+            raise TypeError(f"Adapter object for '{slug}' missing 'name' attribute: {type(adapter).__name__}")
         task_id = model_tasks[slug]
 
         def process_q(it: EvalItem, q: Question):
             nonlocal total
+            item_timer = perf_counter() if profiling.is_enabled() else None
             item_dir = Path(it.item_dir)
             inv_ids = it.inventory.all_ids()
             # Prompt
@@ -1305,6 +1339,7 @@ def main():
 
             # Predict
             error_msg: str | None = None
+            pred_timer = perf_counter() if profiling.is_enabled() else None
             try:
                 pred = adapter.predict([
                     {
@@ -1318,7 +1353,15 @@ def main():
                 ])[0]
             except Exception as e:
                 pred = ""
-                error_msg = str(getattr(e, "message", e))
+                error_msg = str(getattr(e, "message", e)) or str(e)
+                # Print error to stderr so it's visible to the user - CRITICAL: never fail silently
+                print(f"[ERROR] Prediction failed for {Path(it.item_dir).name}/{q.id}: {error_msg}", file=sys.stderr, flush=True)
+                print(f"[ERROR] Full traceback:", file=sys.stderr, flush=True)
+                traceback.print_exc(file=sys.stderr)
+            finally:
+                if profiling.is_enabled() and pred_timer is not None:
+                    elapsed_ms = (perf_counter() - pred_timer) * 1000
+                    profiling.log("adapter", "predict", elapsed_ms, context=f"model={slug}")
 
             # Judge prompt (Markdown) and variables
             if not q.judge_prompt:
@@ -1708,6 +1751,10 @@ def main():
             with progress_lock:
                 progress.update(task_id, advance=1)
 
+            if profiling.is_enabled() and item_timer is not None:
+                total_ms = (perf_counter() - item_timer) * 1000
+                profiling.log("worker", "item_total", total_ms, context=f"item={Path(it.item_dir).name} question={q.id}")
+
         import time as _time
         item_timeout = float(os.getenv("EVAL_ITEM_TIMEOUT", "300.0"))  # 5 min per item default
         with ThreadPoolExecutor(max_workers=max(1, int(args.item_workers))) as item_pool:
@@ -1716,6 +1763,7 @@ def main():
                 for q in it.questions:
                     futs.append(item_pool.submit(process_q, it, q))
             for i, f in enumerate(futs):
+                wait_start = perf_counter() if profiling.is_enabled() else None
                 try:
                     # Add timeout to prevent indefinite hangs
                     f.result(timeout=item_timeout)
@@ -1737,9 +1785,22 @@ def main():
                     except Exception:
                         pass
                 except Exception as e:
+                    import traceback
                     print(f"[ERROR] Item {i+1}/{len(futs)} failed: {e}", file=sys.stderr, flush=True)
+                    print(f"[ERROR] Full traceback:", file=sys.stderr, flush=True)
+                    traceback.print_exc(file=sys.stderr)
                     # Continue processing other items
                     pass
+                finally:
+                    if profiling.is_enabled() and wait_start is not None:
+                        wait_ms = (perf_counter() - wait_start) * 1000
+                        if wait_ms > 100:
+                            profiling.log(
+                                "thread_pool",
+                                "item_future_wait",
+                                wait_ms,
+                                context=f"model={slug} index={i+1}/{len(futs)}",
+                            )
 
     with results_path.open("w") as f_combined:
         # Progress setup: one task per model
@@ -1761,17 +1822,23 @@ def main():
             with ThreadPoolExecutor(max_workers=max_workers) as ex:
                 futures = [ex.submit(run_for_model, slug) for slug in model_slugs]
                 for i, f in enumerate(futures):
+                    wait_start = perf_counter() if profiling.is_enabled() else None
                     try:
-                        # Add timeout to prevent indefinite hangs
                         f.result(timeout=model_timeout)
                     except FutureTimeoutError:
-                        slug_affected = model_slugs[i] if i < len(model_slugs) else "unknown"
-                        print(f"[ERROR] Model {slug_affected} timed out after {model_timeout}s - continuing with remaining models", file=sys.stderr, flush=True)
-                        # Continue with other models
+                        print(f"[ERROR] Model {model_slugs[i]} timed out after {model_timeout}s", file=sys.stderr, flush=True)
                     except Exception as e:
-                        slug_affected = model_slugs[i] if i < len(model_slugs) else "unknown"
-                        print(f"[ERROR] Model {slug_affected} failed: {e}", file=sys.stderr, flush=True)
-                        # Continue with other models
+                        print(f"[ERROR] Model {model_slugs[i]} failed: {e}", file=sys.stderr, flush=True)
+                    finally:
+                        if profiling.is_enabled() and wait_start is not None:
+                            wait_ms = (perf_counter() - wait_start) * 1000
+                            if wait_ms > 100:
+                                profiling.log(
+                                    "thread_pool",
+                                    "model_future_wait",
+                                    wait_ms,
+                                    context=f"model={model_slugs[i]} index={i+1}/{len(futures)}",
+                                )
 
     def _force_remove(path: Path) -> None:
         """Forcefully remove a file, directory, or symlink, handling broken symlinks and Windows quirks."""
@@ -1865,6 +1932,18 @@ def main():
         print(f"[green]Updated outputs index:[/green] {outputs_index}")
     except Exception as e:
         print(f"[yellow]Outputs index update failed:[/yellow] {e}")
+
+    if profiling.is_enabled():
+        try:
+            profile_log, profile_summary = profiling.write_reports(out_dir / "profiling")
+            if profile_log:
+                print(f"[green]Profiling log:[/green] {profile_log}")
+            else:
+                print("[yellow]Profiling enabled but no events were recorded.")
+            if profile_summary:
+                print(f"[green]Profiling summary:[/green] {profile_summary}")
+        except Exception as e:
+            print(f"[yellow]Profiling export failed:[/yellow] {e}")
 
 
 if __name__ == "__main__":

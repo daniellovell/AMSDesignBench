@@ -2,10 +2,12 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List
 import time
+from time import perf_counter
 import random as _rnd
 import re
 from .base import BaseAdapter
 from ..utils.rate_limiter import get_limiter
+from ..utils import profiling
 
 try:
     import anthropic  # type: ignore
@@ -78,7 +80,11 @@ class AnthropicAdapter(BaseAdapter):
                 rpm = float(os.getenv("ANTHROPIC_RPM", 0) or 0)
                 tpm = float(os.getenv("ANTHROPIC_TPM", 0) or 0)
                 if rpm > 0 or tpm > 0:
-                    get_limiter("anthropic", rpm=rpm, tpm=tpm).acquire(token_cost=est, req_cost=1.0)
+                    get_limiter("anthropic", rpm=rpm, tpm=tpm).acquire(
+                        token_cost=est,
+                        req_cost=1.0,
+                        enable_profiling=profiling.is_enabled(),
+                    )
             except Exception:
                 pass
 
@@ -97,7 +103,15 @@ class AnthropicAdapter(BaseAdapter):
             while attempt < max_attempts:
                 attempt += 1
                 try:
+                    api_timer = perf_counter() if profiling.is_enabled() else None
                     resp = self.client.messages.create(**params)  # type: ignore[arg-type]
+                    if api_timer is not None:
+                        profiling.log(
+                            "api",
+                            "call",
+                            (perf_counter() - api_timer) * 1000,
+                            context=f"adapter={self.name} model={self.model}",
+                        )
                     break
                 except Exception as e:
                     msg = (str(getattr(e, "message", e)) or str(e)).lower()
