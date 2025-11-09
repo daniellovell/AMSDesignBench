@@ -406,9 +406,11 @@ def judge_answer(
     total_timer = perf_counter() if profiling.is_enabled() else None
 
     def _log_total_duration() -> None:
+        """Log the total duration of the judge scoring operation."""
         if total_timer is not None:
             profiling.log("judge", "score", (perf_counter() - total_timer) * 1000, context=f"model={judge_model}")
 
+    # Wrap main logic in try-finally to ensure profiling is logged on all exit paths
     try:
         with _sem():
             while attempt < max_attempts and resp is None:
