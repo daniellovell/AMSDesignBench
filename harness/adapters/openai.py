@@ -25,11 +25,13 @@ SYS_PROMPT = (
 class OpenAIAdapter(BaseAdapter):
     name = "openai"
 
-    def __init__(self, model: str | None = None, temperature: float = 0.2, max_tokens: int = 800):
+    def __init__(self, model: str | None = None, temperature: float = 0.2, max_tokens: int = 800, reasoning_effort: str | None = None):
         self.model = model or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.temperature = float(os.getenv("OPENAI_TEMPERATURE", temperature))
         self.max_tokens = int(os.getenv("OPENAI_MAX_TOKENS", max_tokens))
+        # Use provided reasoning_effort, or fall back to env var
+        self.reasoning_effort = reasoning_effort or os.getenv("OPENAI_REASONING_EFFORT")
         if OpenAI is None:
             raise RuntimeError("openai package not installed. pip install openai")
         if not self.api_key:
@@ -92,10 +94,18 @@ class OpenAIAdapter(BaseAdapter):
                 pass
             # gpt-5 family can consume the entire completion budget as reasoning
             # and return empty text when a hard cap is set. Prefer no cap.
-            if "gpt-5" in str(self.model).lower():
+            is_gpt5 = "gpt-5" in str(self.model).lower()
+            use_responses_api_directly = False
+            if is_gpt5:
                 params.pop("max_tokens", None)
                 # Temperature typically unsupported for gpt-5; let default apply
                 params.pop("temperature", None)
+                # If reasoning_effort is specified, use Responses API directly
+                # (Chat Completions API doesn't support reasoning parameter)
+                if self.reasoning_effort:
+                    effort = self.reasoning_effort.strip().lower()
+                    if effort not in {"", "default", "auto"}:
+                        use_responses_api_directly = True
             # Some models (gpt-5 family) only support default temperature; retry without it.
             # Some models require max_completion_tokens instead of max_tokens.
             # Add robust backoff handling for transient errors/rate limits.
@@ -113,58 +123,70 @@ class OpenAIAdapter(BaseAdapter):
             base_delay = float(os.getenv("OPENAI_BACKOFF_BASE", 1.0))
             attempt = 0
             last_exc: Exception | None = None
-            while attempt < max_attempts:
-                attempt += 1
-                # Parameter adaptation loop
-                for _ in range(3):
-                    try:
-                        api_timer = perf_counter() if profiling.is_enabled() else None
-                        resp = self.client.chat.completions.create(**params)
-                        if api_timer is not None:
-                            profiling.log(
-                                "api",
-                                "call",
-                                (perf_counter() - api_timer) * 1000,
-                                context=f"adapter={self.name} model={self.model}",
-                            )
-                        break
-                    except Exception as e:
-                        emsg = str(getattr(e, "message", e))
-                        txt = (emsg or str(e)).lower()
-                        adapted = False
-                        if "max_tokens" in txt and "max_completion_tokens" in txt:
-                            params.pop("max_tokens", None)
-                            params["max_completion_tokens"] = self.max_tokens
-                            adapted = True
-                        if "temperature" in txt and ("unsupported" in txt or "does not support" in txt or "only the default" in txt):
-                            params.pop("temperature", None)
-                            adapted = True
-                        if not adapted:
-                            last_exc = e
+            text = ""
+            
+            # If reasoning effort is specified for GPT-5, use Responses API directly
+            if use_responses_api_directly:
+                # Skip Chat Completions API and go straight to Responses API
+                pass
+            else:
+                # Try Chat Completions API first
+                while attempt < max_attempts:
+                    attempt += 1
+                    # Parameter adaptation loop
+                    for _ in range(3):
+                        try:
+                            api_timer = perf_counter() if profiling.is_enabled() else None
+                            resp = self.client.chat.completions.create(**params)
+                            if api_timer is not None:
+                                profiling.log(
+                                    "api",
+                                    "call",
+                                    (perf_counter() - api_timer) * 1000,
+                                    context=f"adapter={self.name} model={self.model}",
+                                )
+                            text = (getattr(resp.choices[0].message, "content", None) or "").strip()
                             break
-                else:
-                    last_exc = RuntimeError("parameter adaptation failed")
-                if last_exc is None and 'resp' in locals():
-                    # Success
+                        except Exception as e:
+                            emsg = str(getattr(e, "message", e))
+                            txt = (emsg or str(e)).lower()
+                            adapted = False
+                            if "max_tokens" in txt and "max_completion_tokens" in txt:
+                                params.pop("max_tokens", None)
+                                params["max_completion_tokens"] = self.max_tokens
+                                adapted = True
+                            if "temperature" in txt and ("unsupported" in txt or "does not support" in txt or "only the default" in txt):
+                                params.pop("temperature", None)
+                                adapted = True
+                            if not adapted:
+                                last_exc = e
+                                break
+                    else:
+                        last_exc = RuntimeError("parameter adaptation failed")
+                    if text:
+                        # Success - got text from Chat Completions
+                        break
+                    if last_exc is None:
+                        continue
+                    # Transient/Rate limit handling
+                    err_txt = str(getattr(last_exc, 'message', last_exc) or '').lower()
+                    is_rate = ("rate limit" in err_txt) or ("429" in err_txt) or ("tpm" in err_txt) or ("rpm" in err_txt)
+                    is_overload = ("service unavailable" in err_txt) or ("overloaded" in err_txt) or ("temporarily" in err_txt) or ("timeout" in err_txt)
+                    if is_rate or is_overload:
+                        # Compute delay: try parse, else exponential backoff with jitter
+                        parsed = _parse_retry_after(str(getattr(last_exc, 'message', last_exc) or ''))
+                        delay = parsed if parsed > 0 else (base_delay * (2 ** (attempt - 1)))
+                        delay += _rnd.uniform(0.1, 0.5)
+                        time.sleep(min(delay, 20.0))
+                        last_exc = None
+                        continue
+                    # Not recoverable - will fall through to Responses API fallback
                     break
-                # Transient/Rate limit handling
-                err_txt = str(getattr(last_exc, 'message', last_exc) or '').lower()
-                is_rate = ("rate limit" in err_txt) or ("429" in err_txt) or ("tpm" in err_txt) or ("rpm" in err_txt)
-                is_overload = ("service unavailable" in err_txt) or ("overloaded" in err_txt) or ("temporarily" in err_txt) or ("timeout" in err_txt)
-                if is_rate or is_overload:
-                    # Compute delay: try parse, else exponential backoff with jitter
-                    parsed = _parse_retry_after(str(getattr(last_exc, 'message', last_exc) or ''))
-                    delay = parsed if parsed > 0 else (base_delay * (2 ** (attempt - 1)))
-                    delay += _rnd.uniform(0.1, 0.5)
-                    time.sleep(min(delay, 20.0))
-                    last_exc = None
-                    continue
-                # Not recoverable
-                raise last_exc
-            if last_exc is not None:
-                raise last_exc
+                if last_exc is not None and not text:
+                    # Chat Completions failed, will try Responses API below
+                    pass
+            
             # Extract text; if empty, fall back to Responses API for newer models
-            text = (getattr(resp.choices[0].message, "content", None) or "").strip()
             if not text:
                 # Try Responses API with the same backoff strategy
                 attempt = 0
@@ -173,12 +195,20 @@ class OpenAIAdapter(BaseAdapter):
                     attempt += 1
                     try:
                         api_timer2 = perf_counter() if profiling.is_enabled() else None
-                        r2 = self.client.responses.create(
-                            model=self.model,
-                            instructions=SYS_PROMPT,
-                            input=user,
-                            max_output_tokens=self.max_tokens,
-                        )
+                        responses_params: Dict[str, Any] = {
+                            "model": self.model,
+                            "instructions": SYS_PROMPT,
+                            "input": user,
+                        }
+                        # Only set max_output_tokens if not GPT-5 (GPT-5 prefers no cap)
+                        if not is_gpt5:
+                            responses_params["max_output_tokens"] = self.max_tokens
+                        # Add reasoning effort for gpt-5 models
+                        if is_gpt5 and self.reasoning_effort:
+                            effort = self.reasoning_effort.strip().lower()
+                            if effort not in {"", "default", "auto"}:
+                                responses_params["reasoning"] = {"effort": effort}
+                        r2 = self.client.responses.create(**responses_params)
                         if api_timer2 is not None:
                             profiling.log(
                                 "api",
@@ -223,7 +253,7 @@ class OpenAIAdapter(BaseAdapter):
         return outs
 
 
-def build(model: str | None = None, temperature: float | None = None, max_tokens: int | None = None) -> OpenAIAdapter:
+def build(model: str | None = None, temperature: float | None = None, max_tokens: int | None = None, reasoning_effort: str | None = None) -> OpenAIAdapter:
     kwargs = {}
     if model is not None:
         kwargs["model"] = model
@@ -231,4 +261,6 @@ def build(model: str | None = None, temperature: float | None = None, max_tokens
         kwargs["temperature"] = temperature
     if max_tokens is not None:
         kwargs["max_tokens"] = max_tokens
+    if reasoning_effort is not None:
+        kwargs["reasoning_effort"] = reasoning_effort
     return OpenAIAdapter(**kwargs)

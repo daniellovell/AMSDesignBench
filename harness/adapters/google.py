@@ -32,7 +32,7 @@ SYS_PROMPT = (
 class GoogleAdapter(BaseAdapter):
     name = "google"
 
-    def __init__(self, model: str | None = None, temperature: float = 0.2, max_tokens: int = 800):
+    def __init__(self, model: str | None = None, temperature: float = 0.2, max_tokens: int = 800, thinking_budget: str | int | None = None):
         """Configure the Gemini client used for every request."""
         if genai is None:
             raise RuntimeError("google-genai package not installed. pip install google-genai")
@@ -42,6 +42,21 @@ class GoogleAdapter(BaseAdapter):
             raise RuntimeError("GOOGLE_API_KEY env var not set.")
         self.temperature = float(os.getenv("GOOGLE_TEMPERATURE", temperature))
         self.max_tokens = int(os.getenv("GOOGLE_MAX_TOKENS", max_tokens))
+        # Use provided thinking_budget, or fall back to env var
+        # If thinking_budget is a string (effort level), map it to numeric value
+        if thinking_budget is not None:
+            if isinstance(thinking_budget, str):
+                # Map effort levels to numeric thinking budget values
+                effort_map = {
+                    "low": 512,
+                    "medium": 2048,
+                    "high": 8192,
+                }
+                self.thinking_budget = effort_map.get(thinking_budget.lower().strip(), 0)
+            else:
+                self.thinking_budget = int(thinking_budget)
+        else:
+            self.thinking_budget = None
         timeout_seconds = float(os.getenv("GOOGLE_TIMEOUT", "60.0"))
         # Initialize client with timeout via HttpOptions if available
         client_kwargs: Dict[str, Any] = {"api_key": self.api_key}
@@ -162,7 +177,11 @@ class GoogleAdapter(BaseAdapter):
 
     def _build_generation_config(self) -> Optional[Any]:
         """Assemble the final GenerateContentConfig with knobs we expose."""
-        thinking_budget = int(os.getenv("GOOGLE_THINKING_BUDGET", "0"))
+        # Use instance thinking_budget if set, otherwise fall back to env var
+        if self.thinking_budget is not None:
+            thinking_budget = self.thinking_budget
+        else:
+            thinking_budget = int(os.getenv("GOOGLE_THINKING_BUDGET", "0"))
         config_kwargs: Dict[str, Any] = {}
         if self.temperature is not None:
             config_kwargs["temperature"] = self.temperature
@@ -241,7 +260,7 @@ class GoogleAdapter(BaseAdapter):
         return 0.0
 
 
-def build(model: str | None = None, temperature: float | None = None, max_tokens: int | None = None) -> GoogleAdapter:
+def build(model: str | None = None, temperature: float | None = None, max_tokens: int | None = None, thinking_budget: str | int | None = None) -> GoogleAdapter:
     kwargs: Dict[str, Any] = {}
     if model is not None:
         kwargs["model"] = model
@@ -249,5 +268,7 @@ def build(model: str | None = None, temperature: float | None = None, max_tokens
         kwargs["temperature"] = temperature
     if max_tokens is not None:
         kwargs["max_tokens"] = max_tokens
+    if thinking_budget is not None:
+        kwargs["thinking_budget"] = thinking_budget
     return GoogleAdapter(**kwargs)
 
