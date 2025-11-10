@@ -1,5 +1,5 @@
-weight_gain_expression: "0.70"
-weight_grounded_evidence: "0.30"
+weight_gain_expression: "0.80"
+weight_grounded_evidence: "0.20"
 gain_expression_target: "Vout/Iin = -R1."
 gain_expression_guidance: "Emphasize the transimpedance set by the feedback resistor and the negative sign from the inverting configuration."
 gain_expression_reject: "Vout/Iin = R1; Vout/Iin = +R1; Vout/Iin = 1/R1; missing negative sign."

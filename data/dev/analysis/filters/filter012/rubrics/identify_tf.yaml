@@ -1,6 +1,6 @@
 weight_topology: 0.35
-weight_tf: 0.35
-weight_grounded_evidence: 0.3
+weight_tf: 0.55
+weight_grounded_evidence: 0.1
 tf_target: H(s) = (ω₀/Q)s/(s^2 + (ω₀/Q)s + ω₀²)
 tf_equivalents: "H(s) = (ω₀/Q)s/(s^2 + (ω₀/Q)s + ω₀²) with ω₀ and Q normalized"
 grounded_min_refs: 2
