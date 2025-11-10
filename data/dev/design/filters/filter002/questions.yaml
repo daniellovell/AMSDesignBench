@@ -2,16 +2,16 @@ questions:
 - id: filter002_design
   track: design
   modality: spice_netlist
-  judge_prompt: ../judge_prompts/design_filter.md
-  judge_id: design_filter
   prompt_template: ../prompts/design_filter.txt
   artifact_path: netlist_template.sp
   attachments:
-    - path: netlist_template.sp
-      description: "SPICE netlist template with BLANK placeholders for component values"
+  - path: netlist_template.sp
+    description: SPICE netlist template with BLANK placeholders for component values
   meta:
     family: filters
     bench_version: 0.1.0
     aspect: design_filter
   verification:
-    enabled: false
+    enabled: true
+    simulator: ngspice
+    spec_file: verification/design_spec.json

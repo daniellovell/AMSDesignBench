@@ -12,18 +12,16 @@ questions:
 - id: ota011_design_with_verification_spice_netlist
   track: design
   modality: spice_netlist
-  rubric_id: design_folded_cascode_se_hs_pmos_verified
-  rubric_path: rubrics/design_folded_cascode_se_hs_pmos_verified.json
   prompt_template: design_prompt.txt
   require_sections: []
-  answer_format: "spice_netlist"
+  answer_format: spice_netlist
   attachments:
-    - path: netlist_template.sp
-      description: "SPICE netlist template with BLANK parameters"
-    - path: ../../../../../pdk/skywater130/gm_id_tables/sky130_nfet_gmid_lut.json
-      description: "Complete NFET Gm/ID lookup table for SKY130"
-    - path: ../../../../../pdk/skywater130/gm_id_tables/sky130_pfet_gmid_lut.json
-      description: "Complete PFET Gm/ID lookup table for SKY130"
+  - path: netlist_template.sp
+    description: SPICE netlist template with BLANK parameters
+  - path: ../../../../../pdk/skywater130/gm_id_tables/sky130_nfet_gmid_lut.json
+    description: Complete NFET Gm/ID lookup table for SKY130
+  - path: ../../../../../pdk/skywater130/gm_id_tables/sky130_pfet_gmid_lut.json
+    description: Complete PFET Gm/ID lookup table for SKY130
   verification:
     enabled: true
     simulator: ngspice

@@ -1,1 +1,1 @@
-Design a second-order passive RLC band-pass filter with center frequency f0 = 50.3 kHz and quality factor Q ≈ 3.16. Use f0 = 1/(2π√LC) and Q = (1/R)√(L/C).
+Design a second-order passive RLC band-pass filter with center frequency f0 = 50.3 kHz and quality factor Q ≈ 3.16..

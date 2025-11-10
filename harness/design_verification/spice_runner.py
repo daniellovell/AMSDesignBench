@@ -114,6 +114,10 @@ class SpiceRunner:
                 file_metrics = self._parse_results(results_content, sim_dir)
                 metrics.update(file_metrics)
             
+            # Add measurement frequencies to metrics if available (for filters)
+            if hasattr(self, '_last_measurement_freqs'):
+                metrics['_measurement_frequencies'] = self._last_measurement_freqs
+            
             warnings = self._extract_warnings(result.stdout)
             
             return SimulationResults(
@@ -164,6 +168,47 @@ class SpiceRunner:
             elif cl_str.endswith('f'):
                 cl = float(cl_str[:-1]) * 1e-15
         
+        # Calculate dynamic measurement frequencies for filters
+        passband_freq = 10  # Default for non-filter circuits
+        stopband_freq = 100000  # Default for non-filter circuits
+        
+        filter_type = design_spec.get('filter_type')
+        if filter_type:
+            # Find characteristic frequency
+            char_freq = None
+            for spec_name, spec_data in specs.items():
+                if 'cutoff_frequency' in spec_name:
+                    char_freq = spec_data.get('target') or spec_data.get('value')
+                    break
+                elif 'center_frequency' in spec_name:
+                    char_freq = spec_data.get('target') or spec_data.get('value')
+                    break
+                elif 'notch_frequency' in spec_name:
+                    char_freq = spec_data.get('target') or spec_data.get('value')
+                    break
+                elif 'characteristic_frequency' in spec_name:
+                    char_freq = spec_data.get('target') or spec_data.get('value')
+                    break
+            
+            if char_freq:
+                # Calculate measurement frequencies based on filter type
+                if filter_type in ['low_pass', 'band_stop']:
+                    # Passband at fc/10, stopband at fc*10
+                    passband_freq = max(10, char_freq / 10)
+                    stopband_freq = min(1e6, char_freq * 10)
+                elif filter_type == 'high_pass':
+                    # Stopband at fc/10, passband at fc*10
+                    stopband_freq = max(10, char_freq / 10)
+                    passband_freq = min(1e6, char_freq * 10)
+                elif filter_type in ['band_pass', 'all_pass']:
+                    # For band-pass: passband at fc, stopband at fc/10
+                    passband_freq = char_freq
+                    stopband_freq = max(10, char_freq / 10)
+                else:
+                    # Default: use fc/10 and fc*10
+                    passband_freq = max(10, char_freq / 10)
+                    stopband_freq = min(1e6, char_freq * 10)
+        
         # Substitutions
         pdk_models = self.pdk_path / "models"
         output_file = sim_dir / "results.txt"
@@ -177,42 +222,63 @@ class SpiceRunner:
             VDD=vdd,
             CL=cl,
             VCM=vcm,
-            TEMP=temp
+            TEMP=temp,
+            passband_freq=passband_freq,
+            stopband_freq=stopband_freq
         )
+        
+        # Store measurement frequencies in a temporary attribute for later retrieval
+        self._last_measurement_freqs = {
+            'passband_freq': passband_freq,
+            'stopband_freq': stopband_freq
+        }
         
         return testbench
     
     def _find_template(self, topology: str, design_id: str = None) -> Path:
         """Find appropriate testbench template for topology."""
         # Map topology to template
-        templates_base = Path(__file__).parent.parent.parent / "data" / "dev" / "design" / "ota"
+        design_base = Path(__file__).parent.parent.parent / "data" / "dev" / "design"
         
         # First, try to match by design_id if provided (most specific)
         if design_id:
-            specific_template = templates_base / design_id / "verification" / "testbench_template.sp"
-            if specific_template.exists():
-                return specific_template
+            # Try filters first
+            for family in ['filters', 'ota', 'feedback']:
+                specific_template = design_base / family / design_id / "verification" / "testbench_template.sp"
+                if specific_template.exists():
+                    return specific_template
         
-        # Try to find matching topology
-        for ota_dir in sorted(templates_base.glob("ota*")):
-            verification_dir = ota_dir / "verification"
-            if verification_dir.exists():
-                template = verification_dir / "testbench_template.sp"
-                if template.exists():
-                    # Read design_spec to check if topology matches
-                    spec_file = verification_dir / "design_spec.json"
-                    if spec_file.exists():
-                        import json
-                        with open(spec_file, 'r') as f:
-                            spec = json.load(f)
-                        if spec.get('topology') == topology:
-                            return template
+        # Try to find matching topology in all design families
+        for family in ['filters', 'ota', 'feedback']:
+            family_dir = design_base / family
+            if not family_dir.exists():
+                continue
+            
+            for item_dir in sorted(family_dir.glob("*")):
+                if not item_dir.is_dir():
+                    continue
+                verification_dir = item_dir / "verification"
+                if verification_dir.exists():
+                    template = verification_dir / "testbench_template.sp"
+                    if template.exists():
+                        # Read design_spec to check if topology matches
+                        spec_file = verification_dir / "design_spec.json"
+                        if spec_file.exists():
+                            import json
+                            with open(spec_file, 'r') as f:
+                                spec = json.load(f)
+                            if spec.get('topology') == topology:
+                                return template
         
         # Fallback: return first found template
-        for ota_dir in sorted(templates_base.glob("ota*")):
-            template = ota_dir / "verification" / "testbench_template.sp"
-            if template.exists():
-                return template
+        for family in ['filters', 'ota', 'feedback']:
+            family_dir = design_base / family
+            if not family_dir.exists():
+                continue
+            for item_dir in sorted(family_dir.glob("*")):
+                template = item_dir / "verification" / "testbench_template.sp"
+                if template.exists():
+                    return template
         
         raise FileNotFoundError("No testbench template found")
     

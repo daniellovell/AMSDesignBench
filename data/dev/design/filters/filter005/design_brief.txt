@@ -1,1 +1,1 @@
-Design a fourth-order cascaded active biquad low-pass filter with two Sallen-Key stages. Stage 1: f01 = 10 kHz, Stage 2: f02 = 15 kHz. Use ideal op-amps (OPAMP subcircuit).
+Design a fourth-order cascaded active biquad low-pass filter with two Sallen-Key stages. Stage 1: f01 = 10 kHz, Stage 2: f02 = 15 kHz.. Use ideal op-amps (OPAMP subcircuit).

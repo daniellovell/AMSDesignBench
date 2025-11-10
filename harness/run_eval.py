@@ -284,16 +284,24 @@ def load_questions(item_dir: Path) -> List[Question]:
                     qdict["require_sections"] = sections
         if not qdict.get("require_sections"):
             qdict["require_sections"] = ["Answer"]
+        
+        # Skip judge defaults for verification-only questions
+        is_verification_only = (
+            qdict.get("verification", {}).get("enabled") and
+            not qdict.get("judge_prompt") and
+            not qdict.get("judge_id")
+        )
+        
         # Judge prompt defaults: map prompt_template stem to ../judge_prompts/<stem>.md
-        if not qdict.get("judge_prompt"):
+        if not qdict.get("judge_prompt") and not is_verification_only:
             try:
                 stem = Path(str(qdict["prompt_template"]).strip()).stem
             except Exception:
                 stem = "rubric"
             qdict["judge_prompt"] = (Path("../judge_prompts") / f"{stem}.md").as_posix()
-        if not qdict.get("judge_id"):
+        if not qdict.get("judge_id") and not is_verification_only:
             try:
-                qdict["judge_id"] = Path(qdict["judge_prompt"]).stem
+                qdict["judge_id"] = Path(qdict["judge_prompt"]).stem if qdict.get("judge_prompt") else None
             except Exception:
                 qdict["judge_id"] = str(qdict.get("id") or "judge")
         # Default answer format to markdown for legacy items
@@ -1364,17 +1372,27 @@ def main():
                     elapsed_ms = (perf_counter() - pred_timer) * 1000
                     profiling.log("adapter", "predict", elapsed_ms, context=f"model={slug}")
 
-            # Judge prompt (Markdown) and variables
+            # Skip judge if no judge_prompt and verification is enabled (verification-only mode)
+            skip_judge = False
             if not q.judge_prompt:
-                raise SystemExit(f"Question {q.id} must specify judge_prompt relative to item_dir: {item_dir}")
-            jpath = (item_dir / q.judge_prompt)
-            if not jpath.exists():
-                alt = (item_dir.parent / "judge_prompts" / Path(q.judge_prompt).name)
-                if alt.exists():
-                    jpath = alt
+                if q.verification and q.verification.get("enabled"):
+                    skip_judge = True
                 else:
-                    raise SystemExit(f"Judge prompt not found for {q.id}: {jpath}")
-            rubric_md = jpath.read_text(encoding='utf-8')
+                    raise SystemExit(f"Question {q.id} must specify judge_prompt relative to item_dir: {item_dir}")
+            
+            # Judge prompt (Markdown) and variables
+            if not skip_judge:
+                jpath = (item_dir / q.judge_prompt)
+                if not jpath.exists():
+                    alt = (item_dir.parent / "judge_prompts" / Path(q.judge_prompt).name)
+                    if alt.exists():
+                        jpath = alt
+                    else:
+                        raise SystemExit(f"Judge prompt not found for {q.id}: {jpath}")
+                rubric_md = jpath.read_text(encoding='utf-8')
+            else:
+                rubric_md = None
+                jpath = None
             # Build an effective inventory depending on modality
             def _inventory_from_casir(text: str) -> Inventory:
                 try:
@@ -1454,47 +1472,145 @@ def main():
                 eff_inv = Inv(elements={}, nets=[], blocks={})
 
             # Render judge prompt with YAML variables under item_dir/rubrics/<stem>.yaml
-            stem = Path(jpath).stem
-            vars_yaml = item_dir / "rubrics" / f"{stem}.yaml"
-            vars_map: Dict[str, Any] = {}
+            if not skip_judge:
+                stem = Path(jpath).stem
+                vars_yaml = item_dir / "rubrics" / f"{stem}.yaml"
+                vars_map: Dict[str, Any] = {}
 
-            # Build runtime_vars from bug_info for template rendering
-            # Only emit runtime vars when a mutation actually occurred
-            # If no mutation happened, runtime_vars will be empty
-            runtime_vars = {k: str(v) for k, v in bug_info.items()} if bug_info else {}
-            
-            if vars_yaml.exists():
+                # Build runtime_vars from bug_info for template rendering
+                # Only emit runtime vars when a mutation actually occurred
+                # If no mutation happened, runtime_vars will be empty
+                runtime_vars = {k: str(v) for k, v in bug_info.items()} if bug_info else {}
+                
+                if vars_yaml.exists():
+                    try:
+                        # Render YAML as a template to allow includes and runtime vars
+                        vars_yaml_text = vars_yaml.read_text(encoding='utf-8')
+                        rendered_yaml = render_template(vars_yaml_text, runtime_vars, base_dir=vars_yaml.parent)
+                        vars_map = yaml.safe_load(rendered_yaml) or {}
+                    except Exception as e:
+                        print(f"[yellow]Warning: Failed to render/parse {vars_yaml}: {e}[/yellow]")
+                        vars_map = {}
+                # unwrap namespaced
+                if isinstance(vars_map, dict) and stem in vars_map and isinstance(vars_map[stem], dict):
+                    vars_map = vars_map[stem]
+
+                # Inject bug_info into vars_map for template rendering (debugging tasks)
+                if bug_info:
+                    vars_map.update({k: str(v) for k, v in bug_info.items()})
+                    # Derive expected_type and actual_type from bug_info if not present
+                    if "from_type" in bug_info and "expected_type" not in vars_map:
+                        vars_map["expected_type"] = str(bug_info["from_type"])
+                    if "to_type" in bug_info and "actual_type" not in vars_map:
+                        vars_map["actual_type"] = str(bug_info["to_type"])
+
+                # Merge runtime_vars and vars_map for judge prompt rendering
+                all_vars = {**runtime_vars, **{k: str(v) for k, v in vars_map.items()}}
+
+                # Note: For design tasks, answer keys are resolved via {modmux:answer_key} in templates
+                # No need to manually inject answer_key variable anymore
+
                 try:
-                    # Render YAML as a template to allow includes and runtime vars
-                    vars_yaml_text = vars_yaml.read_text(encoding='utf-8')
-                    rendered_yaml = render_template(vars_yaml_text, runtime_vars, base_dir=vars_yaml.parent)
-                    vars_map = yaml.safe_load(rendered_yaml) or {}
+                    rubric_md_rendered = render_template(rubric_md, all_vars, base_dir=jpath.parent, modality=q.modality)
                 except Exception as e:
-                    print(f"[yellow]Warning: Failed to render/parse {vars_yaml}: {e}[/yellow]")
-                    vars_map = {}
-            # unwrap namespaced
-            if isinstance(vars_map, dict) and stem in vars_map and isinstance(vars_map[stem], dict):
-                vars_map = vars_map[stem]
+                    raise SystemExit(f"Failed to render judge prompt for {q.id} at {jpath}: {e}")
 
-            # Inject bug_info into vars_map for template rendering (debugging tasks)
-            if bug_info:
-                vars_map.update({k: str(v) for k, v in bug_info.items()})
-                # Derive expected_type and actual_type from bug_info if not present
-                if "from_type" in bug_info and "expected_type" not in vars_map:
-                    vars_map["expected_type"] = str(bug_info["from_type"])
-                if "to_type" in bug_info and "actual_type" not in vars_map:
-                    vars_map["actual_type"] = str(bug_info["to_type"])
-
-            # Merge runtime_vars and vars_map for judge prompt rendering
-            all_vars = {**runtime_vars, **{k: str(v) for k, v in vars_map.items()}}
-
-            # Note: For design tasks, answer keys are resolved via {modmux:answer_key} in templates
-            # No need to manually inject answer_key variable anymore
-
-            try:
-                rubric_md_rendered = render_template(rubric_md, all_vars, base_dir=jpath.parent, modality=q.modality)
-            except Exception as e:
-                raise SystemExit(f"Failed to render judge prompt for {q.id} at {jpath}: {e}")
+            # Define objective scoring function
+            def _compute_objective_score(metrics: Dict[str, Any], design_spec: Dict[str, Any]) -> float:
+                """
+                Compute normalized objective score (0-1) based on how well metrics meet specifications.
+                1.0 = perfect match, 0.0 = completely fails specs
+                Uses normalized error: score = 1 - (error / max_error)
+                """
+                if not design_spec.get("specifications"):
+                    return 0.0
+                
+                spec_scores = []
+                
+                for spec_name, spec_data in design_spec["specifications"].items():
+                    # Map spec names to metric names
+                    metric_map = {
+                        "cutoff_frequency": "fc_low",
+                        "dc_gain": "dc_gain_db",
+                        "unity_gain_frequency": "unity_gain_freq",
+                        "phase_margin": "phase_margin",
+                        "power": "power",
+                        "passband_gain": "passband_gain",
+                        "stopband_attenuation": "stopband_gain",
+                        "center_frequency": "center_frequency",
+                        "quality_factor": "quality_factor",
+                        "notch_frequency": "notch_freq"
+                    }
+                    
+                    metric_name = metric_map.get(spec_name, spec_name)
+                    if metric_name not in metrics:
+                        continue
+                    
+                    value = metrics[metric_name]
+                    
+                    # Special handling for attenuation specs (negative dB, lower is better)
+                    is_attenuation = spec_name in ["stopband_attenuation", "notch_depth"]
+                    
+                    # Handle different spec types (target with tolerance, min, max)
+                    if "target" in spec_data:
+                        target = spec_data["target"]
+                        tolerance = spec_data.get("tolerance", abs(target) * 0.1)  # Default 10% tolerance
+                        error = abs(value - target)
+                        normalized_error = min(error / tolerance, 1.0)
+                        score = 1.0 - normalized_error
+                    elif "min" in spec_data and "max" in spec_data:
+                        min_val = spec_data["min"]
+                        max_val = spec_data["max"]
+                        if min_val <= value <= max_val:
+                            score = 1.0
+                        elif value < min_val:
+                            error = min_val - value
+                            range_size = max_val - min_val
+                            normalized_error = min(error / abs(range_size), 1.0)
+                            score = 1.0 - normalized_error
+                        else:  # value > max_val
+                            error = value - max_val
+                            range_size = max_val - min_val
+                            normalized_error = min(error / abs(range_size), 1.0)
+                            score = 1.0 - normalized_error
+                    elif "min" in spec_data:
+                        min_val = spec_data["min"]
+                        # For attenuation: more negative is better, so value <= min_val is good
+                        # For normal specs: value >= min_val is good
+                        if is_attenuation:
+                            if value <= min_val:
+                                score = 1.0
+                            else:
+                                error = value - min_val
+                                normalized_error = min(error / abs(min_val), 1.0)
+                                score = 1.0 - normalized_error
+                        else:
+                            if value >= min_val:
+                                score = 1.0
+                            else:
+                                error = min_val - value
+                                normalized_error = min(error / abs(min_val), 1.0)
+                                score = 1.0 - normalized_error
+                    elif "max" in spec_data:
+                        max_val = spec_data["max"]
+                        if value <= max_val:
+                            score = 1.0
+                        else:
+                            error = value - max_val
+                            normalized_error = min(error / abs(max_val), 1.0)
+                            score = 1.0 - normalized_error
+                    else:
+                        continue
+                    
+                    # Clamp score to [0, 1] to handle any floating point errors
+                    score = max(0.0, min(1.0, score))
+                    spec_scores.append(score)
+                
+                if spec_scores:
+                    # Clamp final average to [0, 1]
+                    return max(0.0, min(1.0, sum(spec_scores) / len(spec_scores)))
+                else:
+                    return 0.0
 
             # SPICE Verification (if enabled)
             verification_results = None
@@ -1525,172 +1641,114 @@ def main():
                                     phase = sim_results.metrics['phase_at_ugf']
                                     sim_results.metrics['phase_margin_deg'] = 180 - abs(phase)
                                 
-                                # Evaluate against specs and add to per_criterion scores
-                                for c in rubric.criteria:
-                                    if c.verification:
-                                        metric_name = c.metric
-                                        threshold = c.threshold
-                                        comparison = c.comparison or ">="
-                                        
-                                        if metric_name in sim_results.metrics:
-                                            value = sim_results.metrics[metric_name]
-                                            passed = False
-                                            if comparison == ">=":
-                                                passed = value >= threshold
-                                            elif comparison == "<=":
-                                                passed = value <= threshold
-                                            elif comparison == ">":
-                                                passed = value > threshold
-                                            elif comparison == "<":
-                                                passed = value < threshold
-                                            
-                                            criterion_score = c.weight if passed else 0.0
-                                            scores["per_criterion"][c.id] = {
-                                                "score": criterion_score / max(c.weight, 1e-9),
-                                                "value": value,
-                                                "threshold": threshold,
-                                                "passed": passed
-                                            }
-                                            scores["points"] += criterion_score
-                                            scores["total_weight"] += c.weight
-                                        else:
-                                            scores["per_criterion"][c.id] = {
-                                                "score": 0.0,
-                                                "error": f"Metric '{metric_name}' not found in simulation results"
-                                            }
-                                            scores["total_weight"] += c.weight
+                                # Compute objective score based on specifications
+                                objective_score = _compute_objective_score(sim_results.metrics, design_spec)
                                 
-                                # Add overall verification summary
-                                scores["verification"] = {
-                                    "passed": sim_results.success,
-                                    "metrics": sim_results.metrics
+                                # Store verification results
+                                verification_results = {
+                                    "passed": True,
+                                    "metrics": sim_results.metrics,
+                                    "objective_score": objective_score
                                 }
-                                # Recalculate raw score with verification included
-                                scores["raw"] = scores["points"] / max(scores["total_weight"], 1e-9)
-                                scores["pass"] = scores["raw"] >= rubric.scoring.get("min_pass", 0.7)
                             else:
-                                # Simulation failed - zero out all verification criteria
-                                for c in rubric.criteria:
-                                    if c.verification:
-                                        scores["per_criterion"][c.id] = {
-                                            "score": 0.0,
-                                            "error": "Simulation failed"
-                                        }
-                                        scores["total_weight"] += c.weight
-                                scores["verification"] = {
+                                # Simulation failed
+                                verification_results = {
                                     "passed": False,
-                                    "score": 0.0,
                                     "error": sim_results.errors
                                 }
-                                scores["raw"] = scores["points"] / max(scores["total_weight"], 1e-9)
-                                scores["pass"] = scores["raw"] >= rubric.scoring.get("min_pass", 0.7)
                         else:
-                            # No netlist found - zero out verification criteria
-                            for c in rubric.criteria:
-                                if c.verification:
-                                    scores["per_criterion"][c.id] = {
-                                        "score": 0.0,
-                                        "error": "No netlist found in response"
-                                    }
-                                    scores["total_weight"] += c.weight
-                            scores["raw"] = scores["points"] / max(scores["total_weight"], 1e-9)
-                            scores["pass"] = scores["raw"] >= rubric.scoring.get("min_pass", 0.7)
-                except Exception as e:
-                    # Exception - zero out verification criteria
-                    for c in rubric.criteria:
-                        if c.verification:
-                            scores["per_criterion"][c.id] = {
-                                "score": 0.0,
-                                "error": f"Verification exception: {str(e)}"
+                            # No netlist found
+                            verification_results = {
+                                "passed": False,
+                                "error": "No netlist found in response"
                             }
-                            scores["total_weight"] += c.weight
-                    scores["verification"] = {
+                except Exception as e:
+                    # Exception during verification
+                    verification_results = {
                         "passed": False,
-                        "score": 0.0,
                         "error": f"Verification exception: {str(e)}"
                     }
-                    scores["raw"] = scores["points"] / max(scores["total_weight"], 1e-9)
-                    scores["pass"] = scores["raw"] >= rubric.scoring.get("min_pass", 0.7)
 
             # Judge
             judge = None
-            try:
-                from .scoring.judge_anchored import judge_answer as judge_call  # type: ignore
-            except Exception:
-                from harness.scoring.judge_anchored import judge_answer as judge_call  # type: ignore
-            def _inventory_summary() -> Dict[str, Any]:
-                """Build a conservative inventory for groundedness/judging.
-
-                Only include actual IDs and nets from the item/template inventory.
-                Do NOT inject extra aliases/types (e.g., CL/Cload, cap/res/elem) or
-                ground synonyms into allowed_ids to avoid leaking hints or irrelevant tokens.
-                Provide common ground synonyms via canonical_map only, so judges can
-                accept them if models use them, without encouraging their use.
-                """
-                alias_map = eff_inv.alias_map()
-                # Only keys explicitly present in elements/blocks/nets
-                allowed = sorted(set(alias_map.keys()))
-                canonical_map = {k: v for k, v in alias_map.items() if k != v}
-
-                # Ground synonyms: offer mapping but do not add to allowed_ids
-                if any(n.strip().upper() == "0" or n.strip() == "0" for n in eff_inv.nets):
-                    for syn in ("GND", "VSS"):
-                        canonical_map.setdefault(syn, "0")
-
-                summary: Dict[str, Any] = {"allowed_ids": sorted(allowed), "canonical_map": canonical_map}
-                if q.modality == "cascode":
-                    summary["grounding_disabled"] = True
-                return summary
-
-            inv_summary = _inventory_summary()
-            if args.judge_model == "dummy":
-                # Build a debug payload; keep concise, track-aware system prompt only
-                track_l = str(q.track or "").strip().lower()
-                if track_l == "design":
-                    sys_prompt = (
-                        "You are an impartial grading assistant for analog/mixed-signal circuit DESIGN. "
-                        "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
-                    )
-                elif track_l == "analysis":
-                    sys_prompt = (
-                        "You are an impartial grading assistant for analog/mixed-signal circuit ANALYSIS. "
-                        "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
-                    )
-                elif track_l == "debugging":
-                    sys_prompt = (
-                        "You are an impartial grading assistant for analog/mixed-signal circuit DEBUGGING. "
-                        "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
-                    )
-                else:
-                    sys_prompt = (
-                        "You are an impartial grading assistant for analog/mixed-signal design/analysis/debugging. "
-                        "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
-                    )
-                instr_flat = rubric_md_rendered
-                payload_dbg = {
-                    "answer_to_evaluate": pred,
-                    "inventory": inv_summary,
-                }
-                judge = {
-                    "scores": {},
-                    "overall": 0.0,
-                    "debug": {
-                        "system": sys_prompt,
-                        "instructions": instr_flat,
-                        "payload": payload_dbg,
-                        "judge_model": "dummy",
-                        "rubric_markdown": rubric_md_rendered,
-                    },
-                }
-            elif pred:
+            if not skip_judge:
                 try:
-                    judge = judge_call(pred, rubric_md_rendered, q.track, inv_summary, model=args.judge_model)
+                    from .scoring.judge_anchored import judge_answer as judge_call  # type: ignore
                 except Exception:
-                    judge = None
-            if judge and isinstance(judge.get("scores"), dict):
-                j_scores = judge["scores"]
-                if "overall" not in judge:
-                    judge["overall"] = sum(j_scores.values())/len(j_scores) if j_scores else 0.0
+                    from harness.scoring.judge_anchored import judge_answer as judge_call  # type: ignore
+                def _inventory_summary() -> Dict[str, Any]:
+                    """Build a conservative inventory for groundedness/judging.
+
+                    Only include actual IDs and nets from the item/template inventory.
+                    Do NOT inject extra aliases/types (e.g., CL/Cload, cap/res/elem) or
+                    ground synonyms into allowed_ids to avoid leaking hints or irrelevant tokens.
+                    Provide common ground synonyms via canonical_map only, so judges can
+                    accept them if models use them, without encouraging their use.
+                    """
+                    alias_map = eff_inv.alias_map()
+                    # Only keys explicitly present in elements/blocks/nets
+                    allowed = sorted(set(alias_map.keys()))
+                    canonical_map = {k: v for k, v in alias_map.items() if k != v}
+
+                    # Ground synonyms: offer mapping but do not add to allowed_ids
+                    if any(n.strip().upper() == "0" or n.strip() == "0" for n in eff_inv.nets):
+                        for syn in ("GND", "VSS"):
+                            canonical_map.setdefault(syn, "0")
+
+                    summary: Dict[str, Any] = {"allowed_ids": sorted(allowed), "canonical_map": canonical_map}
+                    if q.modality == "cascode":
+                        summary["grounding_disabled"] = True
+                    return summary
+
+                inv_summary = _inventory_summary()
+                if args.judge_model == "dummy":
+                    # Build a debug payload; keep concise, track-aware system prompt only
+                    track_l = str(q.track or "").strip().lower()
+                    if track_l == "design":
+                        sys_prompt = (
+                            "You are an impartial grading assistant for analog/mixed-signal circuit DESIGN. "
+                            "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
+                        )
+                    elif track_l == "analysis":
+                        sys_prompt = (
+                            "You are an impartial grading assistant for analog/mixed-signal circuit ANALYSIS. "
+                            "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
+                        )
+                    elif track_l == "debugging":
+                        sys_prompt = (
+                            "You are an impartial grading assistant for analog/mixed-signal circuit DEBUGGING. "
+                            "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
+                        )
+                    else:
+                        sys_prompt = (
+                            "You are an impartial grading assistant for analog/mixed-signal design/analysis/debugging. "
+                            "You ONLY output JSON and never prose. Score the answer per rubric using the rubric and inventory."
+                        )
+                    instr_flat = rubric_md_rendered
+                    payload_dbg = {
+                        "answer_to_evaluate": pred,
+                        "inventory": inv_summary,
+                    }
+                    judge = {
+                        "scores": {},
+                        "overall": 0.0,
+                        "debug": {
+                            "system": sys_prompt,
+                            "instructions": instr_flat,
+                            "payload": payload_dbg,
+                            "judge_model": "dummy",
+                            "rubric_markdown": rubric_md_rendered,
+                        },
+                    }
+                elif pred:
+                    try:
+                        judge = judge_call(pred, rubric_md_rendered, q.track, inv_summary, model=args.judge_model)
+                    except Exception:
+                        judge = None
+                if judge and isinstance(judge.get("scores"), dict):
+                    j_scores = judge["scores"]
+                    if "overall" not in judge:
+                        judge["overall"] = sum(j_scores.values())/len(j_scores) if j_scores else 0.0
 
             # Normalize family/topic labeling
             if "/" in str(args.split):
@@ -1712,8 +1770,8 @@ def main():
                 "topic": topic_str,
                 "question_id": q.id,
                 "track": q.track,
-                "judge_id": q.judge_id,
-                "judge_prompt": str(jpath),
+                "judge_id": q.judge_id if not skip_judge else None,
+                "judge_prompt": str(jpath) if jpath else None,
                 "modality": q.modality,
                 "split": args.split,
                 "aspect": (q.meta or {}).get("aspect"),
@@ -1722,21 +1780,23 @@ def main():
                 "artifact": artifact_used,
                 "artifact_randomization": rand_info or None,
                 "answer": pred,
-                "judge": judge,
+                "judge": judge if not skip_judge else None,
             }
             
             # Add verification details if SPICE verification ran
-            if q.verification and q.verification.get("enabled") and scores.get("verification"):
-                ver = scores["verification"]
+            if q.verification and q.verification.get("enabled") and verification_results:
                 rec["verification_details"] = {
-                    "simulation_passed": ver.get("passed", False),
-                    "metrics": ver.get("metrics", {}),
-                    "error": ver.get("error") if not ver.get("passed") else None
+                    "simulation_passed": verification_results.get("passed", False),
+                    "metrics": verification_results.get("metrics", {}),
+                    "objective_score": verification_results.get("objective_score"),
+                    "error": verification_results.get("error") if not verification_results.get("passed") else None
                 }
                 # Also add top-level metrics for easy access in reports
-                rec["verification_metrics"] = ver.get("metrics", {})
-                if ver.get("error"):
-                    rec["verification_errors"] = [ver.get("error")]
+                rec["verification_metrics"] = verification_results.get("metrics", {})
+                if verification_results.get("objective_score") is not None:
+                    rec["objective_score"] = verification_results.get("objective_score")
+                if verification_results.get("error"):
+                    rec["verification_errors"] = [verification_results.get("error")]
             
             if error_msg:
                 rec["error"] = error_msg

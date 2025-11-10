@@ -42,8 +42,8 @@ class Question(BaseModel):
     modality: str
     artifact_path: str
     prompt_template: str
-    judge_prompt: str
-    judge_id: str
+    judge_prompt: Optional[str] = None
+    judge_id: Optional[str] = None
     require_sections: List[str]
     answer_format: str
     meta: Dict[str, Any] = Field(default_factory=dict)

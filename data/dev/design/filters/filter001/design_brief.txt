@@ -1,1 +1,1 @@
-Design a first-order RC low-pass filter with cutoff frequency fc = 15.9 kHz. 
+Design a first-order RC low-pass filter with cutoff frequency fc = 15.9 kHz.

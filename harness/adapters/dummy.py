@@ -366,17 +366,13 @@ R1A vin n1 1.59k
 R2A n1 v1 1.59k
 C1A n1 0 10n
 C2A v1 n1 10n
-XU1 v1 n1i v1 OPAMP
-RG1 n1i 0 10k
-RF1 v1 n1i 10k
+XU1 v1 n1 0 OPAMP
 
 R1B v1 n2 1.06k
 R2B n2 vout 1.06k
 C1B n2 0 10n
 C2B vout n2 10n
-XU2 vout n2i vout OPAMP
-RG2 n2i 0 10k
-RF2 vout n2i 10k
+XU2 vout n2 0 OPAMP
 
 Rload vout 0 10k
 
@@ -392,17 +388,13 @@ R1A vin n1 2k
 R2A n1 v1 2k
 C1A n1 0 10n
 C2A v1 n1 10n
-XU1 v1 n1i v1 OPAMP
-RG1 n1i 0 10k
-RF1 v1 n1i 10k
+XU1 v1 n1 0 OPAMP
 
 R1B v1 n2 1.33k
 R2B n2 vout 1.33k
 C1B n2 0 10n
 C2B vout n2 10n
-XU2 vout n2i vout OPAMP
-RG2 n2i 0 10k
-RF2 vout n2i 10k
+XU2 vout n2 0 OPAMP
 
 Rload vout 0 10k
 

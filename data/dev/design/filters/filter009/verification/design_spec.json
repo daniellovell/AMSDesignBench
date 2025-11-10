@@ -1,0 +1,30 @@
+{
+  "design_id": "filter009",
+  "topology": "twin_T",
+  "filter_type": "band_stop",
+  "order": 2,
+  "specifications": {
+    "notch_frequency": {
+      "value": 15900,
+      "unit": "Hz",
+      "tolerance": 0.15
+    },
+    "notch_depth": {
+      "min": -20,
+      "unit": "dB"
+    },
+    "quality_factor": {
+      "value": 0.5,
+      "tolerance": 0.3
+    }
+  },
+  "test_conditions": {
+    "temperature": 27,
+    "input_amplitude": 1.0
+  },
+  "verification_metrics": [
+    "notch_frequency",
+    "notch_depth",
+    "quality_factor"
+  ]
+}

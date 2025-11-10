@@ -1,1 +1,1 @@
-Design a fourth-order cascaded active biquad filter with independent tuning. Stage 1: f01 = 8 kHz, Q1 = 0.707; Stage 2: f02 = 12 kHz, Q2 = 1.0. Use ideal op-amps (OPAMP subcircuit).
+Design a fourth-order cascaded active biquad filter with independent tuning. Stage 1: f01 = 8 kHz, Q1 = 0.707; Stage 2: f02 = 12 kHz, Q2 = 1.0.. Use ideal op-amps (OPAMP subcircuit).

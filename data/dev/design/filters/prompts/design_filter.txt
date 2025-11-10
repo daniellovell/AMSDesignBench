@@ -9,7 +9,7 @@
 2. **Calculate appropriate component values** to meet the specifications in the design brief:
    - Use standard component values (e.g., 1k, 10n, 100m, 1u)
    - Include proper units: R (Ω, k, M), C (f, n, p), L (h, m, u)
-   - Apply filter design formulas (e.g., fc = 1/(2πRC) for RC filters)
+   - Apply appropriate filter design formulas for the given topology
 
 3. **Replace each BLANK with your calculated value**:
    - Example: `R1 vin vout BLANK` becomes `R1 vin vout 1k`
