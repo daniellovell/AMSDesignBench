@@ -102,45 +102,77 @@ def get_adapter(name: str, **kwargs):
 
 def parse_model_spec(spec: str) -> tuple[str, Dict[str, Any]]:
     """
-    Parse a model spec like "openai" or "openai:gpt-4o-mini" into (adapter, kwargs).
+    Parse a model spec like "openai", "openai:gpt-4o-mini", or "openai:gpt-5-nano:low" into (adapter, kwargs).
+    Supports optional effort level as third component: adapter:model:effort
     For unknown adapters, everything after ':' is ignored.
     """
     if ":" in spec:
-        name, rest = spec.split(":", 1)
-        name = name.strip()
-        rest = rest.strip()
-        # For OpenAI, map to underlying model name
+        parts = spec.split(":")
+        name = parts[0].strip()
+        rest = parts[1].strip() if len(parts) > 1 else ""
+        effort = parts[2].strip() if len(parts) > 2 else None
+        
+        kwargs: Dict[str, Any] = {}
+        
+        # For OpenAI, map to underlying model name and optional reasoning effort
         if name == "openai" and rest:
-            return name, {"model": rest}
+            kwargs["model"] = rest
+            if effort:
+                kwargs["reasoning_effort"] = effort
         # For Anthropic, map to underlying model name
-        if name == "anthropic" and rest:
-            return name, {"model": rest}
+        elif name == "anthropic" and rest:
+            kwargs["model"] = rest
         # For OpenRouter, pass model name through
-        if name == "openrouter" and rest:
-            return name, {"model": rest}
-        # For Google, map to underlying model name
-        if name == "google" and rest:
-            return name, {"model": rest}
+        elif name == "openrouter" and rest:
+            kwargs["model"] = rest
+        # For Google, map to underlying model name and optional thinking budget (effort level)
+        elif name == "google" and rest:
+            kwargs["model"] = rest
+            if effort:
+                kwargs["thinking_budget"] = effort
         # Future adapters can parse additional kv-pairs here
-        return name, {}
+        else:
+            if rest:
+                kwargs["model"] = rest
+        
+        return name, kwargs
     return spec.strip(), {}
 
 
-def normalize_judge_model(spec: Optional[str]) -> Optional[str]:
+def normalize_judge_model(spec: Optional[str]) -> tuple[Optional[str], Optional[str]]:
     """
     Normalize judge model specs so we can reuse adapter-style strings
-    (e.g., openai:gpt-4o-mini) while still passing raw model IDs to judge calls.
+    (e.g., openai:gpt-4o-mini or openai:gpt-5-nano:low) while still passing raw model IDs to judge calls.
+    Also handles specs without adapter prefix (e.g., gpt-5-nano:minimal).
+    Returns (model_name, effort_level) where effort_level may be None.
     """
     if spec is None:
-        return None
+        return None, None
     cleaned = str(spec).strip()
     if not cleaned:
-        return None
+        return None, None
     if ":" in cleaned:
-        prefix, rest = cleaned.split(":", 1)
-        if prefix.strip().lower() in {"openai", "anthropic", "openrouter", "google"}:
-            return rest.strip() or None
-    return cleaned
+        parts = cleaned.split(":")
+        prefix = parts[0].strip()
+        rest = parts[1].strip() if len(parts) > 1 else ""
+        effort = parts[2].strip() if len(parts) > 2 else None
+        
+        # If prefix is a known adapter, extract model name and effort
+        if prefix.lower() in {"openai", "anthropic", "openrouter", "google"}:
+            return rest or None, effort
+        # If prefix is not a known adapter, assume it's a model name with optional effort
+        # (e.g., "gpt-5-nano:minimal" -> model="gpt-5-nano", effort="minimal")
+        if len(parts) == 2:
+            # Two parts: model:effort
+            return prefix, rest
+        elif len(parts) == 3:
+            # Three parts: adapter:model:effort (but adapter not recognized)
+            # Treat as model:effort:something (unlikely but handle gracefully)
+            return prefix, rest
+        else:
+            # More than 3 parts - return first part as model, second as effort
+            return prefix, rest
+    return cleaned, None
 
 
 def load_questions(item_dir: Path) -> List[Question]:
@@ -775,8 +807,13 @@ def main():
 
     judge_model_cfg = eval_cfg.get("judge_model")
     judge_model_spec = args.judge_model if args.judge_model is not None else judge_model_cfg
-    judge_model = normalize_judge_model(judge_model_spec)
+    judge_model, judge_effort = normalize_judge_model(judge_model_spec)
     args.judge_model = judge_model
+    # Store effort separately for judge calls (overrides env var if specified)
+    if judge_effort:
+        args.judge_reasoning_effort = judge_effort
+    else:
+        args.judge_reasoning_effort = None
 
     split_dir = data_root / args.split
     if not split_dir.exists():
@@ -953,10 +990,16 @@ def main():
         name, kwargs = parse_model_spec(spec)
         adapter = get_adapter(name, **kwargs)
         # Create a unique, descriptive slug for outputs
+        # Include effort level in slug if specified for uniqueness
+        effort_suffix = ""
+        if kwargs.get("reasoning_effort"):
+            effort_suffix = f"_{kwargs['reasoning_effort']}"
+        elif kwargs.get("thinking_budget"):
+            effort_suffix = f"_{kwargs['thinking_budget']}"
         if kwargs.get("model"):
-            slug = f"{name}_{kwargs['model']}".replace("/", "-")
+            slug = f"{name}_{kwargs['model']}{effort_suffix}".replace("/", "-")
         else:
-            slug = name
+            slug = f"{name}{effort_suffix}"
         # Ensure uniqueness if duplicates
         base_slug = slug
         suffix = 2
@@ -1678,7 +1721,7 @@ def main():
                 }
             elif pred:
                 try:
-                    judge = judge_call(pred, rubric_md_rendered, q.track, inv_summary, model=args.judge_model)
+                    judge = judge_call(pred, rubric_md_rendered, q.track, inv_summary, model=args.judge_model, reasoning_effort=getattr(args, 'judge_reasoning_effort', None))
                 except Exception:
                     judge = None
             if judge and isinstance(judge.get("scores"), dict):

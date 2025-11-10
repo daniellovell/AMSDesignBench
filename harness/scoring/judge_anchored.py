@@ -201,6 +201,7 @@ def judge_answer(
     track: str,
     inventory: Optional[Dict[str, Any]] = None,
     model: Optional[str] = None,
+    reasoning_effort: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
     """
     Evaluate an answer against a Markdown rubric using an OpenAI-based grading judge and return the parsed scoring result.
@@ -213,6 +214,7 @@ def judge_answer(
         track (str): Evaluation track label (e.g., "design", "analysis", "debugging") used to shape the system prompt.
         inventory (Optional[Dict[str, Any]]): Optional contextual information to include in the evaluation payload.
         model (Optional[str]): Optional model identifier to override environment-configured judge model.
+        reasoning_effort (Optional[str]): Optional reasoning effort level (low, medium, high, default, auto). Overrides environment variables if provided.
     
     Returns:
         Optional[Dict[str, Any]]: On success, a dict parsed from the judge's JSON output containing at minimum a "scores" key and an attached "debug" field. On failure, a dict with an "error" message and often a "debug" payload and/or "raw" text for diagnosis. Returns None only in unexpected runtime scenarios.
@@ -270,8 +272,11 @@ def judge_answer(
             "input": judge_user_blob,
         }
         if is_gpt5:
-            effort = os.getenv("OPENAI_JUDGE_REASONING_EFFORT") or os.getenv("OPENAI_REASONING_EFFORT") or ""
-            effort = effort.strip().lower()
+            # Use provided reasoning_effort, or fall back to env vars, or default to "low"
+            effort = reasoning_effort
+            if not effort:
+                effort = os.getenv("OPENAI_JUDGE_REASONING_EFFORT") or os.getenv("OPENAI_REASONING_EFFORT") or ""
+            effort = effort.strip().lower() if effort else ""
             if not effort:
                 effort = "low"
             if effort not in {"", "default", "auto"}:
