@@ -1,9 +1,9 @@
 # Common rubric parameters for device swap debugging (OTA subfamily)
 
 # Weights
-weight_fault_id: 0.45
-weight_fix: 0.30
-weight_grounding: 0.25
+weight_fault_id: 0.55
+weight_fix: 0.35
+weight_grounding: 0.10
 
 # fault_id criterion
 fault_id_section: "Fault"
