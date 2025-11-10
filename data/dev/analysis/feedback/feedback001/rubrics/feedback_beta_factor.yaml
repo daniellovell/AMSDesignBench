@@ -1,5 +1,5 @@
-weight_beta_expression: "0.70"
-weight_grounded_evidence: "0.30"
+weight_beta_expression: "0.80"
+weight_grounded_evidence: "0.20"
 beta_expression_target: "beta = 1 (unity feedback)."
 beta_expression_guidance: "Explain that the feedback network directly ties the op-amp output to the summing node, yielding a unity feedback factor."
 beta_expression_reject: "beta = 0; beta = R1; beta = 1/R1; no feedback path."

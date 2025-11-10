@@ -1,6 +1,2 @@
-weight_topology: 0.1
-weight_key_relation: 0.35
-weight_device_specificity: 0.25
-weight_grounded_evidence: 0.3
 relation_target: "High-side: VDD - Vov_load; Low-side: Vov_M_in"
 {path:_ota_rubric_template.yaml}

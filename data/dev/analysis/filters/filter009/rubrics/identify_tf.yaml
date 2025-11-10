@@ -1,6 +1,6 @@
 weight_topology: 0.35
-weight_tf: 0.35
-weight_grounded_evidence: 0.3
+weight_tf: 0.55
+weight_grounded_evidence: 0.1
 tf_target: H(s) = (s^2 + 1)/(s^2 + s/Q + 1)
 tf_equivalents: "H(s) = (s^2 + ω₀²)/(s^2 + (ω₀/Q)s + ω₀²) with normalized notch form"
 grounded_min_refs: 2

@@ -1,5 +1,5 @@
-weight_gain_expression: "0.70"
-weight_grounded_evidence: "0.30"
+weight_gain_expression: "0.80"
+weight_grounded_evidence: "0.20"
 gain_expression_target: "Vout/Vin = 1 + R2/R1."
 gain_expression_guidance: "State the familiar non-inverting gain and mention the divider's role."
 gain_expression_reject: "-(R2/R1); -R2/R1; R1/R2; 1 + R1/R2."

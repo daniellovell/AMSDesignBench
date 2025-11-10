@@ -1,5 +1,5 @@
-weight_loop_gain_expression: "0.70"
-weight_grounded_evidence: "0.30"
+weight_loop_gain_expression: "0.80"
+weight_grounded_evidence: "0.20"
 loop_gain_target: "T = A0 (also acceptable: Aol or A(s))."
 loop_gain_disallowed: "Symbolic products with beta that are never expanded."
 loop_gain_guidance: "Accept references to the op-amp open-loop gain parameters provided."
