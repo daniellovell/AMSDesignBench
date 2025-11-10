@@ -15,6 +15,7 @@ import yaml
 
 from rich import print
 from rich.progress import Progress, BarColumn, TimeElapsedColumn, TimeRemainingColumn, MofNCompleteColumn
+from rich.table import Table
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 import threading
 
@@ -771,6 +772,7 @@ def main():
         raise SystemExit(f"Split not found: {split_dir}")
 
     # Resolve model list (support both --models and legacy --model). If none, try bench_config eval.models.
+    # This needs to happen before config table printing to show correct model count
     model_specs: List[str] = []
     if args.models:
         for token in args.models:
@@ -785,6 +787,115 @@ def main():
             model_specs = [str(m) for m in cfg_models]
         else:
             model_specs = ["dummy"]
+
+    # Print configuration summary
+    def _get_env_or_default(key: str, default: str = "not set") -> str:
+        val = os.getenv(key)
+        return val if val else default
+
+    def _format_value(val: Any) -> str:
+        if val is None:
+            return "not set"
+        if isinstance(val, (int, float)):
+            return str(val)
+        if isinstance(val, list):
+            return ", ".join(str(v) for v in val)
+        return str(val)
+
+    config_table = Table(title="[bold cyan]Evaluation Configuration[/bold cyan]", show_header=True, header_style="bold")
+    config_table.add_column("Category", style="cyan", no_wrap=True)
+    config_table.add_column("Setting", style="yellow")
+    config_table.add_column("Value", style="green")
+
+    # Parallelization settings
+    model_workers_display = str(args.model_workers) if args.model_workers > 0 else f"{len(model_specs)} (all)"
+    config_table.add_row("Parallelization", "--model-workers", model_workers_display)
+    config_table.add_row("", "--item-workers", str(args.item_workers))
+    config_table.add_row("", "EVAL_MODEL_TIMEOUT", _get_env_or_default("EVAL_MODEL_TIMEOUT", "3600.0"))
+    config_table.add_row("", "EVAL_ITEM_TIMEOUT", _get_env_or_default("EVAL_ITEM_TIMEOUT", "300.0"))
+
+    # Judge settings
+    judge_model_display = judge_model or _get_env_or_default("OPENAI_JUDGE_MODEL", _get_env_or_default("OPENAI_MODEL", "gpt-4o-mini"))
+    config_table.add_row("Judge", "Model", judge_model_display)
+    config_table.add_row("", "OPENAI_JUDGE_RPM", _get_env_or_default("OPENAI_JUDGE_RPM", "0 (unlimited)"))
+    config_table.add_row("", "OPENAI_JUDGE_TPM", _get_env_or_default("OPENAI_JUDGE_TPM", "0 (unlimited)"))
+    config_table.add_row("", "OPENAI_JUDGE_CONCURRENCY", _get_env_or_default("OPENAI_JUDGE_CONCURRENCY", "3"))
+    config_table.add_row("", "OPENAI_JUDGE_MAX_RETRIES", _get_env_or_default("OPENAI_JUDGE_MAX_RETRIES", "6"))
+    config_table.add_row("", "OPENAI_JUDGE_BACKOFF_BASE", _get_env_or_default("OPENAI_JUDGE_BACKOFF_BASE", "1.0"))
+    config_table.add_row("", "OPENAI_JUDGE_TIMEOUT", _get_env_or_default("OPENAI_JUDGE_TIMEOUT", _get_env_or_default("OPENAI_TIMEOUT", "60.0")))
+    config_table.add_row("", "OPENAI_JUDGE_TEMPERATURE", _get_env_or_default("OPENAI_JUDGE_TEMPERATURE", "0.0"))
+    judge_max_tokens_default = "2000" if "gpt-5" in judge_model_display.lower() else "400"
+    config_table.add_row("", "OPENAI_JUDGE_MAX_TOKENS", _get_env_or_default("OPENAI_JUDGE_MAX_TOKENS", judge_max_tokens_default))
+    config_table.add_row("", "OPENAI_JUDGE_REASONING_EFFORT", _get_env_or_default("OPENAI_JUDGE_REASONING_EFFORT", "not set"))
+    config_table.add_row("", "OPENAI_JUDGE_TOKEN_DIVISOR", _get_env_or_default("OPENAI_JUDGE_TOKEN_DIVISOR", "3.5"))
+
+    # OpenAI adapter settings
+    config_table.add_row("OpenAI Adapter", "OPENAI_RPM", _get_env_or_default("OPENAI_RPM", "0 (unlimited)"))
+    config_table.add_row("", "OPENAI_TPM", _get_env_or_default("OPENAI_TPM", "0 (unlimited)"))
+    config_table.add_row("", "OPENAI_MAX_RETRIES", _get_env_or_default("OPENAI_MAX_RETRIES", "8"))
+    config_table.add_row("", "OPENAI_BACKOFF_BASE", _get_env_or_default("OPENAI_BACKOFF_BASE", "1.0"))
+    config_table.add_row("", "OPENAI_TIMEOUT", _get_env_or_default("OPENAI_TIMEOUT", "60.0"))
+    config_table.add_row("", "OPENAI_MODEL", _get_env_or_default("OPENAI_MODEL", "gpt-4o-mini"))
+    config_table.add_row("", "OPENAI_TEMPERATURE", _get_env_or_default("OPENAI_TEMPERATURE", str(eval_cfg.get("temperature", 0.2))))
+    config_table.add_row("", "OPENAI_MAX_TOKENS", _get_env_or_default("OPENAI_MAX_TOKENS", str(eval_cfg.get("max_tokens", 800))))
+    config_table.add_row("", "OPENAI_TOKEN_DIVISOR", _get_env_or_default("OPENAI_TOKEN_DIVISOR", "4"))
+
+    # Anthropic adapter settings
+    config_table.add_row("Anthropic Adapter", "ANTHROPIC_RPM", _get_env_or_default("ANTHROPIC_RPM", "0 (unlimited)"))
+    config_table.add_row("", "ANTHROPIC_TPM", _get_env_or_default("ANTHROPIC_TPM", "0 (unlimited)"))
+    config_table.add_row("", "ANTHROPIC_MAX_RETRIES", _get_env_or_default("ANTHROPIC_MAX_RETRIES", "8"))
+    config_table.add_row("", "ANTHROPIC_BACKOFF_BASE", _get_env_or_default("ANTHROPIC_BACKOFF_BASE", "1.0"))
+    config_table.add_row("", "ANTHROPIC_MODEL", _get_env_or_default("ANTHROPIC_MODEL", "claude-3-5-sonnet-latest"))
+    config_table.add_row("", "ANTHROPIC_TEMPERATURE", _get_env_or_default("ANTHROPIC_TEMPERATURE", str(eval_cfg.get("temperature", 0.2))))
+    config_table.add_row("", "ANTHROPIC_MAX_TOKENS", _get_env_or_default("ANTHROPIC_MAX_TOKENS", str(eval_cfg.get("max_tokens", 800))))
+    config_table.add_row("", "ANTHROPIC_TOKEN_DIVISOR", _get_env_or_default("ANTHROPIC_TOKEN_DIVISOR", "4"))
+
+    # Google adapter settings
+    config_table.add_row("Google Adapter", "GOOGLE_RPM", _get_env_or_default("GOOGLE_RPM", "0 (unlimited)"))
+    config_table.add_row("", "GOOGLE_TPM", _get_env_or_default("GOOGLE_TPM", "0 (unlimited)"))
+    config_table.add_row("", "GOOGLE_MAX_RETRIES", _get_env_or_default("GOOGLE_MAX_RETRIES", "8"))
+    config_table.add_row("", "GOOGLE_BACKOFF_BASE", _get_env_or_default("GOOGLE_BACKOFF_BASE", "1.0"))
+    config_table.add_row("", "GOOGLE_TIMEOUT", _get_env_or_default("GOOGLE_TIMEOUT", "60.0"))
+    config_table.add_row("", "GOOGLE_MODEL", _get_env_or_default("GOOGLE_MODEL", "gemini-2.5-pro"))
+    config_table.add_row("", "GOOGLE_TEMPERATURE", _get_env_or_default("GOOGLE_TEMPERATURE", str(eval_cfg.get("temperature", 0.2))))
+    config_table.add_row("", "GOOGLE_MAX_TOKENS", _get_env_or_default("GOOGLE_MAX_TOKENS", str(eval_cfg.get("max_tokens", 800))))
+    config_table.add_row("", "GOOGLE_TOKEN_DIVISOR", _get_env_or_default("GOOGLE_TOKEN_DIVISOR", "4"))
+    config_table.add_row("", "GOOGLE_THINKING_BUDGET", _get_env_or_default("GOOGLE_THINKING_BUDGET", "0"))
+
+    # OpenRouter adapter settings
+    config_table.add_row("OpenRouter Adapter", "OPENROUTER_RPM", _get_env_or_default("OPENROUTER_RPM", "0 (unlimited)"))
+    config_table.add_row("", "OPENROUTER_TPM", _get_env_or_default("OPENROUTER_TPM", "0 (unlimited)"))
+    config_table.add_row("", "OPENROUTER_MAX_RETRIES", _get_env_or_default("OPENROUTER_MAX_RETRIES", "8"))
+    config_table.add_row("", "OPENROUTER_BACKOFF_BASE", _get_env_or_default("OPENROUTER_BACKOFF_BASE", "1.0"))
+    config_table.add_row("", "OPENROUTER_MODEL", _get_env_or_default("OPENROUTER_MODEL", "openai/gpt-4o-mini"))
+    config_table.add_row("", "OPENROUTER_TEMPERATURE", _get_env_or_default("OPENROUTER_TEMPERATURE", str(eval_cfg.get("temperature", 0.2))))
+    config_table.add_row("", "OPENROUTER_MAX_TOKENS", _get_env_or_default("OPENROUTER_MAX_TOKENS", str(eval_cfg.get("max_tokens", 800))))
+    config_table.add_row("", "OPENROUTER_TOKEN_DIVISOR", _get_env_or_default("OPENROUTER_TOKEN_DIVISOR", "4"))
+    config_table.add_row("", "OPENROUTER_REFERER", _get_env_or_default("OPENROUTER_REFERER", "not set"))
+    config_table.add_row("", "OPENROUTER_TITLE", _get_env_or_default("OPENROUTER_TITLE", "not set"))
+
+    # Config file settings
+    config_table.add_row("Config File", "eval.max_tokens", _format_value(eval_cfg.get("max_tokens")))
+    config_table.add_row("", "eval.temperature", _format_value(eval_cfg.get("temperature")))
+    config_table.add_row("", "eval.top_p", _format_value(eval_cfg.get("top_p")))
+    config_table.add_row("", "eval.judge_model", _format_value(eval_cfg.get("judge_model")))
+    config_table.add_row("", "eval.models", _format_value(eval_cfg.get("models")))
+    config_table.add_row("", "eval.judge_reasoning_effort", _format_value(eval_cfg.get("judge_reasoning_effort")))
+
+    # Models being evaluated
+    models_display = ", ".join(model_specs) if model_specs else "dummy"
+    config_table.add_row("Models", "Models to evaluate", models_display)
+
+    # Other settings
+    config_table.add_row("Other", "--enable-profiling", "enabled" if args.enable_profiling else "disabled")
+    config_table.add_row("", "--split", args.split)
+    config_table.add_row("", "--max-items", str(args.max_items) if args.max_items > 0 else "unlimited")
+    config_table.add_row("", "--family", args.family or "all")
+    config_table.add_row("", "--family-subdir", args.family_subdir or "not set")
+    config_table.add_row("", "--item-index", str(args.item_index) if args.item_index > 0 else "all")
+
+    print(config_table)
+    print()  # Empty line after table
 
     dummy_requested = False
     for spec in model_specs:
