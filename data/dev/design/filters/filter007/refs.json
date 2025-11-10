@@ -1,0 +1,5 @@
+{
+  "filter_type": "RL low-pass",
+  "order": 1,
+  "frequency": "796 Hz"
+}

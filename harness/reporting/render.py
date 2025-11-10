@@ -49,10 +49,12 @@ def aggregates(recs: List[Dict[str, Any]]):
         "n": 0,
         "judge_sum": 0.0,
         "judge_n": 0,
+        "objective_sum": 0.0,
+        "objective_n": 0,
     })
     # Nested dicts keyed by [group][model]
     def _mk():
-        return {"n": 0, "judge_sum": 0.0, "judge_n": 0}
+        return {"n": 0, "judge_sum": 0.0, "judge_n": 0, "objective_sum": 0.0, "objective_n": 0}
     per_family = defaultdict(lambda: defaultdict(_mk))
     per_modality = defaultdict(lambda: defaultdict(_mk))
 
@@ -61,20 +63,34 @@ def aggregates(recs: List[Dict[str, Any]]):
         fam = r.get("topic") or r.get("family", "?")
         mod = r.get("modality", "?")
         per_model[m]["n"] += 1
+        
+        # Judge score
         j = r.get("judge")
         if isinstance(j, dict) and isinstance(j.get("overall"), (int, float)):
             per_model[m]["judge_sum"] += float(j["overall"])
             per_model[m]["judge_n"] += 1
-        # blended score removed in judge-only pipeline
+        
+        # Objective score
+        obj = r.get("objective_score")
+        if isinstance(obj, (int, float)):
+            per_model[m]["objective_sum"] += float(obj)
+            per_model[m]["objective_n"] += 1
 
         per_family[fam][m]["n"] += 1
         if isinstance(j, dict) and isinstance(j.get("overall"), (int, float)):
             per_family[fam][m]["judge_sum"] += float(j["overall"])
             per_family[fam][m]["judge_n"] += 1
+        if isinstance(obj, (int, float)):
+            per_family[fam][m]["objective_sum"] += float(obj)
+            per_family[fam][m]["objective_n"] += 1
+            
         per_modality[mod][m]["n"] += 1
         if isinstance(j, dict) and isinstance(j.get("overall"), (int, float)):
             per_modality[mod][m]["judge_sum"] += float(j["overall"])
             per_modality[mod][m]["judge_n"] += 1
+        if isinstance(obj, (int, float)):
+            per_modality[mod][m]["objective_sum"] += float(obj)
+            per_modality[mod][m]["objective_n"] += 1
 
     return per_model, per_family, per_modality
 
@@ -126,13 +142,25 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
         for m in models:
             r = recs_by_model.get(m)
             judge_overall = None
+            objective_score = None
+            score_type = "judge"
+            
             if r:
                 j = r.get("judge") or {}
                 if isinstance(j.get("overall"), (int, float)):
                     judge_overall = float(j["overall"])
-            color = color_for_score(judge_overall)
-            judge_str = f"{judge_overall:.2f}" if judge_overall is not None else "-"
-            cells.append(f"<td style=\"background:{color}\"><span title=\"judged\">{esc(judge_str)}</span></td>")
+                # Check for objective score if no judge score
+                if judge_overall is None and "objective_score" in r:
+                    obj = r.get("objective_score")
+                    if isinstance(obj, (int, float)):
+                        objective_score = float(obj)
+                        score_type = "objective"
+            
+            # Use whichever score is available
+            display_score = judge_overall if judge_overall is not None else objective_score
+            color = color_for_score(display_score)
+            score_str = f"{display_score:.2f}" if display_score is not None else "-"
+            cells.append(f"<td style=\"background:{color}\"><span title=\"{score_type}\">{esc(score_str)}</span></td>")
         return "".join(cells)
 
     # HTML
@@ -153,13 +181,19 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
     a:hover { text-decoration: underline; }
     """
 
-    # Leaderboard (judge-only rendering)
+    # Leaderboard (judge + objective rendering)
     leader_rows = []
     for m in models:
         a = per_model[m]
         judge_avg = a["judge_sum"] / a["judge_n"] if a["judge_n"] else None
+        objective_avg = a["objective_sum"] / a["objective_n"] if a["objective_n"] else None
         row = f"<tr><td>{esc(m)}</td><td>{a['n']}</td>"
         row += _render_judge_cell(judge_avg)
+        # Add objective score column
+        if objective_avg is not None:
+            row += f"<td>{objective_avg:.3f}</td>"
+        else:
+            row += "<td>-</td>"
         leader_rows.append(row + "</tr>")
 
     # Families table (judge-only)
@@ -233,7 +267,7 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
     <div class="box">
       <b>Models</b>
       <table class="small">
-        <tr><th>Model</th><th>n</th><th>Judge</th></tr>
+        <tr><th>Model</th><th>n</th><th>Judge</th><th>Objective</th></tr>
         {''.join(leader_rows)}
       </table>
     </div>
@@ -347,10 +381,51 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
             err = r.get("error")
             if err:
                 judge_html += ("<div class=small style='color:#b00'>Error: " + esc(str(err)) + "</div>")
+            
+            # SPICE Verification Details
+            verification_html = ""
+            verification = r.get("verification_details")
+            if verification:
+                sim_passed = verification.get("simulation_passed", False)
+                metrics = verification.get("metrics", {})
+                ver_err = verification.get("error")
+                obj_score = verification.get("objective_score")  # Get objective score
+                
+                status_color = "#0a0" if sim_passed else "#b00"
+                status_text = "✅ PASSED" if sim_passed else "❌ FAILED"
+                verification_html = f"<div style='margin-top:8px;'><b style='color:{status_color}'>SPICE Verification: {status_text}</b></div>"
+                
+                # Display objective score prominently
+                if obj_score is not None and isinstance(obj_score, (int, float)):
+                    score_color = color_for_score(obj_score)
+                    verification_html += f"<div style='margin-top:4px;'><b>Objective Score:</b> <span style='background:{score_color};padding:2px 6px;border-radius:3px;'>{obj_score:.4f}</span></div>"
+                
+                if metrics:
+                    # Extract and display measurement frequencies if available
+                    meas_freqs = metrics.get('_measurement_frequencies', {})
+                    if meas_freqs:
+                        verification_html += "<div style='margin-top:4px;font-size:11px;color:#666;'>"
+                        verification_html += f"<b>Measurement Frequencies:</b> "
+                        verification_html += f"passband @ {meas_freqs.get('passband_freq', 'N/A')} Hz, "
+                        verification_html += f"stopband @ {meas_freqs.get('stopband_freq', 'N/A')} Hz"
+                        verification_html += "</div>"
+                    
+                    verification_html += "<table class=small style='margin-top:4px;'><tr><th>Metric</th><th>Value</th></tr>"
+                    for metric_name, value in metrics.items():
+                        # Skip internal metadata fields
+                        if metric_name.startswith('_'):
+                            continue
+                        value_str = f"{value:.2f}" if isinstance(value, (int, float)) else str(value)
+                        verification_html += f"<tr><td>{esc(metric_name)}</td><td>{esc(value_str)}</td></tr>"
+                    verification_html += "</table>"
+                
+                if ver_err:
+                    verification_html += f"<div class=small style='color:#b00;margin-top:4px;'>Error: {esc(str(ver_err))}</div>"
+            
             answer = r.get("answer", "")
             answer_html = f"<details><summary>View answer</summary><div class=mono>{esc(answer)}</div></details>"
             blocks.append(
-                f"<tr><td>{esc(m)}</td><td>{judge_html}</td><td>{answer_html}</td></tr>"
+                f"<tr><td>{esc(m)}</td><td>{judge_html}{verification_html}</td><td>{answer_html}</td></tr>"
             )
 
         html_out = f"""

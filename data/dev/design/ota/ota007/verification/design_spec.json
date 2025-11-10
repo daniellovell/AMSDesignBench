@@ -1,0 +1,52 @@
+{
+  "design_id": "ota007",
+  "topology": "cs_active_load",
+  "description": "CS Active Load OTA",
+  "pdk": {
+    "technology": "sky130",
+    "supply_voltage": 1.8,
+    "temperature": 27
+  },
+  "specifications": {
+    "dc_gain": {
+      "min": 20,
+      "target": 30,
+      "unit": "dB",
+      "weight": 0.25
+    },
+    "gbw": {
+      "min": 10000000.0,
+      "target": 15000000.0,
+      "unit": "Hz",
+      "weight": 0.2
+    },
+    "phase_margin": {
+      "min": 60,
+      "target": 70,
+      "unit": "deg",
+      "weight": 0.2
+    },
+    "power": {
+      "max": 0.0005,
+      "target": 0.00035,
+      "unit": "W",
+      "weight": 0.15
+    }
+  },
+  "test_conditions": {
+    "load_capacitance": "5p",
+    "feedback_factor": 1.0,
+    "input_common_mode": 0.9,
+    "analyses": [
+      "dc",
+      "ac"
+    ]
+  },
+  "constraints": {
+    "min_transistor_length": 1.5e-07,
+    "min_transistor_width": 3e-07,
+    "max_transistor_width": 0.0001,
+    "min_current": 5e-06,
+    "max_current": 0.002
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "design_id": "filter008",
+  "topology": "active",
+  "filter_type": "all_pass",
+  "order": 1,
+  "specifications": {
+    "characteristic_frequency": {
+      "value": 15900,
+      "unit": "Hz",
+      "tolerance": 0.15
+    },
+    "phase_shift_at_f0": {
+      "value": 180,
+      "unit": "degrees",
+      "tolerance": 15
+    }
+  },
+  "test_conditions": {
+    "temperature": 27,
+    "input_amplitude": 1.0
+  },
+  "verification_metrics": [
+    "characteristic_frequency",
+    "phase_shift"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "design_id": "filter011",
+  "topology": "MFB",
+  "filter_type": "band_pass",
+  "order": 2,
+  "specifications": {
+    "center_frequency": {
+      "value": 10000,
+      "unit": "Hz",
+      "tolerance": 0.15
+    },
+    "quality_factor": {
+      "value": 5,
+      "tolerance": 0.3
+    },
+    "gain": {
+      "value": -2,
+      "unit": "V/V",
+      "tolerance": 0.2
+    }
+  },
+  "test_conditions": {
+    "temperature": 27,
+    "input_amplitude": 1.0
+  },
+  "verification_metrics": [
+    "center_frequency",
+    "quality_factor",
+    "bandwidth"
+  ]
+}

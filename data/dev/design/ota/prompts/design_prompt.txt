@@ -1,0 +1,40 @@
+**TASK:** Fill in ALL BLANK parameters in the provided SPICE netlist template.
+
+**SPECIFICATIONS (use these EXACT values):**
+- VDD = 1.8 V
+- CL = 5 pF
+- Target: DC Gain ≥ 40 dB, GBW ≥ 10 MHz, Phase Margin ≥ 60°
+- Technology: SKY130 (NFET min L=0.15µm, PFET min L=0.35µm)
+
+**INSTRUCTIONS:**
+
+1. **Copy the netlist template provided below**
+
+2. **Replace `.param VDD=BLANK` with `.param VDD=1.8`** (exact value from spec)
+
+3. **Replace `.param CL=BLANK` with `.param CL=5p`** (5 pF, use 'p' suffix)
+
+4. **Design transistor sizes** using the Gm/ID tables:
+   - Use Gm/ID ≈ 10-20 S/A for moderate inversion
+   - Replace `L1=BLANK W1=BLANK` with your designed values
+   - Replace `Lp=BLANK Wp=BLANK` with your designed values  
+   - Replace `Ltail=BLANK Wtail=BLANK` with your designed values
+   - **CRITICAL**: Write `L1=0.5` NOT `L1=0.5u` (no 'u' suffix)
+
+5. **Design bias voltage**:
+   - Replace `Vbias_n vbias_n 0 DC BLANK` with calculated value (e.g., `0.55`)
+
+6. **Output the complete netlist** with:
+   - NO BLANK keywords remaining
+   - ALL parameters filled with numbers
+   - Device lines (XM1, XM2, etc.) EXACTLY as in template
+
+**CRITICAL RULES:**
+- ✅ Fill in VDD=1.8 and CL=5p exactly as specified
+- ✅ Use NO 'u' suffix on L/W in .param lines
+- ✅ Keep all XM device lines exactly as shown in template
+- ❌ Do NOT add .lib, .option, .control, .end, Vdd, Vss, vinp, vinn, or CL device lines
+- ❌ Do NOT leave any BLANK
+
+**OUTPUT:** Provide ONLY the filled-in SPICE netlist in a code block.
+

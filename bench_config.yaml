@@ -14,3 +14,19 @@ paths:
   data_root: data
   prompts_root: prompts
   outputs_root: outputs
+
+# Design verification settings
+design_verification:
+  enabled: true
+  pdk:
+    name: skywater130
+    path: pdk/skywater130
+  simulation:
+    engine: ngspice
+    timeout_s: 120
+    use_gmid_tables: true
+  eval:
+    # Design-specific LLM settings
+    max_tokens: 2000  # Larger for netlist generation
+    temperature: 0.3
+    include_gmid_tables: true

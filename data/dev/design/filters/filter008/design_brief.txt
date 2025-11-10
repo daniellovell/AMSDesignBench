@@ -1,0 +1,1 @@
+Design a first-order all-pass filter using an op-amp with characteristic frequency f0 = 15.9 kHz.

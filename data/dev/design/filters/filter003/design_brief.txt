@@ -1,0 +1,1 @@
+Design a first-order RL low-pass filter with cutoff frequency fc = 796 Hz.

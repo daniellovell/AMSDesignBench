@@ -1,0 +1,17 @@
+questions:
+- id: filter003_design
+  track: design
+  modality: spice_netlist
+  prompt_template: ../prompts/design_filter.txt
+  artifact_path: netlist_template.sp
+  attachments:
+  - path: netlist_template.sp
+    description: SPICE netlist template with BLANK placeholders for component values
+  meta:
+    family: filters
+    bench_version: 0.1.0
+    aspect: design_filter
+  verification:
+    enabled: true
+    simulator: ngspice
+    spec_file: verification/design_spec.json
