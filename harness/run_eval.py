@@ -723,7 +723,7 @@ def main():
     )
     ap.add_argument("--judge-model", "--judge_model", dest="judge_model", default=None, help="override judge model name")
     ap.add_argument("--model-workers", type=int, default=0, help="parallel model workers (0 = run all models in parallel)")
-    ap.add_argument("--item-workers", type=int, default=8, help="per-model concurrent workers for items/questions")
+    ap.add_argument("--item-workers", type=int, default=8, help="per-model concurrent workers for items/questions (judge concurrency auto-scales with this if not explicitly set)")
     ap.add_argument(
         "--enable-profiling",
         action="store_true",
@@ -733,7 +733,7 @@ def main():
     ap.add_argument("--judge-rpm", type=float, default=None, help="Rate limit RPM for judge API (sets OPENAI_JUDGE_RPM)")
     ap.add_argument("--judge-tpm", type=float, default=None, help="Token per minute limit for judge API (sets OPENAI_JUDGE_TPM)")
     ap.add_argument("--judge-max-retries", type=int, default=None, help="Max retries for judge API (sets OPENAI_JUDGE_MAX_RETRIES)")
-    ap.add_argument("--judge-concurrency", type=int, default=None, help="Max concurrent judge calls (sets OPENAI_JUDGE_CONCURRENCY)")
+    ap.add_argument("--judge-concurrency", type=int, default=None, help="Max concurrent judge calls (sets OPENAI_JUDGE_CONCURRENCY). If unset, auto-scales with --item-workers to avoid bottlenecks.")
     args = ap.parse_args()
     # Judge is always enabled; no flag required
 
@@ -746,8 +746,19 @@ def main():
         os.environ["OPENAI_JUDGE_TPM"] = str(args.judge_tpm)
     if args.judge_max_retries is not None:
         os.environ["OPENAI_JUDGE_MAX_RETRIES"] = str(args.judge_max_retries)
+    # Track if judge concurrency was explicitly set (via arg or pre-existing env var)
+    judge_concurrency_explicitly_set = args.judge_concurrency is not None or bool(os.getenv("OPENAI_JUDGE_CONCURRENCY"))
     if args.judge_concurrency is not None:
         os.environ["OPENAI_JUDGE_CONCURRENCY"] = str(args.judge_concurrency)
+    else:
+        # Adaptive judge concurrency: if not explicitly set, match item workers to avoid bottlenecks
+        # This ensures judge slots scale with parallelization capacity.
+        # Performance note: With 8 item workers and only 3 judge slots, ~62% of threads block waiting.
+        # By scaling judge concurrency to match workers (minus 2 for headroom), we reduce serialization.
+        # If hitting rate limits, reduce via --judge-concurrency or configure OPENAI_JUDGE_RPM/TPM.
+        if not os.getenv("OPENAI_JUDGE_CONCURRENCY"):
+            adaptive_concurrency = max(3, args.item_workers - 2)
+            os.environ["OPENAI_JUDGE_CONCURRENCY"] = str(adaptive_concurrency)
 
     # Load bench config (YAML)
     cfg = yaml.safe_load(Path("bench_config.yaml").read_text(encoding='utf-8')) or {}
@@ -819,7 +830,18 @@ def main():
     config_table.add_row("Judge", "Model", judge_model_display)
     config_table.add_row("", "OPENAI_JUDGE_RPM", _get_env_or_default("OPENAI_JUDGE_RPM", "0 (unlimited)"))
     config_table.add_row("", "OPENAI_JUDGE_TPM", _get_env_or_default("OPENAI_JUDGE_TPM", "0 (unlimited)"))
-    config_table.add_row("", "OPENAI_JUDGE_CONCURRENCY", _get_env_or_default("OPENAI_JUDGE_CONCURRENCY", "3"))
+    # Show judge concurrency with indication if it was auto-set
+    judge_concurrency_val = os.getenv("OPENAI_JUDGE_CONCURRENCY", "")
+    if judge_concurrency_val:
+        if judge_concurrency_explicitly_set:
+            # Explicitly set via --judge-concurrency or pre-existing env var
+            judge_concurrency_display = judge_concurrency_val
+        else:
+            # Was auto-set adaptively
+            judge_concurrency_display = f"{judge_concurrency_val} (auto-set from --item-workers)"
+    else:
+        judge_concurrency_display = "10 (default)"
+    config_table.add_row("", "OPENAI_JUDGE_CONCURRENCY", judge_concurrency_display)
     config_table.add_row("", "OPENAI_JUDGE_MAX_RETRIES", _get_env_or_default("OPENAI_JUDGE_MAX_RETRIES", "6"))
     config_table.add_row("", "OPENAI_JUDGE_BACKOFF_BASE", _get_env_or_default("OPENAI_JUDGE_BACKOFF_BASE", "1.0"))
     config_table.add_row("", "OPENAI_JUDGE_TIMEOUT", _get_env_or_default("OPENAI_JUDGE_TIMEOUT", _get_env_or_default("OPENAI_TIMEOUT", "60.0")))
