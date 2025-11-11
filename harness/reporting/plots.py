@@ -7,6 +7,97 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 
+# Nature Journal color palette (darker, more saturated)
+NATURE_COLORS = {
+    "blue": "#2563eb",
+    "red": "#c93c3d",
+    "yellow": "#eab308",
+    "green": "#10b981",
+}
+
+# Modality to Nature color mapping
+MODALITY_COLORS = {
+    "SPICE": NATURE_COLORS["red"],
+    "casIR": NATURE_COLORS["yellow"],
+    "Cascode ADL": NATURE_COLORS["blue"],
+}
+
+
+def _configure_plot_style():
+    """
+    Configure matplotlib with Times New Roman font and professional styling.
+    Should be called before creating any plots.
+    """
+    try:
+        import matplotlib.pyplot as plt  # type: ignore
+        import matplotlib  # type: ignore
+        
+        # Use Times New Roman font (serif, professional)
+        plt.rcParams['font.family'] = ['serif']
+        plt.rcParams['font.serif'] = ['Times New Roman', 'Times', 'DejaVu Serif', 'serif']
+        
+        # Professional styling defaults
+        plt.rcParams['font.size'] = 10
+        plt.rcParams['axes.labelsize'] = 11
+        plt.rcParams['axes.titlesize'] = 13
+        plt.rcParams['xtick.labelsize'] = 9
+        plt.rcParams['ytick.labelsize'] = 9
+        plt.rcParams['legend.fontsize'] = 9
+        plt.rcParams['figure.titlesize'] = 14
+        
+        # Professional grid and axes styling
+        plt.rcParams['axes.grid'] = True
+        plt.rcParams['grid.alpha'] = 0.3
+        plt.rcParams['grid.linestyle'] = '--'
+        plt.rcParams['axes.spines.top'] = False
+        plt.rcParams['axes.spines.right'] = False
+        
+        # Better figure quality
+        plt.rcParams['figure.dpi'] = 200
+        plt.rcParams['savefig.dpi'] = 200
+        plt.rcParams['savefig.bbox'] = 'tight'
+        
+    except ImportError:
+        pass  # matplotlib not available
+
+
+def _get_modality_color(modality: str) -> str:
+    """
+    Get the Nature Journal color for a given modality.
+    Falls back to green for unknown modalities.
+    """
+    return MODALITY_COLORS.get(modality, NATURE_COLORS["green"])
+
+
+def _apply_dark_mode(fig, ax):
+    """Apply dark mode styling: transparent background, white text."""
+    fig.patch.set_facecolor('none')
+    ax.set_facecolor('none')
+    ax.spines['bottom'].set_color('white')
+    ax.spines['top'].set_color('white')
+    ax.spines['left'].set_color('white')
+    ax.spines['right'].set_color('white')
+    ax.tick_params(colors='white')
+    ax.xaxis.label.set_color('white')
+    ax.yaxis.label.set_color('white')
+    ax.title.set_color('white')
+    if ax.get_legend():
+        legend = ax.get_legend()
+        for text in legend.get_texts():
+            text.set_color('white')
+        legend.get_frame().set_facecolor('black')
+        legend.get_frame().set_alpha(0.7)
+    for text in ax.texts:
+        text.set_color('white')
+    for a in fig.axes:
+        a.tick_params(colors='white')
+        if hasattr(a, 'yaxis') and a.yaxis.get_label().get_text():
+            a.yaxis.label.set_color('white')
+        for text in a.texts:
+            text.set_color('white')
+    ax.grid(alpha=0.2)
+
+
 def load_results(path: Path) -> List[Dict[str, Any]]:
     recs: List[Dict[str, Any]] = []
     for line in path.read_text().splitlines():
@@ -81,7 +172,8 @@ def plot_grouped_bars(
     try:
         import matplotlib.pyplot as plt  # type: ignore
         import numpy as np  # type: ignore
-    except Exception:
+        _configure_plot_style()
+    except ImportError:
         print("matplotlib/numpy not available; install to generate plots: pip install matplotlib numpy")
         return []
     # Build sets
@@ -116,13 +208,15 @@ def plot_grouped_bars(
                 d = data.get((m, mod, fam))
                 avg = (d["sum"] / d["n"]) if d and d["n"] else np.nan
                 ys.append(avg)
-            ax.bar(x + i * width, ys, width=width, label=mod)
+            color = _get_modality_color(mod)
+            ax.bar(x + i * width, ys, width=width, label=mod, color=color)
         ax.set_xticks(x + (len(fam_modalities) - 1) * width / 2)
         ax.set_xticklabels(models, rotation=30, ha='right')
         ax.set_ylim(0, 1.0)
         ax.set_ylabel("Judge score")
         ax.set_title(f"{fam}: models × modality (judge avg)")
         ax.legend(ncol=min(4, len(fam_modalities)))
+        ax.grid(axis='y', alpha=0.3, linestyle='--')
         _ensure_dir(out_dir)
         path = out_dir / f"grouped_bar_{fam.replace('/', '_')}.png"
         fig.tight_layout()
@@ -132,6 +226,8 @@ def plot_grouped_bars(
             pass
         try:
             fig.savefig(path, dpi=200)
+            _apply_dark_mode(fig, ax)
+            fig.savefig(path.with_stem(path.stem + "_dark"), dpi=200, transparent=True)
         except Exception as e:
             print(f"[plots] Failed to save {path}: {e}")
         if silent:
@@ -165,7 +261,8 @@ def plot_top_family_breakdowns(
     try:
         import matplotlib.pyplot as plt  # type: ignore
         import numpy as np  # type: ignore
-    except Exception:
+        _configure_plot_style()
+    except ImportError:
         print("matplotlib/numpy not available; install to generate plots: pip install matplotlib numpy")
         return []
     
@@ -198,13 +295,6 @@ def plot_top_family_breakdowns(
         print("[plots] No top-level family data found; skipping breakdown plots.")
         return []
     
-    # Define color scheme matching the attached plot: Blue=SPICE, Orange=casIR, Yellow=Cascode ADL
-    modality_colors = {
-        "SPICE": "#1f77b4",  # Blue
-        "casIR": "#ff7f0e",  # Orange
-        "Cascode ADL": "#d4af37",  # Gold/Yellow
-    }
-    
     paths = []
     for fam in top_fams:
         fig, ax = plt.subplots(figsize=(max(8, 1.8 * len(models)), 4.5))
@@ -218,7 +308,7 @@ def plot_top_family_breakdowns(
                 avg = (d["sum"] / d["n"]) if d and d["n"] else np.nan
                 ys.append(avg)
             
-            color = modality_colors.get(mod, None)
+            color = _get_modality_color(mod)
             bars = ax.bar(x + i * width, ys, width=width, label=mod, color=color)
             
             # Add value labels on top of bars
@@ -247,6 +337,8 @@ def plot_top_family_breakdowns(
             pass
         try:
             fig.savefig(path, dpi=200)
+            _apply_dark_mode(fig, ax)
+            fig.savefig(path.with_stem(path.stem + "_dark"), dpi=200, transparent=True)
         except Exception as e:
             print(f"[plots] Failed to save {path}: {e}")
         if silent:
@@ -275,8 +367,10 @@ def plot_heatmap_overall(
 ):
     try:
         import matplotlib.pyplot as plt  # type: ignore
+        import matplotlib.colors as mcolors  # type: ignore
         import numpy as np  # type: ignore
-    except Exception:
+        _configure_plot_style()
+    except ImportError:
         print("matplotlib/numpy not available; install to generate plots: pip install matplotlib numpy")
         return None
     # Aggregate across families to a (model, modality) matrix
@@ -295,8 +389,27 @@ def plot_heatmap_overall(
             d = mm.get((m, mod))
             if d and d["n"]:
                 mat[i, j] = d["sum"] / d["n"]
+    
+    # Create Nature-inspired colormap: red (low) -> yellow -> green (high)
+    colors = [NATURE_COLORS["red"], NATURE_COLORS["yellow"], NATURE_COLORS["green"]]
+    n_bins = 256
+    cmap = mcolors.LinearSegmentedColormap.from_list('nature', colors, N=n_bins)
+    
+    # Normalize scale to observed score range
+    vmin = np.nanmin(mat) if not np.isnan(mat).all() else 0
+    vmax = np.nanmax(mat) if not np.isnan(mat).all() else 1
+    
     fig, ax = plt.subplots(figsize=(1.5 * len(modalities) + 2, 0.5 * len(models) + 2.5))
-    im = ax.imshow(mat, vmin=0, vmax=1, cmap='RdYlGn')
+    im = ax.imshow(mat, vmin=vmin, vmax=vmax, cmap=cmap)
+    
+    # Add data value annotations in center of each cell (always black)
+    for i in range(len(models)):
+        for j in range(len(modalities)):
+            val = mat[i, j]
+            if not np.isnan(val):
+                ax.text(j, i, f'{val:.2f}', ha='center', va='center', 
+                       color='black', fontsize=8)
+    
     ax.set_xticks(range(len(modalities)))
     ax.set_xticklabels(modalities, rotation=30, ha='right')
     ax.set_yticks(range(len(models)))
@@ -304,6 +417,7 @@ def plot_heatmap_overall(
     ax.set_title("Judge score heatmap (model × modality)")
     cbar = fig.colorbar(im, ax=ax)
     cbar.set_label("Judge score")
+    ax.grid(False)  # Heatmaps typically don't show grid
     fig.tight_layout()
     _ensure_dir(out_dir)
     path = out_dir / "heatmap_model_modality.png"
@@ -313,6 +427,12 @@ def plot_heatmap_overall(
         pass
     try:
         fig.savefig(path, dpi=200)
+        _apply_dark_mode(fig, ax)
+        # Keep heatmap annotation text black in dark mode
+        for text in ax.texts:
+            text.set_color('black')
+        ax.grid(False)  # Keep grid off for heatmap
+        fig.savefig(path.with_stem(path.stem + "_dark"), dpi=200, transparent=True)
     except Exception as e:
         print(f"[plots] Failed to save {path}: {e}")
     if silent:
@@ -345,7 +465,8 @@ def plot_modality_by_top_families(
     try:
         import matplotlib.pyplot as plt  # type: ignore
         import numpy as np  # type: ignore
-    except Exception:
+        _configure_plot_style()
+    except ImportError:
         print("matplotlib/numpy not available; install to generate plots: pip install matplotlib numpy")
         return []
     
@@ -388,6 +509,7 @@ def plot_modality_by_top_families(
         ax.set_ylabel("Judge score")
         ax.set_title(f"{mod}: models × families (judge avg)")
         ax.legend(ncol=min(4, len(top_fams)))
+        ax.grid(axis='y', alpha=0.3, linestyle='--')
         _ensure_dir(out_dir)
         path = out_dir / f"modality_{mod.replace('/', '_')}_by_top_families.png"
         fig.tight_layout()
@@ -397,6 +519,8 @@ def plot_modality_by_top_families(
             pass
         try:
             fig.savefig(path, dpi=200)
+            _apply_dark_mode(fig, ax)
+            fig.savefig(path.with_stem(path.stem + "_dark"), dpi=200, transparent=True)
         except Exception as e:
             print(f"[plots] Failed to save {path}: {e}")
         if silent:
@@ -430,7 +554,8 @@ def plot_modality_by_analysis_subfamilies(
     try:
         import matplotlib.pyplot as plt  # type: ignore
         import numpy as np  # type: ignore
-    except Exception:
+        _configure_plot_style()
+    except ImportError:
         print("matplotlib/numpy not available; install to generate plots: pip install matplotlib numpy")
         return []
     
@@ -477,6 +602,7 @@ def plot_modality_by_analysis_subfamilies(
         ax.set_ylabel("Judge score")
         ax.set_title(f"{mod}: models × analysis subfamilies (judge avg)")
         ax.legend(ncol=min(4, len(analysis_subfams)))
+        ax.grid(axis='y', alpha=0.3, linestyle='--')
         _ensure_dir(out_dir)
         path = out_dir / f"modality_{mod.replace('/', '_')}_by_analysis_subfamilies.png"
         fig.tight_layout()
@@ -486,6 +612,8 @@ def plot_modality_by_analysis_subfamilies(
             pass
         try:
             fig.savefig(path, dpi=200)
+            _apply_dark_mode(fig, ax)
+            fig.savefig(path.with_stem(path.stem + "_dark"), dpi=200, transparent=True)
         except Exception as e:
             print(f"[plots] Failed to save {path}: {e}")
         if silent:
@@ -520,7 +648,8 @@ def plot_family_modality_aggregated(
     try:
         import matplotlib.pyplot as plt  # type: ignore
         import numpy as np  # type: ignore
-    except Exception:
+        _configure_plot_style()
+    except ImportError:
         print("matplotlib/numpy not available; install to generate plots: pip install matplotlib numpy")
         return None
     
@@ -542,23 +671,6 @@ def plot_family_modality_aggregated(
     modalities = _sort_modalities(list({k[0] for k in fm.keys()}))
     families = sorted({k[1] for k in fm.keys()})
     
-    # Use RdYlGn colormap to match heatmap colors
-    cmap = plt.get_cmap('RdYlGn')
-    # Get colors for modalities (red=low, green=high, but we want consistent colors per modality)
-    # Use a consistent color scheme: SPICE=reddish, Cascode ADL=greenish, casIR=yellowish-green
-    modality_colors = {}
-    if len(modalities) == 3:
-        # Map to RdYlGn colors: SPICE (low performance expected) = red, Cascode ADL = green, casIR = yellow-green
-        modality_colors = {
-            "SPICE": cmap(0.0),  # Red
-            "Cascode ADL": cmap(1.0),  # Green
-            "casIR": cmap(0.6),  # Yellow-green
-        }
-    else:
-        # Fallback: use colormap evenly distributed
-        for i, mod in enumerate(modalities):
-            modality_colors[mod] = cmap(i / max(1, len(modalities) - 1))
-    
     fig, ax = plt.subplots(figsize=(max(6, 1.5 * len(families)), 4.0))
     x = np.arange(len(families))
     width = 0.75 / max(1, len(modalities))
@@ -569,7 +681,7 @@ def plot_family_modality_aggregated(
             d = fm.get((mod, fam))
             avg = (d["sum"] / d["n"]) if d and d["n"] else np.nan
             ys.append(avg)
-        color = modality_colors.get(mod, cmap(i / max(1, len(modalities) - 1)))
+        color = _get_modality_color(mod)
         ax.bar(x + i * width, ys, width=width, label=mod, color=color)
     
     ax.set_xticks(x + (len(modalities) - 1) * width / 2)
@@ -588,6 +700,8 @@ def plot_family_modality_aggregated(
         pass
     try:
         fig.savefig(path, dpi=200)
+        _apply_dark_mode(fig, ax)
+        fig.savefig(path.with_stem(path.stem + "_dark"), dpi=200, transparent=True)
     except Exception as e:
         print(f"[plots] Failed to save {path}: {e}")
     if silent:
