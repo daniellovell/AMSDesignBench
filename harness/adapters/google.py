@@ -43,16 +43,10 @@ class GoogleAdapter(BaseAdapter):
         self.temperature = float(os.getenv("GOOGLE_TEMPERATURE", temperature))
         self.max_tokens = int(os.getenv("GOOGLE_MAX_TOKENS", max_tokens))
         # Use provided thinking_budget, or fall back to env var
-        # If thinking_budget is a string (effort level), map it to numeric value
+        # If thinking_budget is a string (effort level or numeric), coerce it
         if thinking_budget is not None:
             if isinstance(thinking_budget, str):
-                # Map effort levels to numeric thinking budget values
-                effort_map = {
-                    "low": 512,
-                    "medium": 2048,
-                    "high": 8192,
-                }
-                self.thinking_budget = effort_map.get(thinking_budget.lower().strip(), 0)
+                self.thinking_budget = self._coerce_thinking_budget(thinking_budget)
             else:
                 self.thinking_budget = int(thinking_budget)
         else:
@@ -175,13 +169,40 @@ class GoogleAdapter(BaseAdapter):
             return {"thinking_budget": budget}
         return types.ThinkingConfig(thinking_budget=budget)
 
+    @staticmethod
+    def _coerce_thinking_budget(value: str) -> int:
+        """Convert a thinking_budget string to an integer.
+
+        Accepts preset names ('low', 'medium', 'high') or numeric strings.
+        Raises ValueError for unrecognized/unparseable values.
+        """
+        effort_map = {
+            "low": 512,
+            "medium": 2048,
+            "high": 8192,
+        }
+        normalized = value.strip().lower()
+        if normalized in effort_map:
+            return effort_map[normalized]
+        try:
+            return int(normalized)
+        except ValueError:
+            raise ValueError(
+                f"Unsupported thinking_budget value: {value!r}. "
+                f"Expected 'low', 'medium', 'high', or a numeric string."
+            )
+
     def _build_generation_config(self) -> Optional[Any]:
         """Assemble the final GenerateContentConfig with knobs we expose."""
         # Use instance thinking_budget if set, otherwise fall back to env var
         if self.thinking_budget is not None:
             thinking_budget = self.thinking_budget
         else:
-            thinking_budget = int(os.getenv("GOOGLE_THINKING_BUDGET", "0"))
+            env_budget = os.getenv("GOOGLE_THINKING_BUDGET")
+            if env_budget:
+                thinking_budget = self._coerce_thinking_budget(env_budget)
+            else:
+                thinking_budget = 0
         config_kwargs: Dict[str, Any] = {}
         if self.temperature is not None:
             config_kwargs["temperature"] = self.temperature
