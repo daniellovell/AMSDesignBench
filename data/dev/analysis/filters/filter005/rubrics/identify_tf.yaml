@@ -1,6 +1,6 @@
 weight_topology: 0.35
-weight_tf: 0.35
-weight_grounded_evidence: 0.3
+weight_tf: 0.55
+weight_grounded_evidence: 0.1
 tf_target: H(s) = product of two second-order low-pass sections
 tf_equivalents: "H(s) = 1/(s^2 + s/Q₁ + 1) · 1/(s^2 + s/Q₂ + 1) or similar product forms"
 grounded_min_refs: 2

@@ -42,7 +42,13 @@ def _sem() -> threading.Semaphore:
     """
     Return the module-wide semaphore that controls judge concurrency.
     
-    Reads the environment variable OPENAI_JUDGE_CONCURRENCY and creates a singleton threading.Semaphore sized to that value if it is a positive integer; otherwise creates a semaphore with a default count of 3. Subsequent calls return the same semaphore instance.
+    Reads the environment variable OPENAI_JUDGE_CONCURRENCY and creates a singleton threading.Semaphore sized to that value if it is a positive integer; otherwise creates a semaphore with a default count of 10. Subsequent calls return the same semaphore instance.
+    
+    Performance tuning:
+    - Higher concurrency (10-20) improves throughput when judge API calls are the bottleneck
+    - Lower concurrency (3-5) reduces rate limit risk but may cause worker threads to block
+    - Recommended: Set to match or exceed --item-workers to avoid serialization bottlenecks
+    - If hitting rate limits, reduce concurrency or configure OPENAI_JUDGE_RPM/TPM limits
     
     Returns:
         threading.Semaphore: The module-global semaphore used to limit concurrent judge operations.
@@ -56,8 +62,9 @@ def _sem() -> threading.Semaphore:
         if lim and lim > 0:
             _SEM = threading.Semaphore(lim)
         else:
-            # Default to conservative concurrency if unset
-            _SEM = threading.Semaphore(3)
+            # Default to 10 for better parallelism (was 3, which caused bottlenecks with 8+ item workers)
+            # Users can override via OPENAI_JUDGE_CONCURRENCY env var or --judge-concurrency flag
+            _SEM = threading.Semaphore(10)
     return _SEM
 
 
@@ -194,6 +201,7 @@ def judge_answer(
     track: str,
     inventory: Optional[Dict[str, Any]] = None,
     model: Optional[str] = None,
+    reasoning_effort: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
     """
     Evaluate an answer against a Markdown rubric using an OpenAI-based grading judge and return the parsed scoring result.
@@ -206,6 +214,7 @@ def judge_answer(
         track (str): Evaluation track label (e.g., "design", "analysis", "debugging") used to shape the system prompt.
         inventory (Optional[Dict[str, Any]]): Optional contextual information to include in the evaluation payload.
         model (Optional[str]): Optional model identifier to override environment-configured judge model.
+        reasoning_effort (Optional[str]): Optional reasoning effort level (low, medium, high, default, auto). Overrides environment variables if provided.
     
     Returns:
         Optional[Dict[str, Any]]: On success, a dict parsed from the judge's JSON output containing at minimum a "scores" key and an attached "debug" field. On failure, a dict with an "error" message and often a "debug" payload and/or "raw" text for diagnosis. Returns None only in unexpected runtime scenarios.
@@ -263,8 +272,11 @@ def judge_answer(
             "input": judge_user_blob,
         }
         if is_gpt5:
-            effort = os.getenv("OPENAI_JUDGE_REASONING_EFFORT") or os.getenv("OPENAI_REASONING_EFFORT") or ""
-            effort = effort.strip().lower()
+            # Use provided reasoning_effort, or fall back to env vars, or default to "low"
+            effort = reasoning_effort
+            if not effort:
+                effort = os.getenv("OPENAI_JUDGE_REASONING_EFFORT") or os.getenv("OPENAI_REASONING_EFFORT") or ""
+            effort = effort.strip().lower() if effort else ""
             if not effort:
                 effort = "low"
             if effort not in {"", "default", "auto"}:
@@ -539,21 +551,33 @@ def judge_answer(
                     # OpenAI client timeout is set in _client(), but add explicit timeout as backup
                     api_timeout = float(os.getenv("OPENAI_JUDGE_TIMEOUT", os.getenv("OPENAI_TIMEOUT", "60.0")))
                     api_timer = perf_counter() if profiling.is_enabled() else None
+                    # Use a slightly shorter timeout than configured to ensure we catch slow calls
+                    # The OpenAI client timeout should catch it, but we add explicit timeout as backup
+                    effective_timeout = min(api_timeout, 60.0)  # Cap at 60s for judge calls
                     if use_responses_api:
-                        resp = client.responses.create(timeout=api_timeout, **params)
+                        resp = client.responses.create(timeout=effective_timeout, **params)
                     else:
-                        resp = client.chat.completions.create(**params, timeout=api_timeout)
+                        resp = client.chat.completions.create(**params, timeout=effective_timeout)
                         # Validate response before breaking
                         if resp is None or not hasattr(resp, "choices") or not resp.choices:
                             raise ValueError(f"Invalid response from API: {type(resp).__name__}")
                     if api_timer is not None:
                         endpoint = "responses" if use_responses_api else "chat"
+                        elapsed_ms = (perf_counter() - api_timer) * 1000
                         profiling.log(
                             "judge_api",
                             "call",
-                            (perf_counter() - api_timer) * 1000,
+                            elapsed_ms,
                             context=f"endpoint={endpoint} model={judge_model}",
                         )
+                        # Warn if call took unusually long (more than 2x expected)
+                        if elapsed_ms > 15000:  # 15 seconds
+                            print(
+                                f"[JUDGE] WARNING: Judge API call took {elapsed_ms/1000:.1f}s (unusually slow, "
+                                f"expected <10s). This may indicate network issues or API throttling.",
+                                file=_sys.stderr,
+                                flush=True
+                            )
                     break
                 except APITimeoutError as e:
                     emsg = f"API call timed out after {api_timeout}s"

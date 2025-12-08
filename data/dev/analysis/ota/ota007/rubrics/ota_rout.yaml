@@ -1,6 +1,2 @@
-weight_topology: 0.1
-weight_key_relation: 0.35
-weight_device_specificity: 0.25
-weight_grounded_evidence: 0.3
 relation_target: "r_out ≈ ro_M_in || ro_load (parallel of NMOS and PMOS output resistances)"
 {path:_ota_rubric_template.yaml}

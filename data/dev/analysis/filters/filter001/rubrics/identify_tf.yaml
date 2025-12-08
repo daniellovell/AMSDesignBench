@@ -1,6 +1,6 @@
 weight_topology: 0.35
-weight_tf: 0.35
-weight_grounded_evidence: 0.3
+weight_tf: 0.55
+weight_grounded_evidence: 0.1
 tf_target: H(s) = 1/(1 + s)
 tf_equivalents: "H(s) = 1/(1 + s/w_c) with w_c normalized"
 grounded_min_refs: 2

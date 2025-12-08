@@ -1,6 +1,6 @@
 weight_topology: 0.35
-weight_tf: 0.35
-weight_grounded_evidence: 0.3
+weight_tf: 0.55
+weight_grounded_evidence: 0.1
 tf_target: H(s) = H₀(s/ω₀)/((s/ω₀)^2 + (s/ω₀)/Q + 1)
 tf_equivalents: "H(s) = H₀(s/ω₀)/((s/ω₀)^2 + (s/ω₀)/Q + 1) or normalized band-pass form"
 grounded_min_refs: 2

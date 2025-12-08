@@ -15,6 +15,7 @@ import yaml
 
 from rich import print
 from rich.progress import Progress, BarColumn, TimeElapsedColumn, TimeRemainingColumn, MofNCompleteColumn
+from rich.table import Table
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 import threading
 
@@ -101,45 +102,77 @@ def get_adapter(name: str, **kwargs):
 
 def parse_model_spec(spec: str) -> tuple[str, Dict[str, Any]]:
     """
-    Parse a model spec like "openai" or "openai:gpt-4o-mini" into (adapter, kwargs).
+    Parse a model spec like "openai", "openai:gpt-4o-mini", or "openai:gpt-5-nano:low" into (adapter, kwargs).
+    Supports optional effort level as third component: adapter:model:effort
     For unknown adapters, everything after ':' is ignored.
     """
     if ":" in spec:
-        name, rest = spec.split(":", 1)
-        name = name.strip()
-        rest = rest.strip()
-        # For OpenAI, map to underlying model name
+        parts = spec.split(":")
+        name = parts[0].strip()
+        rest = parts[1].strip() if len(parts) > 1 else ""
+        effort = parts[2].strip() if len(parts) > 2 else None
+        
+        kwargs: Dict[str, Any] = {}
+        
+        # For OpenAI, map to underlying model name and optional reasoning effort
         if name == "openai" and rest:
-            return name, {"model": rest}
+            kwargs["model"] = rest
+            if effort:
+                kwargs["reasoning_effort"] = effort
         # For Anthropic, map to underlying model name
-        if name == "anthropic" and rest:
-            return name, {"model": rest}
+        elif name == "anthropic" and rest:
+            kwargs["model"] = rest
         # For OpenRouter, pass model name through
-        if name == "openrouter" and rest:
-            return name, {"model": rest}
-        # For Google, map to underlying model name
-        if name == "google" and rest:
-            return name, {"model": rest}
+        elif name == "openrouter" and rest:
+            kwargs["model"] = rest
+        # For Google, map to underlying model name and optional thinking budget (effort level)
+        elif name == "google" and rest:
+            kwargs["model"] = rest
+            if effort:
+                kwargs["thinking_budget"] = effort
         # Future adapters can parse additional kv-pairs here
-        return name, {}
+        else:
+            if rest:
+                kwargs["model"] = rest
+        
+        return name, kwargs
     return spec.strip(), {}
 
 
-def normalize_judge_model(spec: Optional[str]) -> Optional[str]:
+def normalize_judge_model(spec: Optional[str]) -> tuple[Optional[str], Optional[str]]:
     """
     Normalize judge model specs so we can reuse adapter-style strings
-    (e.g., openai:gpt-4o-mini) while still passing raw model IDs to judge calls.
+    (e.g., openai:gpt-4o-mini or openai:gpt-5-nano:low) while still passing raw model IDs to judge calls.
+    Also handles specs without adapter prefix (e.g., gpt-5-nano:minimal).
+    Returns (model_name, effort_level) where effort_level may be None.
     """
     if spec is None:
-        return None
+        return None, None
     cleaned = str(spec).strip()
     if not cleaned:
-        return None
+        return None, None
     if ":" in cleaned:
-        prefix, rest = cleaned.split(":", 1)
-        if prefix.strip().lower() in {"openai", "anthropic", "openrouter", "google"}:
-            return rest.strip() or None
-    return cleaned
+        parts = cleaned.split(":")
+        prefix = parts[0].strip()
+        rest = parts[1].strip() if len(parts) > 1 else ""
+        effort = parts[2].strip() if len(parts) > 2 else None
+        
+        # If prefix is a known adapter, extract model name and effort
+        if prefix.lower() in {"openai", "anthropic", "openrouter", "google"}:
+            return rest or None, effort
+        # If prefix is not a known adapter, assume it's a model name with optional effort
+        # (e.g., "gpt-5-nano:minimal" -> model="gpt-5-nano", effort="minimal")
+        if len(parts) == 2:
+            # Two parts: model:effort
+            return prefix, rest
+        elif len(parts) == 3:
+            # Three parts: adapter:model:effort (but adapter not recognized)
+            # Treat as model:effort:something (unlikely but handle gracefully)
+            return prefix, rest
+        else:
+            # More than 3 parts - return first part as model, second as effort
+            return prefix, rest
+    return cleaned, None
 
 
 def load_questions(item_dir: Path) -> List[Question]:
@@ -732,7 +765,7 @@ def main():
     )
     ap.add_argument("--judge-model", "--judge_model", dest="judge_model", default=None, help="override judge model name")
     ap.add_argument("--model-workers", type=int, default=0, help="parallel model workers (0 = run all models in parallel)")
-    ap.add_argument("--item-workers", type=int, default=8, help="per-model concurrent workers for items/questions")
+    ap.add_argument("--item-workers", type=int, default=8, help="per-model concurrent workers for items/questions (judge concurrency auto-scales with this if not explicitly set)")
     ap.add_argument(
         "--enable-profiling",
         action="store_true",
@@ -742,7 +775,7 @@ def main():
     ap.add_argument("--judge-rpm", type=float, default=None, help="Rate limit RPM for judge API (sets OPENAI_JUDGE_RPM)")
     ap.add_argument("--judge-tpm", type=float, default=None, help="Token per minute limit for judge API (sets OPENAI_JUDGE_TPM)")
     ap.add_argument("--judge-max-retries", type=int, default=None, help="Max retries for judge API (sets OPENAI_JUDGE_MAX_RETRIES)")
-    ap.add_argument("--judge-concurrency", type=int, default=None, help="Max concurrent judge calls (sets OPENAI_JUDGE_CONCURRENCY)")
+    ap.add_argument("--judge-concurrency", type=int, default=None, help="Max concurrent judge calls (sets OPENAI_JUDGE_CONCURRENCY). If unset, auto-scales with --item-workers to avoid bottlenecks.")
     args = ap.parse_args()
     # Judge is always enabled; no flag required
 
@@ -755,8 +788,25 @@ def main():
         os.environ["OPENAI_JUDGE_TPM"] = str(args.judge_tpm)
     if args.judge_max_retries is not None:
         os.environ["OPENAI_JUDGE_MAX_RETRIES"] = str(args.judge_max_retries)
+    # Track if judge concurrency was explicitly set (via arg or pre-existing env var that wasn't auto-generated)
+    # A value is explicit if: args.judge_concurrency is provided OR env var exists AND AUTO marker is not "1"
+    judge_concurrency_explicitly_set = (
+        args.judge_concurrency is not None
+        or (bool(os.getenv("OPENAI_JUDGE_CONCURRENCY")) and os.getenv("OPENAI_JUDGE_CONCURRENCY_AUTO") != "1")
+    )
     if args.judge_concurrency is not None:
+        # Explicit override: set the value and remove/unset the AUTO marker
         os.environ["OPENAI_JUDGE_CONCURRENCY"] = str(args.judge_concurrency)
+        os.environ.pop("OPENAI_JUDGE_CONCURRENCY_AUTO", None)
+    else:
+        # Adaptive judge concurrency: recompute if not explicitly set (or if it was auto-generated)
+        # This ensures judge slots scale with parallelization capacity.
+        # Performance note: With 8 item workers and only 3 judge slots, ~62% of threads block waiting.
+        # By scaling judge concurrency to match workers (minus 2 for headroom), we reduce serialization.
+        # If hitting rate limits, reduce via --judge-concurrency or configure OPENAI_JUDGE_RPM/TPM.
+        adaptive_concurrency = max(3, args.item_workers - 2)
+        os.environ["OPENAI_JUDGE_CONCURRENCY"] = str(adaptive_concurrency)
+        os.environ["OPENAI_JUDGE_CONCURRENCY_AUTO"] = "1"
 
     # Load bench config (YAML)
     cfg = yaml.safe_load(Path("bench_config.yaml").read_text(encoding='utf-8')) or {}
@@ -773,14 +823,20 @@ def main():
 
     judge_model_cfg = eval_cfg.get("judge_model")
     judge_model_spec = args.judge_model if args.judge_model is not None else judge_model_cfg
-    judge_model = normalize_judge_model(judge_model_spec)
+    judge_model, judge_effort = normalize_judge_model(judge_model_spec)
     args.judge_model = judge_model
+    # Store effort separately for judge calls (overrides env var if specified)
+    if judge_effort:
+        args.judge_reasoning_effort = judge_effort
+    else:
+        args.judge_reasoning_effort = None
 
     split_dir = data_root / args.split
     if not split_dir.exists():
         raise SystemExit(f"Split not found: {split_dir}")
 
     # Resolve model list (support both --models and legacy --model). If none, try bench_config eval.models.
+    # This needs to happen before config table printing to show correct model count
     model_specs: List[str] = []
     if args.models:
         for token in args.models:
@@ -795,6 +851,126 @@ def main():
             model_specs = [str(m) for m in cfg_models]
         else:
             model_specs = ["dummy"]
+
+    # Print configuration summary
+    def _get_env_or_default(key: str, default: str = "not set") -> str:
+        val = os.getenv(key)
+        return val if val else default
+
+    def _format_value(val: Any) -> str:
+        if val is None:
+            return "not set"
+        if isinstance(val, (int, float)):
+            return str(val)
+        if isinstance(val, list):
+            return ", ".join(str(v) for v in val)
+        return str(val)
+
+    config_table = Table(title="[bold cyan]Evaluation Configuration[/bold cyan]", show_header=True, header_style="bold")
+    config_table.add_column("Category", style="cyan", no_wrap=True)
+    config_table.add_column("Setting", style="yellow")
+    config_table.add_column("Value", style="green")
+
+    # Parallelization settings
+    model_workers_display = str(args.model_workers) if args.model_workers > 0 else f"{len(model_specs)} (all)"
+    config_table.add_row("Parallelization", "--model-workers", model_workers_display)
+    config_table.add_row("", "--item-workers", str(args.item_workers))
+    config_table.add_row("", "EVAL_MODEL_TIMEOUT", _get_env_or_default("EVAL_MODEL_TIMEOUT", "3600.0"))
+    config_table.add_row("", "EVAL_ITEM_TIMEOUT", _get_env_or_default("EVAL_ITEM_TIMEOUT", "300.0"))
+
+    # Judge settings
+    judge_model_display = judge_model or _get_env_or_default("OPENAI_JUDGE_MODEL", _get_env_or_default("OPENAI_MODEL", "gpt-4o-mini"))
+    config_table.add_row("Judge", "Model", judge_model_display)
+    config_table.add_row("", "OPENAI_JUDGE_RPM", _get_env_or_default("OPENAI_JUDGE_RPM", "0 (unlimited)"))
+    config_table.add_row("", "OPENAI_JUDGE_TPM", _get_env_or_default("OPENAI_JUDGE_TPM", "0 (unlimited)"))
+    # Show judge concurrency with indication if it was auto-set
+    judge_concurrency_val = os.getenv("OPENAI_JUDGE_CONCURRENCY", "")
+    if judge_concurrency_val:
+        if judge_concurrency_explicitly_set:
+            # Explicitly set via --judge-concurrency or pre-existing env var
+            judge_concurrency_display = judge_concurrency_val
+        else:
+            # Was auto-set adaptively
+            judge_concurrency_display = f"{judge_concurrency_val} (auto-set from --item-workers)"
+    else:
+        judge_concurrency_display = "10 (default)"
+    config_table.add_row("", "OPENAI_JUDGE_CONCURRENCY", judge_concurrency_display)
+    config_table.add_row("", "OPENAI_JUDGE_MAX_RETRIES", _get_env_or_default("OPENAI_JUDGE_MAX_RETRIES", "6"))
+    config_table.add_row("", "OPENAI_JUDGE_BACKOFF_BASE", _get_env_or_default("OPENAI_JUDGE_BACKOFF_BASE", "1.0"))
+    config_table.add_row("", "OPENAI_JUDGE_TIMEOUT", _get_env_or_default("OPENAI_JUDGE_TIMEOUT", _get_env_or_default("OPENAI_TIMEOUT", "60.0")))
+    config_table.add_row("", "OPENAI_JUDGE_TEMPERATURE", _get_env_or_default("OPENAI_JUDGE_TEMPERATURE", "0.0"))
+    judge_max_tokens_default = "2000" if "gpt-5" in judge_model_display.lower() else "400"
+    config_table.add_row("", "OPENAI_JUDGE_MAX_TOKENS", _get_env_or_default("OPENAI_JUDGE_MAX_TOKENS", judge_max_tokens_default))
+    config_table.add_row("", "OPENAI_JUDGE_REASONING_EFFORT", _get_env_or_default("OPENAI_JUDGE_REASONING_EFFORT", "not set"))
+    config_table.add_row("", "OPENAI_JUDGE_TOKEN_DIVISOR", _get_env_or_default("OPENAI_JUDGE_TOKEN_DIVISOR", "3.5"))
+
+    # OpenAI adapter settings
+    config_table.add_row("OpenAI Adapter", "OPENAI_RPM", _get_env_or_default("OPENAI_RPM", "0 (unlimited)"))
+    config_table.add_row("", "OPENAI_TPM", _get_env_or_default("OPENAI_TPM", "0 (unlimited)"))
+    config_table.add_row("", "OPENAI_MAX_RETRIES", _get_env_or_default("OPENAI_MAX_RETRIES", "8"))
+    config_table.add_row("", "OPENAI_BACKOFF_BASE", _get_env_or_default("OPENAI_BACKOFF_BASE", "1.0"))
+    config_table.add_row("", "OPENAI_TIMEOUT", _get_env_or_default("OPENAI_TIMEOUT", "60.0"))
+    config_table.add_row("", "OPENAI_MODEL", _get_env_or_default("OPENAI_MODEL", "gpt-4o-mini"))
+    config_table.add_row("", "OPENAI_TEMPERATURE", _get_env_or_default("OPENAI_TEMPERATURE", str(eval_cfg.get("temperature", 0.2))))
+    config_table.add_row("", "OPENAI_MAX_TOKENS", _get_env_or_default("OPENAI_MAX_TOKENS", str(eval_cfg.get("max_tokens", 800))))
+    config_table.add_row("", "OPENAI_TOKEN_DIVISOR", _get_env_or_default("OPENAI_TOKEN_DIVISOR", "4"))
+
+    # Anthropic adapter settings
+    config_table.add_row("Anthropic Adapter", "ANTHROPIC_RPM", _get_env_or_default("ANTHROPIC_RPM", "0 (unlimited)"))
+    config_table.add_row("", "ANTHROPIC_TPM", _get_env_or_default("ANTHROPIC_TPM", "0 (unlimited)"))
+    config_table.add_row("", "ANTHROPIC_MAX_RETRIES", _get_env_or_default("ANTHROPIC_MAX_RETRIES", "8"))
+    config_table.add_row("", "ANTHROPIC_BACKOFF_BASE", _get_env_or_default("ANTHROPIC_BACKOFF_BASE", "1.0"))
+    config_table.add_row("", "ANTHROPIC_MODEL", _get_env_or_default("ANTHROPIC_MODEL", "claude-3-5-sonnet-latest"))
+    config_table.add_row("", "ANTHROPIC_TEMPERATURE", _get_env_or_default("ANTHROPIC_TEMPERATURE", str(eval_cfg.get("temperature", 0.2))))
+    config_table.add_row("", "ANTHROPIC_MAX_TOKENS", _get_env_or_default("ANTHROPIC_MAX_TOKENS", str(eval_cfg.get("max_tokens", 800))))
+    config_table.add_row("", "ANTHROPIC_TOKEN_DIVISOR", _get_env_or_default("ANTHROPIC_TOKEN_DIVISOR", "4"))
+
+    # Google adapter settings
+    config_table.add_row("Google Adapter", "GOOGLE_RPM", _get_env_or_default("GOOGLE_RPM", "0 (unlimited)"))
+    config_table.add_row("", "GOOGLE_TPM", _get_env_or_default("GOOGLE_TPM", "0 (unlimited)"))
+    config_table.add_row("", "GOOGLE_MAX_RETRIES", _get_env_or_default("GOOGLE_MAX_RETRIES", "8"))
+    config_table.add_row("", "GOOGLE_BACKOFF_BASE", _get_env_or_default("GOOGLE_BACKOFF_BASE", "1.0"))
+    config_table.add_row("", "GOOGLE_TIMEOUT", _get_env_or_default("GOOGLE_TIMEOUT", "60.0"))
+    config_table.add_row("", "GOOGLE_MODEL", _get_env_or_default("GOOGLE_MODEL", "gemini-2.5-pro"))
+    config_table.add_row("", "GOOGLE_TEMPERATURE", _get_env_or_default("GOOGLE_TEMPERATURE", str(eval_cfg.get("temperature", 0.2))))
+    config_table.add_row("", "GOOGLE_MAX_TOKENS", _get_env_or_default("GOOGLE_MAX_TOKENS", str(eval_cfg.get("max_tokens", 800))))
+    config_table.add_row("", "GOOGLE_TOKEN_DIVISOR", _get_env_or_default("GOOGLE_TOKEN_DIVISOR", "4"))
+    config_table.add_row("", "GOOGLE_THINKING_BUDGET", _get_env_or_default("GOOGLE_THINKING_BUDGET", "0"))
+
+    # OpenRouter adapter settings
+    config_table.add_row("OpenRouter Adapter", "OPENROUTER_RPM", _get_env_or_default("OPENROUTER_RPM", "0 (unlimited)"))
+    config_table.add_row("", "OPENROUTER_TPM", _get_env_or_default("OPENROUTER_TPM", "0 (unlimited)"))
+    config_table.add_row("", "OPENROUTER_MAX_RETRIES", _get_env_or_default("OPENROUTER_MAX_RETRIES", "8"))
+    config_table.add_row("", "OPENROUTER_BACKOFF_BASE", _get_env_or_default("OPENROUTER_BACKOFF_BASE", "1.0"))
+    config_table.add_row("", "OPENROUTER_MODEL", _get_env_or_default("OPENROUTER_MODEL", "openai/gpt-4o-mini"))
+    config_table.add_row("", "OPENROUTER_TEMPERATURE", _get_env_or_default("OPENROUTER_TEMPERATURE", str(eval_cfg.get("temperature", 0.2))))
+    config_table.add_row("", "OPENROUTER_MAX_TOKENS", _get_env_or_default("OPENROUTER_MAX_TOKENS", str(eval_cfg.get("max_tokens", 800))))
+    config_table.add_row("", "OPENROUTER_TOKEN_DIVISOR", _get_env_or_default("OPENROUTER_TOKEN_DIVISOR", "4"))
+    config_table.add_row("", "OPENROUTER_REFERER", _get_env_or_default("OPENROUTER_REFERER", "not set"))
+    config_table.add_row("", "OPENROUTER_TITLE", _get_env_or_default("OPENROUTER_TITLE", "not set"))
+
+    # Config file settings
+    config_table.add_row("Config File", "eval.max_tokens", _format_value(eval_cfg.get("max_tokens")))
+    config_table.add_row("", "eval.temperature", _format_value(eval_cfg.get("temperature")))
+    config_table.add_row("", "eval.top_p", _format_value(eval_cfg.get("top_p")))
+    config_table.add_row("", "eval.judge_model", _format_value(eval_cfg.get("judge_model")))
+    config_table.add_row("", "eval.models", _format_value(eval_cfg.get("models")))
+    config_table.add_row("", "eval.judge_reasoning_effort", _format_value(eval_cfg.get("judge_reasoning_effort")))
+
+    # Models being evaluated
+    models_display = ", ".join(model_specs) if model_specs else "dummy"
+    config_table.add_row("Models", "Models to evaluate", models_display)
+
+    # Other settings
+    config_table.add_row("Other", "--enable-profiling", "enabled" if args.enable_profiling else "disabled")
+    config_table.add_row("", "--split", args.split)
+    config_table.add_row("", "--max-items", str(args.max_items) if args.max_items > 0 else "unlimited")
+    config_table.add_row("", "--family", args.family or "all")
+    config_table.add_row("", "--family-subdir", args.family_subdir or "not set")
+    config_table.add_row("", "--item-index", str(args.item_index) if args.item_index > 0 else "all")
+
+    print(config_table)
+    print()  # Empty line after table
 
     dummy_requested = False
     for spec in model_specs:
@@ -830,10 +1006,16 @@ def main():
         name, kwargs = parse_model_spec(spec)
         adapter = get_adapter(name, **kwargs)
         # Create a unique, descriptive slug for outputs
+        # Include effort level in slug if specified for uniqueness
+        effort_suffix = ""
+        if kwargs.get("reasoning_effort"):
+            effort_suffix = f"_{kwargs['reasoning_effort']}"
+        elif kwargs.get("thinking_budget"):
+            effort_suffix = f"_{kwargs['thinking_budget']}"
         if kwargs.get("model"):
-            slug = f"{name}_{kwargs['model']}".replace("/", "-")
+            slug = f"{name}_{kwargs['model']}{effort_suffix}".replace("/", "-")
         else:
-            slug = name
+            slug = f"{name}{effort_suffix}"
         # Ensure uniqueness if duplicates
         base_slug = slug
         suffix = 2

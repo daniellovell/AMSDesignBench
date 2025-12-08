@@ -1,7 +1,7 @@
 {path:../../judge_prompts/analysis_common_prompt.md}
 {path:ota_common_instructions.md}
 
-Scoring: Compute `overall` as the weighted sum: {weight_topology}*scores.topology + {weight_key_relation}*scores.key_relation + {weight_device_specificity}*scores.device_specificity + {weight_grounded_evidence}*scores.grounded_evidence. **IMPORTANT: Output the computed numeric result (e.g., 0.75) in the `overall` field, NOT the formula itself.**
+Scoring: Compute `overall` as the weighted sum: 0.1*scores.topology + 0.6*scores.key_relation + 0.2*scores.device_specificity + 0.1*scores.grounded_evidence. **IMPORTANT: Output the computed numeric result (e.g., 0.75) in the `overall` field, NOT the formula itself.**
 
 {path:ota_common_criteria.md}
 

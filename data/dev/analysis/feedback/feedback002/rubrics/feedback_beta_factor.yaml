@@ -1,5 +1,5 @@
-weight_beta_expression: "0.70"
-weight_grounded_evidence: "0.30"
+weight_beta_expression: "0.80"
+weight_grounded_evidence: "0.20"
 beta_expression_target: "beta = 1 (unity feedback)."
 beta_expression_guidance: "Highlight that the capacitor connects output to summing node, keeping unity feedback."
 beta_expression_reject: "beta = 0; beta = C1; beta = 1/C1; no feedback path."
