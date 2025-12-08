@@ -1,6 +1,2 @@
-weight_topology: 0.1
-weight_key_relation: 0.4
-weight_device_specificity: 0.2
-weight_grounded_evidence: 0.3
 relation_target: "I_tail + I_branch1 + I_branch2. NOT individual branches, NOT I_M1 ≈ I_M2"
 {path:_ota_rubric_template.yaml}

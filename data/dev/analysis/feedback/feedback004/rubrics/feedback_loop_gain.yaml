@@ -1,5 +1,5 @@
-weight_loop_gain_expression: "0.70"
-weight_grounded_evidence: "0.30"
+weight_loop_gain_expression: "0.80"
+weight_grounded_evidence: "0.20"
 loop_gain_target: "T = A0 * R2/(R1+R2)."
 loop_gain_disallowed: "Unexpanded beta (e.g., A0*beta) without explicitly stating R2/(R1+R2)."
 loop_gain_guidance: "Express loop gain as open-loop gain multiplied by the feedback factor from the divider."
