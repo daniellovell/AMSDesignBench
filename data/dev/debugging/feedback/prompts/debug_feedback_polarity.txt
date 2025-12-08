@@ -11,7 +11,7 @@ Required sections (use these exact headers):
 Guidance:
 - In Symptoms: describe the symptoms of the issue.
 - In Fault: identify the fault in the design.
-- In Grounded evidence: cite the exact element IDs and show describe any problematic connections from the artifact.
+- In Grounded evidence: cite the exact element IDs and describe any problematic connections from the artifact.
 - In Fix: propose a concrete change to fix the issue.
 
 Return markdown only. NEVER use LaTeX or MathJax formatting in your response.
