@@ -778,19 +778,25 @@ def main():
         os.environ["OPENAI_JUDGE_TPM"] = str(args.judge_tpm)
     if args.judge_max_retries is not None:
         os.environ["OPENAI_JUDGE_MAX_RETRIES"] = str(args.judge_max_retries)
-    # Track if judge concurrency was explicitly set (via arg or pre-existing env var)
-    judge_concurrency_explicitly_set = args.judge_concurrency is not None or bool(os.getenv("OPENAI_JUDGE_CONCURRENCY"))
+    # Track if judge concurrency was explicitly set (via arg or pre-existing env var that wasn't auto-generated)
+    # A value is explicit if: args.judge_concurrency is provided OR env var exists AND AUTO marker is not "1"
+    judge_concurrency_explicitly_set = (
+        args.judge_concurrency is not None
+        or (bool(os.getenv("OPENAI_JUDGE_CONCURRENCY")) and os.getenv("OPENAI_JUDGE_CONCURRENCY_AUTO") != "1")
+    )
     if args.judge_concurrency is not None:
+        # Explicit override: set the value and remove/unset the AUTO marker
         os.environ["OPENAI_JUDGE_CONCURRENCY"] = str(args.judge_concurrency)
+        os.environ.pop("OPENAI_JUDGE_CONCURRENCY_AUTO", None)
     else:
-        # Adaptive judge concurrency: if not explicitly set, match item workers to avoid bottlenecks
+        # Adaptive judge concurrency: recompute if not explicitly set (or if it was auto-generated)
         # This ensures judge slots scale with parallelization capacity.
         # Performance note: With 8 item workers and only 3 judge slots, ~62% of threads block waiting.
         # By scaling judge concurrency to match workers (minus 2 for headroom), we reduce serialization.
         # If hitting rate limits, reduce via --judge-concurrency or configure OPENAI_JUDGE_RPM/TPM.
-        if not os.getenv("OPENAI_JUDGE_CONCURRENCY"):
-            adaptive_concurrency = max(3, args.item_workers - 2)
-            os.environ["OPENAI_JUDGE_CONCURRENCY"] = str(adaptive_concurrency)
+        adaptive_concurrency = max(3, args.item_workers - 2)
+        os.environ["OPENAI_JUDGE_CONCURRENCY"] = str(adaptive_concurrency)
+        os.environ["OPENAI_JUDGE_CONCURRENCY_AUTO"] = "1"
 
     # Load bench config (YAML)
     cfg = yaml.safe_load(Path("bench_config.yaml").read_text(encoding='utf-8')) or {}
