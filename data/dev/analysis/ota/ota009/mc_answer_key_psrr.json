@@ -1,18 +1,18 @@
 {
   "question_id": "ota009_psrr_mc",
-  "correct_answer": "H",
+  "correct_answer": "G",
   "answer_text": "PSRR+ \u2248 gm\u00b7ro",
   "choices": {
     "A": "PSRR+ \u2248 ro/gm",
-    "B": "PSRR+ \u2248 gm/ro",
-    "C": "PSRR+ \u2248 (gm\u00b7ro)/2",
-    "D": "PSRR+ \u2248 A0\u00b7CMRR",
-    "E": "PSRR+ \u2248 gm\u00b2\u00b7ro",
-    "F": "PSRR+ \u2248 \u221a(gm\u00b7ro)",
-    "G": "PSRR+ \u2248 2\u00b7gm\u00b7ro",
-    "H": "PSRR+ \u2248 gm\u00b7ro",
-    "I": "PSRR+ \u2248 gm\u00b7(ro || rds)",
-    "J": "PSRR+ \u2248 (gm\u00b7ro)\u00b3/2"
+    "B": "PSRR+ \u2248 gm\u00b2\u00b7ro",
+    "C": "PSRR+ \u2248 (gm\u00b7ro)\u00b3/2",
+    "D": "PSRR+ \u2248 (gm\u00b7ro)/2",
+    "E": "PSRR+ \u2248 A0\u00b7CMRR",
+    "F": "PSRR+ \u2248 gm/ro",
+    "G": "PSRR+ \u2248 gm\u00b7ro",
+    "H": "PSRR+ \u2248 gm\u00b7(ro || rds)",
+    "I": "PSRR+ \u2248 \u221a(gm\u00b7ro)",
+    "J": "PSRR+ \u2248 2\u00b7gm\u00b7ro"
   },
   "track": "analysis",
   "aspect": "psrr"

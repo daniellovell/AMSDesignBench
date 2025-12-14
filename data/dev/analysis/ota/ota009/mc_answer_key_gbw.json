@@ -1,18 +1,18 @@
 {
   "question_id": "ota009_gbw_mc",
-  "correct_answer": "A",
+  "correct_answer": "G",
   "answer_text": "GBW \u2248 gm/CL",
   "choices": {
-    "A": "GBW \u2248 gm/CL",
-    "B": "GBW \u2248 gm1\u00b7Cc/CL",
-    "C": "GBW \u2248 gm/(Cc\u00b7CL)",
-    "D": "GBW \u2248 (gm/CL)\u00b7(Cc/CL)",
-    "E": "GBW \u2248 gm/Cc",
+    "A": "GBW \u2248 gm1/(Cc+CL)",
+    "B": "GBW \u2248 gm/(2\u03c0CL)",
+    "C": "GBW \u2248 gm1\u00b7Cc/CL",
+    "D": "GBW \u2248 gm\u00b7CL",
+    "E": "GBW \u2248 gm/(Cc\u00b7CL)",
     "F": "GBW \u2248 \u03c9t = gm\u00b7CL",
-    "G": "GBW \u2248 A0\u00b7\u03c9p",
-    "H": "GBW \u2248 gm1/(Cc+CL)",
-    "I": "GBW \u2248 gm/(2\u03c0CL)",
-    "J": "GBW \u2248 gm\u00b7CL"
+    "G": "GBW \u2248 gm/CL",
+    "H": "GBW \u2248 gm/Cc",
+    "I": "GBW \u2248 (gm/CL)\u00b7(Cc/CL)",
+    "J": "GBW \u2248 A0\u00b7\u03c9p"
   },
   "track": "analysis",
   "aspect": "gbw"

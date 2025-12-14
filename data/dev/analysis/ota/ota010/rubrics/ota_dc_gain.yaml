@@ -1,2 +1,2 @@
-relation_target: "DC Gain ≈ (gm * ro)² for folded cascode"
+relation_target: "DC Gain ≈ (gm * ro)² / 2 for folded cascode"
 {path:_ota_rubric_template.yaml}

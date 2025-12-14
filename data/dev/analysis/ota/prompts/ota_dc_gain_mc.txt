@@ -3,13 +3,6 @@ From the {modality} artifact, answer the question about open-loop DC gain (A0) f
 
 **INSTRUCTIONS:** Select the single best answer from the multiple choice options below.
 
-Guidance:
-- Focus on the ORDER of the gain (e.g., gm*ro, (gm*ro)², (gm*ro)³)
-- Constant multiplicative factors (like 1/2, 2, etc.) are acceptable and will not be penalized
-- Consider the topology (single-stage vs multi-stage, cascode, gain-boosted, etc.)
-- EXPLICITLY identify which specific devices (by their IDs like M1, M2, etc.) contribute to the gain calculation
-- Cite specific device IDs from the artifact
-
 **MULTIPLE CHOICE OPTIONS:**
 
 {choices}

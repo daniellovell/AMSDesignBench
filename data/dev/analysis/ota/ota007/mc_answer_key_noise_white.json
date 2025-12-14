@@ -5,14 +5,14 @@
   "choices": {
     "A": "Vn,out\u00b2 \u2248 8kT/(3gm)\u00b7(1 + aux_contribution)",
     "B": "Vn,out\u00b2 \u2248 \u221a(8kT/(3gm))",
-    "C": "Vn,out\u00b2 \u2248 8kT\u00b7gm",
-    "D": "Vn,out\u00b2 \u2248 4kT\u00b7(2/3gm)",
-    "E": "Vn,out\u00b2 \u2248 16kT/(3gm)",
-    "F": "Vn,out\u00b2 \u2248 8kT\u00b7ro/(3gm)",
-    "G": "Vn,out\u00b2 \u2248 4kT/(gm\u00b7ro)",
-    "H": "Vn,out\u00b2 \u2248 8kT/(gm\u00b7\u221a3)",
-    "I": "Vn,out\u00b2 \u2248 8kT/(3gm\u00b2)",
-    "J": "Vn,out\u00b2 \u2248 16kT/gm"
+    "C": "Vn,out\u00b2 \u2248 8kT/(gm\u00b7\u221a3)",
+    "D": "Vn,out\u00b2 \u2248 8kT\u00b7gm",
+    "E": "Vn,out\u00b2 \u2248 16kT/gm",
+    "F": "Vn,out\u00b2 \u2248 4kT\u00b7(2/3gm)",
+    "G": "Vn,out\u00b2 \u2248 8kT\u00b7ro/(3gm)",
+    "H": "Vn,out\u00b2 \u2248 4kT/(gm\u00b7ro)",
+    "I": "Vn,out\u00b2 \u2248 16kT/(3gm)",
+    "J": "Vn,out\u00b2 \u2248 8kT/(3gm\u00b2)"
   },
   "track": "analysis",
   "aspect": "noise_white"

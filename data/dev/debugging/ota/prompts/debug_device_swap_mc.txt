@@ -6,11 +6,6 @@ A user says their OTA is broken, from the {modality} artifact, diagnose the cata
 Hard constraints:
 - Assume all required bias sources exist and are correctly driven UNLESS the artifact explicitly shows an unconnected bias port or a bias port tied to an illegal rail (e.g., NMOS gate bias to VDD, PMOS gate bias to GND). Do NOT claim "missing bias" if a motif's bias/gate port is connected to any net typed as "bias".
 
-Guidance:
-- Identify the specific device/structure/motif that is at fault
-- Cite the exact element ID and show the problematic line or node context from the artifact
-- Consider the concrete change needed and any node re-ties required
-
 **MULTIPLE CHOICE OPTIONS:**
 
 {choices}

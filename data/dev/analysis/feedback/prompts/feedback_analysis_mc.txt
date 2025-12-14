@@ -3,23 +3,6 @@ From the {modality} artifact, answer the question about the feedback network.
 
 **INSTRUCTIONS:** Select the single best answer from the multiple choice options below.
 
-Guidance for loop gain (T):
-- Accept open-loop gain labels (A0, Aol, A(s)) that represent the op-amp gain in the loop
-- Do NOT express as A0*beta unless beta is expanded
-- Reference the amplifier element and its gain parameters
-
-Guidance for beta factor (β):
-- Provide the voltage/current division ratio of the feedback network
-- For unity feedback: β = 1
-- For resistive dividers: β = R1/(R1+R2)
-- Cite R/C elements and nodes that form the feedback path
-
-Guidance for closed-loop gain:
-- For transimpedance amplifiers (TIA): Vout/Iin = -R1 or include frequency dependence
-- For voltage amplifiers: Vout/Vin = 1 + R2/R1 (non-inverting) or -R2/R1 (inverting)
-- Include the negative sign for inverting configurations
-- Cite resistor values and inverting input/output nodes
-
 **MULTIPLE CHOICE OPTIONS:**
 
 {choices}

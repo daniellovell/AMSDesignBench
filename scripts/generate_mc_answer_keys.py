@@ -36,18 +36,18 @@ DEBUGGING_FEEDBACK_POLARITY_ANSWERS = {
 }
 
 ANALYSIS_OTA_DC_GAIN = {
-    "ota001": "gm·ro",
-    "ota002": "(gm·ro)²",
-    "ota003": "(gm·ro)²",
-    "ota004": "gm·ro",
-    "ota005": "(gm·ro)²",
-    "ota006": "(gm·ro)²",
-    "ota007": "(gm·ro)³",
-    "ota008": "(gm·ro)³",
-    "ota009": "gm·ro",
-    "ota010": "(gm·ro)²",
-    "ota011": "(gm·ro)²",
-    "ota012": "gm·ro",
+    "ota001": "gm·ro/2",       # 5T OTA with current mirror load
+    "ota002": "(gm·ro)²/2",    # Telescopic cascode (fully differential)
+    "ota003": "gm·ro/2",       # High-swing current mirror OTA
+    "ota004": "(gm·ro)²/4",    # Two-stage Miller: (gm1·ro1/2) × (gm2·ro2/2) = (gm·ro)²/4
+    "ota005": "(gm·ro)²/2",    # Single-ended telescopic cascode
+    "ota006": "(gm·ro)²/2",    # Single-ended telescopic cascode
+    "ota007": "gm·ro/2",       # Single-stage common source with current mirror load
+    "ota008": "(gm·ro)²/2",    # NMOS cascode with PMOS cascode load
+    "ota009": "(gm·ro)³/2",    # Gain-boosted cascode (still has parallel ro at output)
+    "ota010": "(gm·ro)²/2",    # Folded cascode (fully differential)
+    "ota011": "(gm·ro)²/2",    # Folded cascode (single-ended)
+    "ota012": "gm·ro/2",       # Folded cascode with current mirror load
 }
 
 ANALYSIS_OTA_GBW = {
@@ -206,17 +206,37 @@ def generate_formula_distractors(correct_formula: str, formula_type: str) -> Lis
     distractors = []
     
     if formula_type == "dc_gain":
-        alternatives = [
-            "gm·ro²",
-            "gm²·ro",
-            "(gm·ro)²/2",
-            "2·gm·ro",
-            "gm/ro",
-            "gm·(ro/2)",
-            "(gm·ro)³",
-            "√(gm·ro)",
-            "gm·(ron || rop)",
+        # Generate distractors based on the correct formula to avoid duplicates
+        # Base pool of modifications
+        base_alternatives = [
+            "gm·ro²",          # Extra ro term
+            "gm²·ro",          # Extra gm term  
+            "2·gm·ro",         # Factor of 2 (wrong direction)
+            "4·gm·ro",         # Factor of 4
+            "gm/ro",           # Division instead of multiplication
+            "(gm·ro)³",        # Cubed
+            "(gm·ro)³/2",      # Cubed with /2
+            "√(gm·ro)",        # Square root
+            "gm·ro/4",         # Factor of 1/4
+            "3·gm·ro/2",       # Factor of 3/2
+            "(gm·ro)²",        # Squared (no /2)
+            "(gm·ro)²/4",      # Squared with /4
+            "gm·ro",           # No /2 factor
+            "(gm·ro)²/2",      # Squared with /2
         ]
+        
+        # Filter based on correct answer to avoid mathematical equivalents
+        if "gm·ro/2" in correct_formula:
+            # Correct is gm·ro/2, exclude equivalent forms
+            alternatives = [d for d in base_alternatives if d not in ["gm·ro/2"]]
+        elif "(gm·ro)²/2" in correct_formula:
+            # Correct is (gm·ro)²/2, exclude equivalent forms
+            alternatives = [d for d in base_alternatives if d not in ["(gm·ro)²/2"]]
+        elif "(gm·ro)³/2" in correct_formula:
+            # Correct is (gm·ro)³/2, exclude equivalent forms  
+            alternatives = [d for d in base_alternatives if d not in ["(gm·ro)³/2"]]
+        else:
+            alternatives = base_alternatives
     elif formula_type == "gbw":
         alternatives = [
             "gm·CL",
@@ -442,8 +462,15 @@ def generate_mc_answer_key(question_id: str, track: str, aspect: str, item_id: s
         correct_answer = "Correct answer for " + question_id
         distractors = [f"Distractor {i} for {question_id}" for i in range(1, 10)]
     
+    # Filter out correct answer from distractors (case-insensitive, whitespace-normalized)
+    def normalize(s):
+        return s.lower().replace(" ", "").replace("≈", "").replace("~", "")
+    
+    correct_norm = normalize(correct_answer)
+    distractors = [d for d in distractors if normalize(d) != correct_norm][:9]
+    
     # Shuffle and assign A-J
-    all_choices = [correct_answer] + distractors[:9]
+    all_choices = [correct_answer] + distractors
     random.shuffle(all_choices)
     
     # Find correct letter

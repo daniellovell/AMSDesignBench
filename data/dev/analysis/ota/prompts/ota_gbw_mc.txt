@@ -3,14 +3,6 @@ From the {modality} artifact, answer the question about gain-bandwidth product (
 
 **INSTRUCTIONS:** Select the single best answer from the multiple choice options below.
 
-Guidance:
-- For single-stage OTAs: GBW ≈ gm/CL
-- For two-stage Miller-compensated OTAs: GBW ≈ gm1/Cc
-- Explicitly name the topology and justify using observed elements
-- Identify single-ended vs differential OTA
-- EXPLICITLY identify which specific devices and capacitors contribute to GBW
-- Cite specific device IDs from the artifact
-
 **MULTIPLE CHOICE OPTIONS:**
 
 {choices}

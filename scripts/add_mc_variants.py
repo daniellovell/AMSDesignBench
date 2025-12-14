@@ -52,9 +52,20 @@ def add_mc_variant(questions_data: Dict[str, List[Dict]], item_dir: Path, track:
                     mc_q['prompt_template'] = '../prompts/ota_dc_gain_mc.txt'
                 elif "gbw" in aspect:
                     mc_q['prompt_template'] = '../prompts/ota_gbw_mc.txt'
+                elif "psrr" in aspect:
+                    mc_q['prompt_template'] = '../prompts/ota_psrr_mc.txt'
+                elif "rout" in aspect:
+                    mc_q['prompt_template'] = '../prompts/ota_rout_mc.txt'
+                elif "swing" in aspect:
+                    mc_q['prompt_template'] = '../prompts/ota_swing_mc.txt'
+                elif "power" in aspect:
+                    mc_q['prompt_template'] = '../prompts/ota_power_mc.txt'
+                elif "noise" in aspect:
+                    mc_q['prompt_template'] = '../prompts/ota_noise_mc.txt'
                 else:
-                    # For other OTA aspects, use a generic MC template
-                    mc_q['prompt_template'] = '../prompts/ota_dc_gain_mc.txt'  # fallback
+                    # Skip if no template defined
+                    print(f"Warning: No MC template for aspect '{aspect}' in {family}, skipping")
+                    continue
             
             elif family == "feedback":
                 mc_q['prompt_template'] = '../prompts/feedback_analysis_mc.txt'

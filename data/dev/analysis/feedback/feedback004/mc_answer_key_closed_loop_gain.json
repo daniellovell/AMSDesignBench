@@ -4,15 +4,15 @@
   "answer_text": "T = A0",
   "choices": {
     "A": "T = \u03b2",
-    "B": "T = A0\u00b7\u03b2",
-    "C": "T = A0/(1+\u03b2)",
+    "B": "T = A0\u00b2",
+    "C": "T = \u221a(A0\u00b7\u03b2)",
     "D": "T = A0",
-    "E": "T = A0\u00b2",
-    "F": "T = \u03b2/A0",
-    "G": "T = 1/(1+A0\u00b7\u03b2)",
-    "H": "T = \u221a(A0\u00b7\u03b2)",
-    "I": "T = (A0\u00b7\u03b2)/2",
-    "J": "T = A0/(1+A0\u00b7\u03b2)"
+    "E": "T = \u03b2/A0",
+    "F": "T = A0/(1+\u03b2)",
+    "G": "T = A0\u00b7\u03b2",
+    "H": "T = 1/(1+A0\u00b7\u03b2)",
+    "I": "T = A0/(1+A0\u00b7\u03b2)",
+    "J": "T = (A0\u00b7\u03b2)/2"
   },
   "track": "analysis",
   "aspect": "closed_loop_gain"

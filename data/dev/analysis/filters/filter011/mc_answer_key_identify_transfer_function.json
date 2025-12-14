@@ -1,18 +1,18 @@
 {
   "question_id": "filter011_identify_mc",
-  "correct_answer": "C",
+  "correct_answer": "B",
   "answer_text": "Correct answer for filter011_identify_mc",
   "choices": {
-    "A": "Distractor 5 for filter011_identify_mc",
-    "B": "Distractor 4 for filter011_identify_mc",
-    "C": "Correct answer for filter011_identify_mc",
-    "D": "Distractor 2 for filter011_identify_mc",
-    "E": "Distractor 3 for filter011_identify_mc",
-    "F": "Distractor 8 for filter011_identify_mc",
+    "A": "Distractor 1 for filter011_identify_mc",
+    "B": "Correct answer for filter011_identify_mc",
+    "C": "Distractor 8 for filter011_identify_mc",
+    "D": "Distractor 9 for filter011_identify_mc",
+    "E": "Distractor 5 for filter011_identify_mc",
+    "F": "Distractor 2 for filter011_identify_mc",
     "G": "Distractor 7 for filter011_identify_mc",
-    "H": "Distractor 9 for filter011_identify_mc",
+    "H": "Distractor 3 for filter011_identify_mc",
     "I": "Distractor 6 for filter011_identify_mc",
-    "J": "Distractor 1 for filter011_identify_mc"
+    "J": "Distractor 4 for filter011_identify_mc"
   },
   "track": "analysis",
   "aspect": "identify_transfer_function"

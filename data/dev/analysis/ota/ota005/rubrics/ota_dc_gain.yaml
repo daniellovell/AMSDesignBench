@@ -1,2 +1,2 @@
-relation_target: "DC Gain ≈ (gm * ro)² for single-ended telescopic cascode OTA"
+relation_target: "DC Gain ≈ (gm * ro)² / 2 for single-ended telescopic cascode OTA"
 {path:_ota_rubric_template.yaml}

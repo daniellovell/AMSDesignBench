@@ -763,6 +763,19 @@ def main():
         default=0,
         help="1-based item index within the selected scope (after family filter). 0 = all.",
     )
+    ap.add_argument(
+        "--prompt-variant",
+        dest="prompt_variant",
+        choices=["short_form", "multiple_choice"],
+        default=None,
+        help="Filter questions by meta.prompt_variant. If unset, runs all variants.",
+    )
+    ap.add_argument(
+        "--modality",
+        dest="modality",
+        default=None,
+        help="Comma-separated modality filter (e.g., spice_netlist,cascode,casIR,veriloga). If unset, runs all modalities.",
+    )
     ap.add_argument("--judge-model", "--judge_model", dest="judge_model", default=None, help="override judge model name")
     ap.add_argument("--model-workers", type=int, default=0, help="parallel model workers (0 = run all models in parallel)")
     ap.add_argument("--item-workers", type=int, default=8, help="per-model concurrent workers for items/questions (judge concurrency auto-scales with this if not explicitly set)")
@@ -1046,6 +1059,34 @@ def main():
         items = [items[args.item_index - 1]]
     if args.max_items and args.max_items > 0:
         items = items[: args.max_items]
+
+    # Optional filtering by prompt variant and/or modality (reduces number of model calls)
+    allowed_modalities: Optional[set[str]] = None
+    if args.modality and str(args.modality).strip():
+        allowed_modalities = {m.strip() for m in str(args.modality).split(",") if m.strip()}
+
+    def _prompt_variant_of(q: "Question") -> str:
+        try:
+            pv = (q.meta or {}).get("prompt_variant")
+            return pv if pv in {"short_form", "multiple_choice"} else "short_form"
+        except Exception:
+            return "short_form"
+
+    if args.prompt_variant or allowed_modalities is not None:
+        filtered_items: List[EvalItem] = []
+        for it in items:
+            qs = it.questions
+            if args.prompt_variant:
+                qs = [q for q in qs if _prompt_variant_of(q) == args.prompt_variant]
+            if allowed_modalities is not None:
+                qs = [q for q in qs if getattr(q, "modality", None) in allowed_modalities]
+            if qs:
+                it.questions = qs
+                filtered_items.append(it)
+        items = filtered_items
+
+    if not items or sum(len(it.questions) for it in items) == 0:
+        raise SystemExit("No questions matched the selected scope/filters (family/family-subdir/item-index/prompt-variant/modality).")
 
     # Pre-compute totals for progress bars
     total_questions = sum(len(it.questions) for it in items)

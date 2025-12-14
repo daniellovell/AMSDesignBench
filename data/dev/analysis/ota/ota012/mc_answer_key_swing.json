@@ -1,17 +1,17 @@
 {
   "question_id": "ota012_swing_mc",
-  "correct_answer": "D",
+  "correct_answer": "G",
   "answer_text": "Max swing \u2248 VDD - |VDsat|",
   "choices": {
     "A": "Max swing \u2248 VDD\u00b7(1 - VDsat/VDD)",
-    "B": "Max swing \u2248 VDD - VTH",
-    "C": "Max swing \u2248 VDD - 5\u00b7|VDsat|",
-    "D": "Max swing \u2248 VDD - |VDsat|",
-    "E": "Max swing \u2248 VDD/2",
-    "F": "Max swing \u2248 VDD - 6\u00b7|VDsat|",
-    "G": "Max swing \u2248 VDD - 2\u00b7VTH",
-    "H": "Max swing \u2248 VDD - |VGS - VTH|",
-    "I": "Max swing \u2248 VDD - 3\u00b7|VDsat|"
+    "B": "Max swing \u2248 VDD - 6\u00b7|VDsat|",
+    "C": "Max swing \u2248 VDD - VTH",
+    "D": "Max swing \u2248 VDD - 3\u00b7|VDsat|",
+    "E": "Max swing \u2248 VDD - 5\u00b7|VDsat|",
+    "F": "Max swing \u2248 VDD - |VGS - VTH|",
+    "G": "Max swing \u2248 VDD - |VDsat|",
+    "H": "Max swing \u2248 VDD - 2\u00b7VTH",
+    "I": "Max swing \u2248 VDD/2"
   },
   "track": "analysis",
   "aspect": "swing"

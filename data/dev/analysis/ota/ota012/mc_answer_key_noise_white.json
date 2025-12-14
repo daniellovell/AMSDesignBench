@@ -3,16 +3,16 @@
   "correct_answer": "I",
   "answer_text": "Vn,out\u00b2 \u2248 8kT/(3gm)",
   "choices": {
-    "A": "Vn,out\u00b2 \u2248 8kT\u00b7ro/(3gm)",
-    "B": "Vn,out\u00b2 \u2248 4kT\u00b7(2/3gm)",
-    "C": "Vn,out\u00b2 \u2248 4kT/(gm\u00b7ro)",
-    "D": "Vn,out\u00b2 \u2248 \u221a(8kT/(3gm))",
-    "E": "Vn,out\u00b2 \u2248 8kT/(gm\u00b7\u221a3)",
-    "F": "Vn,out\u00b2 \u2248 16kT/gm",
-    "G": "Vn,out\u00b2 \u2248 8kT/(3gm\u00b2)",
-    "H": "Vn,out\u00b2 \u2248 16kT/(3gm)",
+    "A": "Vn,out\u00b2 \u2248 \u221a(8kT/(3gm))",
+    "B": "Vn,out\u00b2 \u2248 16kT/(3gm)",
+    "C": "Vn,out\u00b2 \u2248 4kT\u00b7(2/3gm)",
+    "D": "Vn,out\u00b2 \u2248 8kT/(gm\u00b7\u221a3)",
+    "E": "Vn,out\u00b2 \u2248 8kT/(3gm\u00b2)",
+    "F": "Vn,out\u00b2 \u2248 8kT\u00b7ro/(3gm)",
+    "G": "Vn,out\u00b2 \u2248 16kT/gm",
+    "H": "Vn,out\u00b2 \u2248 8kT\u00b7gm",
     "I": "Vn,out\u00b2 \u2248 8kT/(3gm)",
-    "J": "Vn,out\u00b2 \u2248 8kT\u00b7gm"
+    "J": "Vn,out\u00b2 \u2248 4kT/(gm\u00b7ro)"
   },
   "track": "analysis",
   "aspect": "noise_white"

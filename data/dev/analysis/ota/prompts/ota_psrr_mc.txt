@@ -1,5 +1,5 @@
 You are an expert analog IC designer.
-A user says their feedback circuit is broken, from the {modality} artifact, diagnose the feedback polarity error.
+From the {modality} artifact, answer the question about power supply rejection ratio (PSRR+) for the given circuit.
 
 **INSTRUCTIONS:** Select the single best answer from the multiple choice options below.
 
