@@ -9,7 +9,7 @@ questions:
     topology: folded_cascode_two_diode_tailcas_single_end_pmos_in
     bench_version: 0.1.0
     aspect: structure
-- id: ota012_design_with_verification_spice_netlist
+- id: ota012_design_verification
   track: design
   modality: spice_netlist
   prompt_template: design_prompt.txt

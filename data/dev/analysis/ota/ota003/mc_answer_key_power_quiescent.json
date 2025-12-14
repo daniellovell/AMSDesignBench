@@ -1,0 +1,19 @@
+{
+  "question_id": "ota003_power_quiescent_mc",
+  "correct_answer": "I",
+  "answer_text": "P = VDD\u00b7(Itail + Ibias_2nd_stage)",
+  "choices": {
+    "A": "P = VDD\u00b2\u00b7gm",
+    "B": "P = VDD\u00b7Itail/(1 + A0)",
+    "C": "P = VDD\u00b7Itail/2",
+    "D": "P = (VDD - VTH)\u00b7Itail",
+    "E": "P = 2\u00b7VDD\u00b7Itail",
+    "F": "P = VDD\u00b7(Itail + IDD)",
+    "G": "P = VDD\u00b7Itail\u00b7gm",
+    "H": "P = VDD\u00b7\u221a(Itail)",
+    "I": "P = VDD\u00b7(Itail + Ibias_2nd_stage)",
+    "J": "P = VDD\u00b2/Rtail"
+  },
+  "track": "analysis",
+  "aspect": "power_quiescent"
+}

@@ -1,0 +1,19 @@
+{
+  "question_id": "ota007_noise_white_mc",
+  "correct_answer": "A",
+  "answer_text": "Vn,out\u00b2 \u2248 8kT/(3gm)\u00b7(1 + aux_contribution)",
+  "choices": {
+    "A": "Vn,out\u00b2 \u2248 8kT/(3gm)\u00b7(1 + aux_contribution)",
+    "B": "Vn,out\u00b2 \u2248 \u221a(8kT/(3gm))",
+    "C": "Vn,out\u00b2 \u2248 8kT\u00b7gm",
+    "D": "Vn,out\u00b2 \u2248 4kT\u00b7(2/3gm)",
+    "E": "Vn,out\u00b2 \u2248 16kT/(3gm)",
+    "F": "Vn,out\u00b2 \u2248 8kT\u00b7ro/(3gm)",
+    "G": "Vn,out\u00b2 \u2248 4kT/(gm\u00b7ro)",
+    "H": "Vn,out\u00b2 \u2248 8kT/(gm\u00b7\u221a3)",
+    "I": "Vn,out\u00b2 \u2248 8kT/(3gm\u00b2)",
+    "J": "Vn,out\u00b2 \u2248 16kT/gm"
+  },
+  "track": "analysis",
+  "aspect": "noise_white"
+}

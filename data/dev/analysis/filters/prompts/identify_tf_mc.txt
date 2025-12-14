@@ -1,0 +1,24 @@
+You are an expert analog IC designer.
+From the {modality} artifact, identify the transfer function H(s) for the given filter circuit.
+
+**INSTRUCTIONS:** Select the single best answer from the multiple choice options below.
+
+Guidance:
+- Explicitly name the filter topology (low-pass, high-pass, band-pass, notch, all-pass)
+- Identify the order (first-order, second-order, etc.)
+- Express the transfer function in standard form using:
+  - s for the Laplace variable
+  - ωc or ω0 for cutoff/center frequency
+  - Q for quality factor (if applicable)
+  - Normalized forms like H(s) = 1/(1+s/ωc) are acceptable
+- Cite R/C/L elements and nodes that form the filter path
+- For second-order filters, include both poles and any zeros
+
+**MULTIPLE CHOICE OPTIONS:**
+
+{choices}
+
+**ANSWER:** Provide only the letter (A-J) of the correct answer.
+
+Return markdown only. NEVER use LaTeX or MathJax formatting in your response.
+

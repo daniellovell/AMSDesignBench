@@ -1,0 +1,19 @@
+{
+  "question_id": "ota007_power_quiescent_mc",
+  "correct_answer": "E",
+  "answer_text": "P = VDD\u00b7(Imain + Iaux_amps)",
+  "choices": {
+    "A": "P = VDD\u00b7Itail\u00b7gm",
+    "B": "P = VDD\u00b7\u221a(Itail)",
+    "C": "P = VDD\u00b2\u00b7gm",
+    "D": "P = VDD\u00b7Itail/2",
+    "E": "P = VDD\u00b7(Imain + Iaux_amps)",
+    "F": "P = 2\u00b7VDD\u00b7Itail",
+    "G": "P = (VDD - VTH)\u00b7Itail",
+    "H": "P = VDD\u00b2/Rtail",
+    "I": "P = VDD\u00b7(Itail + IDD)",
+    "J": "P = VDD\u00b7Itail/(1 + A0)"
+  },
+  "track": "analysis",
+  "aspect": "power_quiescent"
+}

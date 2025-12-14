@@ -1,0 +1,19 @@
+{
+  "question_id": "feedback003_debug_polarity_mc",
+  "correct_answer": "J",
+  "answer_text": "The circuit has positive feedback instead of negative feedback. Fix: move feedback to inverting terminal.",
+  "choices": {
+    "A": "Common-mode rejection is inadequate. Fix: use fully differential topology.",
+    "B": "Resistor values are incorrect. Fix: recalculate R1 based on desired gain.",
+    "C": "Op-amp bandwidth is insufficient. Fix: select faster op-amp.",
+    "D": "Feedback network has too much attenuation. Fix: increase feedback resistor.",
+    "E": "Capacitor is missing at critical node. Fix: add compensation capacitor.",
+    "F": "Op-amp is saturating due to insufficient supply voltage. Fix: increase VDD.",
+    "G": "Load capacitance is too large. Fix: add buffer stage.",
+    "H": "Input bias current causes DC offset. Fix: add input bias current compensation.",
+    "I": "Circuit is oscillating due to insufficient phase margin. Fix: add lead compensation.",
+    "J": "The circuit has positive feedback instead of negative feedback. Fix: move feedback to inverting terminal."
+  },
+  "track": "debugging",
+  "aspect": "feedback_polarity"
+}

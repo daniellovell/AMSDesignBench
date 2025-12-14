@@ -1,0 +1,19 @@
+{
+  "question_id": "ota010_rout_mc",
+  "correct_answer": "C",
+  "answer_text": "rout \u2248 (gm\u00b7ro)\u00b7ro",
+  "choices": {
+    "A": "rout \u2248 gm\u00b7ro",
+    "B": "rout \u2248 \u221a(ro\u00b3)",
+    "C": "rout \u2248 (gm\u00b7ro)\u00b7ro",
+    "D": "rout \u2248 ro\u00b7(1+gm\u00b7ro)",
+    "E": "rout \u2248 2ro",
+    "F": "rout \u2248 (gm\u00b7ro)\u00b3\u00b7ro",
+    "G": "rout \u2248 ro\u00b2/gm",
+    "H": "rout \u2248 ro/(1+gm\u00b7ro)",
+    "I": "rout \u2248 ro + gm\u00b7ro\u00b2",
+    "J": "rout \u2248 ro/2"
+  },
+  "track": "analysis",
+  "aspect": "rout"
+}

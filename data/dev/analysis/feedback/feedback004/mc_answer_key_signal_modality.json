@@ -1,0 +1,19 @@
+{
+  "question_id": "feedback004_signal_modality_mc",
+  "correct_answer": "I",
+  "answer_text": "Correct answer for feedback004_signal_modality_mc",
+  "choices": {
+    "A": "Distractor 6 for feedback004_signal_modality_mc",
+    "B": "Distractor 5 for feedback004_signal_modality_mc",
+    "C": "Distractor 4 for feedback004_signal_modality_mc",
+    "D": "Distractor 3 for feedback004_signal_modality_mc",
+    "E": "Distractor 2 for feedback004_signal_modality_mc",
+    "F": "Distractor 1 for feedback004_signal_modality_mc",
+    "G": "Distractor 7 for feedback004_signal_modality_mc",
+    "H": "Distractor 9 for feedback004_signal_modality_mc",
+    "I": "Correct answer for feedback004_signal_modality_mc",
+    "J": "Distractor 8 for feedback004_signal_modality_mc"
+  },
+  "track": "analysis",
+  "aspect": "signal_modality"
+}

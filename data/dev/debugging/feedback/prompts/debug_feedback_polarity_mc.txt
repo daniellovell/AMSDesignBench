@@ -1,0 +1,20 @@
+You are an expert analog IC designer.
+A user says their feedback circuit is broken, from the {modality} artifact, diagnose the feedback polarity error.
+
+**INSTRUCTIONS:** Select the single best answer from the multiple choice options below.
+
+Guidance:
+- Correctly identify whether the circuit has positive or negative feedback
+- Determine whether that configuration is correct for the intended circuit
+- Cite exact element IDs and problematic node connections from the artifact (e.g., opamp inputs, feedback resistor connections)
+- Propose concrete change to establish proper negative feedback (e.g., swap opamp inputs, correct resistor node connections)
+- Explain symptoms of positive feedback (instability, oscillation, saturation) vs expected behavior with negative feedback
+
+**MULTIPLE CHOICE OPTIONS:**
+
+{choices}
+
+**ANSWER:** Provide only the letter (A-J) of the correct answer.
+
+Return markdown only. NEVER use LaTeX or MathJax formatting in your response.
+

@@ -7,5 +7,17 @@ questions:
     family: filters
     bench_version: 0.1.0
     aspect: identify_transfer_function
+    prompt_variant: short_form
+  judge_prompt: ../judge_prompts/identify_tf.md
+  judge_id: filters_identify_tf
+- id: filter001_identify_mc
+  track: analysis
+  modality: auto
+  prompt_template: ../prompts/identify_tf_mc.txt
+  meta:
+    family: filters
+    bench_version: 0.1.0
+    aspect: identify_transfer_function
+    prompt_variant: multiple_choice
   judge_prompt: ../judge_prompts/identify_tf.md
   judge_id: filters_identify_tf

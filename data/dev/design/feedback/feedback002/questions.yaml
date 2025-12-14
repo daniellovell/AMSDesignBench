@@ -1,5 +1,5 @@
 questions:
-- id: feedback002_design_tia_cap
+- id: feedback002_design_verification_tia_cap
   track: design
   modality: auto
   prompt_template: ../prompts/design_feedback.txt

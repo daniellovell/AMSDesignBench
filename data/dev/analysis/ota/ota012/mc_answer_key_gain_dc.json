@@ -1,0 +1,19 @@
+{
+  "question_id": "ota012_gain_dc_mc",
+  "correct_answer": "G",
+  "answer_text": "DC gain A0 \u2248 gm\u00b7ro",
+  "choices": {
+    "A": "DC gain A0 \u2248 (gm\u00b7ro)\u00b2/2",
+    "B": "DC gain A0 \u2248 gm\u00b7(ron || rop)",
+    "C": "DC gain A0 \u2248 \u221a(gm\u00b7ro)",
+    "D": "DC gain A0 \u2248 gm\u00b7(ro/2)",
+    "E": "DC gain A0 \u2248 (gm\u00b7ro)\u00b3",
+    "F": "DC gain A0 \u2248 2\u00b7gm\u00b7ro",
+    "G": "DC gain A0 \u2248 gm\u00b7ro",
+    "H": "DC gain A0 \u2248 gm/ro",
+    "I": "DC gain A0 \u2248 gm\u00b7ro\u00b2",
+    "J": "DC gain A0 \u2248 gm\u00b2\u00b7ro"
+  },
+  "track": "analysis",
+  "aspect": "gain_dc"
+}

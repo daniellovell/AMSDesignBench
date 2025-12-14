@@ -1392,6 +1392,34 @@ def main():
                         template_netlist = "\n".join(blanked_lines).strip()
                 except Exception:
                     template_netlist = ""
+            
+            # Multiple choice support: load MC answer key and format choices
+            choices = ""
+            mc_answer_key = None
+            prompt_variant = q.meta.get("prompt_variant", "short_form")
+            if prompt_variant == "multiple_choice":
+                # Load MC answer key based on aspect
+                aspect = q.meta.get("aspect", "")
+                mc_key_name = "mc_answer_key.json"
+                if aspect and str(q.track).lower() == "analysis":
+                    mc_key_name = f"mc_answer_key_{aspect}.json"
+                
+                mc_key_path = item_dir / mc_key_name
+                if mc_key_path.exists():
+                    try:
+                        mc_answer_key = json.loads(mc_key_path.read_text(encoding='utf-8'))
+                        # Format choices as A. ... B. ... etc.
+                        choice_lines = []
+                        for letter in sorted(mc_answer_key.get("choices", {}).keys()):
+                            choice_text = mc_answer_key["choices"][letter]
+                            choice_lines.append(f"{letter}. {choice_text}")
+                        choices = "\n".join(choice_lines)
+                    except Exception as e:
+                        print(f"Warning: Could not load MC answer key for {q.id}: {e}", file=sys.stderr)
+                        choices = "(MC choices unavailable)"
+                else:
+                    print(f"Warning: MC answer key not found for {q.id} at {mc_key_path}", file=sys.stderr)
+                    choices = "(MC choices unavailable)"
             if str(q.track).lower() == "design" and q.modality in ("casIR", "cascode"):
                 try:
                     # Canonical examples: ota003 and ota006 from templates
@@ -1420,17 +1448,26 @@ def main():
                     examples=examples,
                     design_brief=design_brief,
                     template_netlist=template_netlist,
+                    choices=choices,
                 )
             except Exception:
-                # Back-compat: older templates may not use {examples}
+                # Back-compat: older templates may not use {examples} or {choices}
                 try:
                     prompt = prompt_tmpl.format(
                         modality=_display_modality(q.modality),
                         design_brief=design_brief,
                         template_netlist=template_netlist,
+                        choices=choices,
                     )
                 except Exception:
-                    prompt = prompt_tmpl.format(modality=_display_modality(q.modality), template_netlist=template_netlist)
+                    try:
+                        prompt = prompt_tmpl.format(
+                            modality=_display_modality(q.modality),
+                            template_netlist=template_netlist,
+                            choices=choices,
+                        )
+                    except Exception:
+                        prompt = prompt_tmpl.format(modality=_display_modality(q.modality), template_netlist=template_netlist)
 
             # Collect attachment file paths to pass to adapter
             attachment_paths = []
@@ -1577,6 +1614,7 @@ def main():
                         "inventory_ids": inv_ids,
                         "question": q.model_dump(),
                         "attachments": attachment_paths,
+                        "item_dir": str(item_dir),
                     }
                 ])[0]
             except Exception as e:
@@ -1934,9 +1972,39 @@ def main():
 
             # Judge
             judge = None
-            # Skip judge if verification is enabled (use objective score instead)
+            # Multiple choice scoring: check if the answer matches correct letter
+            mc_score = None
+            if prompt_variant == "multiple_choice" and mc_answer_key:
+                correct_letter = mc_answer_key.get("correct_answer", "").strip().upper()
+                # Extract the model's answer (look for single letter A-J)
+                import re
+                # Look for patterns like "A", "Answer: A", "(A)", "The answer is A", etc.
+                answer_pattern = r'\b([A-J])\b'
+                matches = re.findall(answer_pattern, pred.upper())
+                if matches:
+                    model_answer = matches[0]  # Take first match
+                    mc_correct = (model_answer == correct_letter)
+                    mc_score = {
+                        "correct": mc_correct,
+                        "score": 1.0 if mc_correct else 0.0,
+                        "model_answer": model_answer,
+                        "correct_answer": correct_letter,
+                        "answer_text": mc_answer_key.get("answer_text", "")
+                    }
+                else:
+                    # No valid answer found
+                    mc_score = {
+                        "correct": False,
+                        "score": 0.0,
+                        "model_answer": None,
+                        "correct_answer": correct_letter,
+                        "answer_text": mc_answer_key.get("answer_text", ""),
+                        "parse_error": "No valid answer letter (A-J) found in response"
+                    }
+            
+            # Skip judge if verification is enabled (use objective score instead) or if MC scoring is used
             verification_enabled = q.verification and q.verification.get("enabled")
-            if not skip_judge and not verification_enabled:
+            if not skip_judge and not verification_enabled and not mc_score:
                 try:
                     from .scoring.judge_anchored import judge_answer as judge_call  # type: ignore
                 except Exception:
@@ -2040,12 +2108,14 @@ def main():
                 "modality": q.modality,
                 "split": args.split,
                 "aspect": (q.meta or {}).get("aspect"),
+                "prompt_variant": prompt_variant,
                 "prompt": prompt,
                 "artifact_path": str(art_path),
                 "artifact": artifact_used,
                 "artifact_randomization": rand_info or None,
                 "answer": pred,
                 "judge": judge if not skip_judge else None,
+                "mc_score": mc_score if mc_score else None,
             }
             
             # Add verification details if SPICE verification ran

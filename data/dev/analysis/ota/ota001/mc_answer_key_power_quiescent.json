@@ -1,0 +1,19 @@
+{
+  "question_id": "ota001_power_quiescent_mc",
+  "correct_answer": "H",
+  "answer_text": "P = VDD\u00b7Itail",
+  "choices": {
+    "A": "P = VDD\u00b7Itail\u00b7gm",
+    "B": "P = VDD\u00b7Itail/2",
+    "C": "P = VDD\u00b7(Itail + IDD)",
+    "D": "P = VDD\u00b7\u221a(Itail)",
+    "E": "P = VDD\u00b2\u00b7gm",
+    "F": "P = 2\u00b7VDD\u00b7Itail",
+    "G": "P = VDD\u00b7Itail/(1 + A0)",
+    "H": "P = VDD\u00b7Itail",
+    "I": "P = (VDD - VTH)\u00b7Itail",
+    "J": "P = VDD\u00b2/Rtail"
+  },
+  "track": "analysis",
+  "aspect": "power_quiescent"
+}

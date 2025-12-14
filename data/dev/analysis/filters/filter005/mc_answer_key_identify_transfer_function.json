@@ -1,0 +1,19 @@
+{
+  "question_id": "filter005_identify_mc",
+  "correct_answer": "G",
+  "answer_text": "Correct answer for filter005_identify_mc",
+  "choices": {
+    "A": "Distractor 6 for filter005_identify_mc",
+    "B": "Distractor 2 for filter005_identify_mc",
+    "C": "Distractor 1 for filter005_identify_mc",
+    "D": "Distractor 3 for filter005_identify_mc",
+    "E": "Distractor 5 for filter005_identify_mc",
+    "F": "Distractor 7 for filter005_identify_mc",
+    "G": "Correct answer for filter005_identify_mc",
+    "H": "Distractor 9 for filter005_identify_mc",
+    "I": "Distractor 4 for filter005_identify_mc",
+    "J": "Distractor 8 for filter005_identify_mc"
+  },
+  "track": "analysis",
+  "aspect": "identify_transfer_function"
+}

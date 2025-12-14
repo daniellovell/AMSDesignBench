@@ -1,0 +1,19 @@
+{
+  "question_id": "feedback004_beta_factor_mc",
+  "correct_answer": "F",
+  "answer_text": "\u03b2 = R1/(R1+R2)",
+  "choices": {
+    "A": "\u03b2 = R2/(R1+R2)",
+    "B": "\u03b2 = 0",
+    "C": "\u03b2 = (R1+R2)/R1",
+    "D": "\u03b2 = R1",
+    "E": "\u03b2 = R1\u00b7R2",
+    "F": "\u03b2 = R1/(R1+R2)",
+    "G": "\u03b2 = 1/(R1+R2)",
+    "H": "\u03b2 = 1/R1",
+    "I": "\u03b2 = R1/R2",
+    "J": "\u03b2 = 2R1/(R1+R2)"
+  },
+  "track": "analysis",
+  "aspect": "beta_factor"
+}

@@ -1,0 +1,19 @@
+{
+  "question_id": "ota008_psrr_mc",
+  "correct_answer": "I",
+  "answer_text": "PSRR+ \u2248 (gm\u00b7ro)\u00b3",
+  "choices": {
+    "A": "PSRR+ \u2248 A0\u00b7CMRR",
+    "B": "PSRR+ \u2248 (gm\u00b7ro)/2",
+    "C": "PSRR+ \u2248 gm\u00b7(ro || rds)",
+    "D": "PSRR+ \u2248 ro/gm",
+    "E": "PSRR+ \u2248 \u221a(gm\u00b7ro)",
+    "F": "PSRR+ \u2248 gm/ro",
+    "G": "PSRR+ \u2248 (gm\u00b7ro)\u00b3/2",
+    "H": "PSRR+ \u2248 2\u00b7gm\u00b7ro",
+    "I": "PSRR+ \u2248 (gm\u00b7ro)\u00b3",
+    "J": "PSRR+ \u2248 gm\u00b2\u00b7ro"
+  },
+  "track": "analysis",
+  "aspect": "psrr"
+}

@@ -533,11 +533,43 @@ class DummyAdapter(BaseAdapter):
     name = "dummy"
 
     def predict(self, batch: List[Dict[str, Any]]) -> List[str]:
+        import json
+        from pathlib import Path
+        
         outs: List[str] = []
         for item in batch:
             prompt = item.get("prompt", "")
             question = item.get("question", {})
             qid = question.get("id", "")
+            
+            # Check if this is a multiple choice question
+            prompt_variant = question.get("meta", {}).get("prompt_variant", "short_form")
+            if prompt_variant == "multiple_choice":
+                # Load MC answer key and return the correct answer
+                item_dir_str = item.get("item_dir", "")
+                if item_dir_str:
+                    item_dir = Path(item_dir_str)
+                    aspect = question.get("meta", {}).get("aspect", "")
+                    
+                    # Determine MC answer key filename
+                    mc_key_name = "mc_answer_key.json"
+                    if aspect and question.get("track") == "analysis":
+                        mc_key_name = f"mc_answer_key_{aspect}.json"
+                    
+                    mc_key_path = item_dir / mc_key_name
+                    if mc_key_path.exists():
+                        try:
+                            mc_data = json.loads(mc_key_path.read_text(encoding='utf-8'))
+                            correct_letter = mc_data.get("correct_answer", "A")
+                            # Return the correct answer letter
+                            outs.append(f"The correct answer is: {correct_letter}")
+                            continue
+                        except Exception:
+                            pass
+                
+                # Fallback: just answer "A"
+                outs.append("The correct answer is: A")
+                continue
             
             # Check if this is a design question with verification
             is_design_verification = (

@@ -9,6 +9,18 @@ questions:
     topology: tia_feedback_resistor
     bench_version: 0.1.0
     aspect: closed_loop_gain
+    prompt_variant: short_form
+- id: feedback001_closed_loop_gain_mc
+  track: analysis
+  modality: auto
+  judge_prompt: ../judge_prompts/feedback_closed_loop_gain.md
+  judge_id: feedback_closed_loop_gain
+  prompt_template: ../prompts/feedback_analysis_mc.txt
+  meta:
+    topology: tia_feedback_resistor
+    bench_version: 0.1.0
+    aspect: closed_loop_gain
+    prompt_variant: multiple_choice
 - id: feedback001_beta_factor
   track: analysis
   modality: auto
@@ -19,6 +31,18 @@ questions:
     topology: tia_feedback_resistor
     bench_version: 0.1.0
     aspect: beta_factor
+    prompt_variant: short_form
+- id: feedback001_beta_factor_mc
+  track: analysis
+  modality: auto
+  judge_prompt: ../judge_prompts/feedback_beta_factor.md
+  judge_id: feedback_beta_factor
+  prompt_template: ../prompts/feedback_analysis_mc.txt
+  meta:
+    topology: tia_feedback_resistor
+    bench_version: 0.1.0
+    aspect: beta_factor
+    prompt_variant: multiple_choice
 - id: feedback001_loop_gain
   track: analysis
   modality: auto
@@ -29,6 +53,18 @@ questions:
     topology: tia_feedback_resistor
     bench_version: 0.1.0
     aspect: loop_gain
+    prompt_variant: short_form
+- id: feedback001_loop_gain_mc
+  track: analysis
+  modality: auto
+  judge_prompt: ../judge_prompts/feedback_loop_gain.md
+  judge_id: feedback_loop_gain
+  prompt_template: ../prompts/feedback_analysis_mc.txt
+  meta:
+    topology: tia_feedback_resistor
+    bench_version: 0.1.0
+    aspect: loop_gain
+    prompt_variant: multiple_choice
 - id: feedback001_signal_modality
   track: analysis
   modality: auto
@@ -39,3 +75,15 @@ questions:
     topology: tia_feedback_resistor
     bench_version: 0.1.0
     aspect: signal_modality
+    prompt_variant: short_form
+- id: feedback001_signal_modality_mc
+  track: analysis
+  modality: auto
+  judge_prompt: ../judge_prompts/feedback_signal_modality.md
+  judge_id: feedback_signal_modality
+  prompt_template: ../prompts/feedback_analysis_mc.txt
+  meta:
+    topology: tia_feedback_resistor
+    bench_version: 0.1.0
+    aspect: signal_modality
+    prompt_variant: multiple_choice

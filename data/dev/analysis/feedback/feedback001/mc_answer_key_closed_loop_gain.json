@@ -1,0 +1,19 @@
+{
+  "question_id": "feedback001_closed_loop_gain_mc",
+  "correct_answer": "G",
+  "answer_text": "T = A0",
+  "choices": {
+    "A": "T = A0/(1+A0\u00b7\u03b2)",
+    "B": "T = 1/(1+A0\u00b7\u03b2)",
+    "C": "T = A0\u00b7\u03b2",
+    "D": "T = \u221a(A0\u00b7\u03b2)",
+    "E": "T = \u03b2/A0",
+    "F": "T = A0\u00b2",
+    "G": "T = A0",
+    "H": "T = \u03b2",
+    "I": "T = A0/(1+\u03b2)",
+    "J": "T = (A0\u00b7\u03b2)/2"
+  },
+  "track": "analysis",
+  "aspect": "closed_loop_gain"
+}

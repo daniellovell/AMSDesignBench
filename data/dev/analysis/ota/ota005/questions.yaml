@@ -7,6 +7,18 @@ questions:
     topology: telescopic_cascode_single_end
     bench_version: 0.1.0
     aspect: gbw
+    prompt_variant: short_form
+  judge_prompt: ../judge_prompts/gbw_one_stage.md
+  judge_id: gbw_one_stage
+- id: ota005_gbw_mc
+  track: analysis
+  modality: auto
+  prompt_template: ../prompts/ota_gbw_mc.txt
+  meta:
+    topology: telescopic_cascode_single_end
+    bench_version: 0.1.0
+    aspect: gbw
+    prompt_variant: multiple_choice
   judge_prompt: ../judge_prompts/gbw_one_stage.md
   judge_id: gbw_one_stage
 - id: ota005_rout
@@ -17,6 +29,18 @@ questions:
     topology: telescopic_cascode_single_end
     bench_version: 0.1.0
     aspect: rout
+    prompt_variant: short_form
+  judge_prompt: ../judge_prompts/ota_rout.md
+  judge_id: ota_rout
+- id: ota005_rout_mc
+  track: analysis
+  modality: auto
+  prompt_template: ../prompts/ota_dc_gain_mc.txt
+  meta:
+    topology: telescopic_cascode_single_end
+    bench_version: 0.1.0
+    aspect: rout
+    prompt_variant: multiple_choice
   judge_prompt: ../judge_prompts/ota_rout.md
   judge_id: ota_rout
 - id: ota005_swing
@@ -27,6 +51,18 @@ questions:
     topology: telescopic_cascode_single_end
     bench_version: 0.1.0
     aspect: swing
+    prompt_variant: short_form
+  judge_prompt: ../judge_prompts/ota_swing.md
+  judge_id: ota_swing
+- id: ota005_swing_mc
+  track: analysis
+  modality: auto
+  prompt_template: ../prompts/ota_dc_gain_mc.txt
+  meta:
+    topology: telescopic_cascode_single_end
+    bench_version: 0.1.0
+    aspect: swing
+    prompt_variant: multiple_choice
   judge_prompt: ../judge_prompts/ota_swing.md
   judge_id: ota_swing
 - id: ota005_gain_dc
@@ -37,6 +73,18 @@ questions:
     topology: telescopic_cascode_single_end
     bench_version: 0.1.0
     aspect: gain_dc
+    prompt_variant: short_form
+  judge_prompt: ../judge_prompts/ota_dc_gain.md
+  judge_id: ota_dc_gain
+- id: ota005_gain_dc_mc
+  track: analysis
+  modality: auto
+  prompt_template: ../prompts/ota_dc_gain_mc.txt
+  meta:
+    topology: telescopic_cascode_single_end
+    bench_version: 0.1.0
+    aspect: gain_dc
+    prompt_variant: multiple_choice
   judge_prompt: ../judge_prompts/ota_dc_gain.md
   judge_id: ota_dc_gain
 - id: ota005_psrr
@@ -47,6 +95,18 @@ questions:
     topology: telescopic_cascode_single_end
     bench_version: 0.1.0
     aspect: psrr
+    prompt_variant: short_form
+  judge_prompt: ../judge_prompts/ota_psrr.md
+  judge_id: ota_psrr
+- id: ota005_psrr_mc
+  track: analysis
+  modality: auto
+  prompt_template: ../prompts/ota_dc_gain_mc.txt
+  meta:
+    topology: telescopic_cascode_single_end
+    bench_version: 0.1.0
+    aspect: psrr
+    prompt_variant: multiple_choice
   judge_prompt: ../judge_prompts/ota_psrr.md
   judge_id: ota_psrr
 - id: ota005_noise_white
@@ -57,6 +117,18 @@ questions:
     topology: telescopic_cascode_single_end
     bench_version: 0.1.0
     aspect: noise_white
+    prompt_variant: short_form
+  judge_prompt: ../judge_prompts/ota_noise_white.md
+  judge_id: ota_noise_white
+- id: ota005_noise_white_mc
+  track: analysis
+  modality: auto
+  prompt_template: ../prompts/ota_dc_gain_mc.txt
+  meta:
+    topology: telescopic_cascode_single_end
+    bench_version: 0.1.0
+    aspect: noise_white
+    prompt_variant: multiple_choice
   judge_prompt: ../judge_prompts/ota_noise_white.md
   judge_id: ota_noise_white
 - id: ota005_power_quiescent
@@ -67,5 +139,17 @@ questions:
     topology: telescopic_cascode_single_end
     bench_version: 0.1.0
     aspect: power_quiescent
+    prompt_variant: short_form
+  judge_prompt: ../judge_prompts/ota_power_quiescent.md
+  judge_id: ota_power_quiescent
+- id: ota005_power_quiescent_mc
+  track: analysis
+  modality: auto
+  prompt_template: ../prompts/ota_dc_gain_mc.txt
+  meta:
+    topology: telescopic_cascode_single_end
+    bench_version: 0.1.0
+    aspect: power_quiescent
+    prompt_variant: multiple_choice
   judge_prompt: ../judge_prompts/ota_power_quiescent.md
   judge_id: ota_power_quiescent
