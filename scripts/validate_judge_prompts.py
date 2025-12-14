@@ -126,6 +126,13 @@ def validate_family(split_root: Path, family: str, family_subdir: str | None = N
             for entry in _load_questions(q_path):
                 if not isinstance(entry, dict):
                     continue
+                # Verification-only questions intentionally skip the LLM judge.
+                # Mirror harness/run_eval.py behavior: if verification is enabled and
+                # no explicit judge_prompt/judge_id are provided, do not require a judge prompt.
+                ver = entry.get("verification") if isinstance(entry.get("verification"), dict) else {}
+                verification_only = bool(ver.get("enabled")) and not entry.get("judge_prompt") and not entry.get("judge_id")
+                if verification_only:
+                    continue
                 judge_prompt = entry.get("judge_prompt")
                 if not judge_prompt:
                     prompt_template = entry.get("prompt_template")
