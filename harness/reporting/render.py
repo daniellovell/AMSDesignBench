@@ -400,7 +400,7 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
                     score_color = color_for_score(obj_score)
                     verification_html += f"<div style='margin-top:4px;'><b>Objective Score:</b> <span style='background:{score_color};padding:2px 6px;border-radius:3px;'>{obj_score:.4f}</span></div>"
                 
-                if metrics:
+                if metrics is not None:
                     # Extract and display measurement frequencies if available
                     meas_freqs = metrics.get('_measurement_frequencies', {})
                     if meas_freqs:
@@ -410,13 +410,81 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
                         verification_html += f"stopband @ {meas_freqs.get('stopband_freq', 'N/A')} Hz"
                         verification_html += "</div>"
                     
+                    # Get expected metrics from design spec if available
+                    design_spec = verification.get('design_spec', {})
+                    expected_metrics = set()
+                    if design_spec and 'specifications' in design_spec:
+                        # Map spec names to metric names
+                        spec_to_metric = {
+                            'cutoff_frequency': 'fc_low',
+                            'center_frequency': 'center_frequency',
+                            'quality_factor': 'quality_factor',
+                            'notch_frequency': 'notch_freq',
+                            'notch_depth': 'notch_depth_db',
+                            'characteristic_frequency': 'fc_low',
+                            'phase_shift_at_f0': 'phase_at_peak',
+                            'gain': 'gain_vv',
+                            'dc_gain': 'dc_gain_db',
+                            'unity_gain_frequency': 'unity_gain_freq_hz',
+                            'gbw': 'unity_gain_freq_hz',
+                            'phase_margin': 'phase_margin_deg',
+                            'power': 'power_w',
+                            'passband_gain': 'passband_gain',
+                            'stopband_attenuation': 'stopband_gain',
+                        }
+                        for spec_name in design_spec['specifications'].keys():
+                            metric_name = spec_to_metric.get(spec_name, spec_name)
+                            expected_metrics.add(metric_name)
+                    
+                    # Collect all metrics to display (measured + expected but missing)
+                    all_metric_names = set(k for k in metrics.keys() if not k.startswith('_'))
+                    all_metric_names.update(expected_metrics)
+                    
                     verification_html += "<table class=small style='margin-top:4px;'><tr><th>Metric</th><th>Value</th></tr>"
-                    for metric_name, value in metrics.items():
-                        # Skip internal metadata fields
-                        if metric_name.startswith('_'):
-                            continue
-                        value_str = f"{value:.2f}" if isinstance(value, (int, float)) else str(value)
-                        verification_html += f"<tr><td>{esc(metric_name)}</td><td>{esc(value_str)}</td></tr>"
+                    for metric_name in sorted(all_metric_names):
+                        value = metrics.get(metric_name)
+                        
+                        # Format value with appropriate units and precision
+                        if value is None:
+                            # Show unmeasured metrics clearly with warning icon
+                            if metric_name in ['quality_factor', 'bandpass_bandwidth']:
+                                value_str = "<span style='color:#c80;font-weight:bold;'>⚠ N/A</span> <span style='color:#999;font-style:italic;'>(not measured - bandwidth invalid)</span>"
+                            else:
+                                value_str = "<span style='color:#999;font-style:italic;'>N/A (not measured)</span>"
+                        elif isinstance(value, (int, float)):
+                            if metric_name == 'power_w':
+                                # Display power in milliwatts for readability
+                                value_str = f"{value * 1000:.2f} mW"
+                            elif metric_name.endswith('_hz') or 'freq' in metric_name or 'frequency' in metric_name:
+                                # Display frequency in MHz if > 1MHz, otherwise Hz
+                                if abs(value) >= 1e6:
+                                    value_str = f"{value / 1e6:.2f} MHz"
+                                elif abs(value) >= 1e3:
+                                    value_str = f"{value / 1e3:.2f} kHz"
+                                else:
+                                    value_str = f"{value:.2f} Hz"
+                            elif metric_name == 'gain_vv':
+                                # Linear voltage gain (V/V), not dB!
+                                value_str = f"{value:.2f} V/V"
+                            elif metric_name.endswith('_db') or 'gain' in metric_name:
+                                value_str = f"{value:.2f} dB"
+                            elif metric_name.endswith('_deg') or 'phase' in metric_name:
+                                value_str = f"{value:.2f}°"
+                            elif metric_name in ['quality_factor', 'bandpass_bandwidth']:
+                                # Dimensionless ratios or Hz (already handled)
+                                if 'bandwidth' in metric_name:
+                                    if abs(value) >= 1e3:
+                                        value_str = f"{value / 1e3:.2f} kHz"
+                                    else:
+                                        value_str = f"{value:.2f} Hz"
+                                else:
+                                    value_str = f"{value:.2f}"
+                            else:
+                                value_str = f"{value:.2f}"
+                        else:
+                            value_str = str(value)
+                        
+                        verification_html += f"<tr><td>{esc(metric_name)}</td><td>{value_str}</td></tr>"
                     verification_html += "</table>"
                 
                 if ver_err:

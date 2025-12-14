@@ -74,8 +74,13 @@ CLN voutn 0 10p
 
 .control
 op
-let power_w = 1.8 * abs(i(vdd))
-print power_w > {output_file}
+* Power Measurement: P = V * I for all voltage sources
+* VDD power (positive current flows out of positive terminal)
+let power_vdd = v(vdd) * abs(i(vdd))
+* VSS power (typically negligible for differential circuits)
+let power_vss = v(vss) * abs(i(vss))
+* Total power
+let power = power_vdd + power_vss
 echo "DC Operating Point Analysis Complete"
 
 ac dec 100 1 1G

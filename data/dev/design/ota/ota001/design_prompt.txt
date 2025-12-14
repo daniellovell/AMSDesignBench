@@ -6,14 +6,6 @@
 - Target: DC Gain ≥ 40 dB, GBW ≥ 10 MHz, Phase Margin ≥ 60°
 - Technology: SKY130 (NFET min L=0.15µm, PFET min L=0.35µm)
 
-**DESIGN CONSIDERATIONS:**
-- You must CHOOSE an appropriate input common-mode voltage for vinp/vinn
-- Typical choices: 0.6V to 1.0V (often mid-rail ~0.9V)
-- Design constraints:
-  - For M1/M2 saturation: VGS = VCM - V(ntail) must be > Vth (~0.4-0.5V for NFET)
-  - Coordinate Vbias_n with your chosen VCM
-  - Typical: if VCM = 0.9V and V(ntail) ≈ 0.3-0.4V, then Vbias_n ≈ 0.5-0.7V
-
 **INSTRUCTIONS:**
 
 1. **Copy the netlist template provided below**
@@ -23,7 +15,6 @@
 3. **Replace `.param CL=BLANK` with `.param CL=5p`** (5 pF, use 'p' suffix)
 
 4. **Design transistor sizes** using the Gm/ID tables:
-   - Use Gm/ID ≈ 10-20 S/A for moderate inversion
    - Replace `L1=BLANK W1=BLANK` with your designed values (input pair M1, M2)
    - Replace `Lp=BLANK Wp=BLANK` with your designed values (current mirror load Mp1, Mp2)
    - Replace `Ltail=BLANK Wtail=BLANK` with your designed values (tail current source)

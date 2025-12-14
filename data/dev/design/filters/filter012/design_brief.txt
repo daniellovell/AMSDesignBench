@@ -1,1 +1,3 @@
-Design a state-variable biquad filter with band-pass output. Center frequency f0 = 10 kHz, quality factor Q = 2.. Use ideal op-amps (OPAMP subcircuit). Three op-amps provide summing, integration, and feedback.
+Design a band-pass filter with center frequency f0 = 10 kHz and quality factor Q = 2.
+
+Use the provided template netlist topology (series RLC band-pass core + ideal OPAMP buffer).

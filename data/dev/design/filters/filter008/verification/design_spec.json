@@ -10,9 +10,9 @@
       "tolerance": 0.15
     },
     "phase_shift_at_f0": {
-      "value": 180,
+      "value": 270,
       "unit": "degrees",
-      "tolerance": 15
+      "tolerance": 0.0556
     }
   },
   "test_conditions": {

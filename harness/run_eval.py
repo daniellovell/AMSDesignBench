@@ -1364,6 +1364,34 @@ def main():
                 design_brief = _design_brief()
             else:
                 design_brief = ""
+
+            # For feedback design tasks, include the template netlist in the prompt but blank out
+            # value fields so the model must fill in parameters (R/C values) while keeping topology fixed.
+            template_netlist = ""
+            if str(q.track).lower() == "design" and "design/feedback" in str(item_dir).replace("\\", "/"):
+                try:
+                    tpl_path = (item_dir / q.artifact_path)
+                    if tpl_path.exists():
+                        raw_tpl = tpl_path.read_text(encoding="utf-8").strip()
+                        # Blank last token on R*/C* lines: `R1 n1 n2 10k` -> `R1 n1 n2 BLANK`
+                        # Also covers symbolic placeholders like `R` or `C`.
+                        blanked_lines = []
+                        for raw in raw_tpl.splitlines():
+                            s = raw.strip()
+                            if not s or s.startswith(("*", ";", "//")):
+                                blanked_lines.append(raw)
+                                continue
+                            parts = s.split()
+                            if len(parts) >= 4 and parts[0] and parts[0][0].upper() in {"R", "C"}:
+                                # preserve original indentation by rebuilding from raw prefix
+                                leading = raw[: len(raw) - len(raw.lstrip())]
+                                parts[-1] = "BLANK"
+                                blanked_lines.append(leading + " ".join(parts))
+                            else:
+                                blanked_lines.append(raw)
+                        template_netlist = "\n".join(blanked_lines).strip()
+                except Exception:
+                    template_netlist = ""
             if str(q.track).lower() == "design" and q.modality in ("casIR", "cascode"):
                 try:
                     # Canonical examples: ota003 and ota006 from templates
@@ -1387,13 +1415,22 @@ def main():
                 except Exception:
                     examples = ""
             try:
-                prompt = prompt_tmpl.format(modality=_display_modality(q.modality), examples=examples, design_brief=design_brief)
+                prompt = prompt_tmpl.format(
+                    modality=_display_modality(q.modality),
+                    examples=examples,
+                    design_brief=design_brief,
+                    template_netlist=template_netlist,
+                )
             except Exception:
                 # Back-compat: older templates may not use {examples}
                 try:
-                    prompt = prompt_tmpl.format(modality=_display_modality(q.modality), design_brief=design_brief)
+                    prompt = prompt_tmpl.format(
+                        modality=_display_modality(q.modality),
+                        design_brief=design_brief,
+                        template_netlist=template_netlist,
+                    )
                 except Exception:
-                    prompt = prompt_tmpl.format(modality=_display_modality(q.modality))
+                    prompt = prompt_tmpl.format(modality=_display_modality(q.modality), template_netlist=template_netlist)
 
             # Collect attachment file paths to pass to adapter
             attachment_paths = []
@@ -1701,8 +1738,11 @@ def main():
             def _compute_objective_score(metrics: Dict[str, Any], design_spec: Dict[str, Any]) -> float:
                 """
                 Compute normalized objective score (0-1) based on how well metrics meet specifications.
-                1.0 = perfect match, 0.0 = completely fails specs
-                Uses normalized error: score = 1 - (error / max_error)
+                Uses percentage deviation from target/spec:
+                - Score = 1.0 if spec is met
+                - Score = max(0, 1 - |percentage_deviation|/100) if spec is not met
+                
+                Final score is equally-weighted average across all specs.
                 """
                 if not design_spec.get("specifications"):
                     return 0.0
@@ -1714,47 +1754,76 @@ def main():
                     metric_map = {
                         "cutoff_frequency": "fc_low",
                         "dc_gain": "dc_gain_db",
-                        "unity_gain_frequency": "unity_gain_freq",
-                        "phase_margin": "phase_margin",
-                        "power": "power",
+                        "unity_gain_frequency": "unity_gain_freq_hz",
+                        "gbw": "unity_gain_freq_hz",  # Map gbw to unity_gain_freq_hz
+                        "phase_margin": "phase_margin_deg",
+                        "power": "power_w",  # Power in Watts
                         "passband_gain": "passband_gain",
                         "stopband_attenuation": "stopband_gain",
                         "center_frequency": "center_frequency",
                         "quality_factor": "quality_factor",
-                        "notch_frequency": "notch_freq"
+                        "notch_frequency": "notch_freq",
+                        "notch_depth": "notch_depth_db",
+                        "characteristic_frequency": "fc_low",  # For all-pass filters
+                        "phase_shift_at_f0": "phase_at_peak",  # Phase at characteristic frequency
+                        "gain": "gain_vv",  # Linear gain (V/V)
+                        "output_swing": "output_swing",
+                        "input_common_mode_range": "input_cm_range",
+                        "slew_rate": "slew_rate"
                     }
                     
                     metric_name = metric_map.get(spec_name, spec_name)
                     if metric_name not in metrics:
+                        # If metric is missing, score as 0
+                        spec_scores.append(0.0)
                         continue
                     
                     value = metrics[metric_name]
                     
-                    # Special handling for attenuation specs (negative dB, lower is better)
+                    # Special handling for attenuation specs (negative dB, lower/more negative is better)
                     is_attenuation = spec_name in ["stopband_attenuation", "notch_depth"]
                     
-                    # Handle different spec types (target with tolerance, min, max)
-                    if "target" in spec_data:
-                        target = spec_data["target"]
-                        tolerance = spec_data.get("tolerance", abs(target) * 0.1)  # Default 10% tolerance
-                        error = abs(value - target)
-                        normalized_error = min(error / tolerance, 1.0)
-                        score = 1.0 - normalized_error
+                    # Handle different spec types
+                    # Note: "target" is aspirational; scoring is based on min/max boundaries
+                    # For filters: "value" with "tolerance" defines acceptable range
+                    if "value" in spec_data and "tolerance" in spec_data:
+                        # Filter-style spec: value ± tolerance defines the acceptable range
+                        target = spec_data["value"]
+                        tolerance = spec_data["tolerance"]
+                        min_val = target * (1 - tolerance)
+                        max_val = target * (1 + tolerance)
+                        
+                        if min_val <= value <= max_val:
+                            score = 1.0
+                        else:
+                            # Calculate % deviation from nearest boundary
+                            if value < min_val:
+                                reference = min_val
+                            else:  # value > max_val
+                                reference = max_val
+                            
+                            if reference == 0:
+                                score = max(0.0, 1.0 - abs(value))
+                            else:
+                                pct_deviation = abs((value - reference) / reference) * 100
+                                score = max(0.0, 1.0 - pct_deviation / 100)
                     elif "min" in spec_data and "max" in spec_data:
                         min_val = spec_data["min"]
                         max_val = spec_data["max"]
                         if min_val <= value <= max_val:
                             score = 1.0
-                        elif value < min_val:
-                            error = min_val - value
-                            range_size = max_val - min_val
-                            normalized_error = min(error / abs(range_size), 1.0)
-                            score = 1.0 - normalized_error
-                        else:  # value > max_val
-                            error = value - max_val
-                            range_size = max_val - min_val
-                            normalized_error = min(error / abs(range_size), 1.0)
-                            score = 1.0 - normalized_error
+                        else:
+                            # Calculate % deviation from nearest boundary
+                            if value < min_val:
+                                reference = min_val
+                            else:  # value > max_val
+                                reference = max_val
+                            
+                            if reference == 0:
+                                score = max(0.0, 1.0 - abs(value))
+                            else:
+                                pct_deviation = abs((value - reference) / reference) * 100
+                                score = max(0.0, 1.0 - pct_deviation / 100)
                     elif "min" in spec_data:
                         min_val = spec_data["min"]
                         # For attenuation: more negative is better, so value <= min_val is good
@@ -1763,31 +1832,42 @@ def main():
                             if value <= min_val:
                                 score = 1.0
                             else:
-                                error = value - min_val
-                                normalized_error = min(error / abs(min_val), 1.0)
-                                score = 1.0 - normalized_error
+                                # Failed: not negative enough
+                                if min_val == 0:
+                                    score = max(0.0, 1.0 - abs(value))
+                                else:
+                                    pct_deviation = abs((value - min_val) / min_val) * 100
+                                    score = max(0.0, 1.0 - pct_deviation / 100)
                         else:
                             if value >= min_val:
                                 score = 1.0
                             else:
-                                error = min_val - value
-                                normalized_error = min(error / abs(min_val), 1.0)
-                                score = 1.0 - normalized_error
+                                # Failed: below minimum
+                                if min_val == 0:
+                                    score = max(0.0, 1.0 - abs(value))
+                                else:
+                                    pct_deviation = abs((value - min_val) / min_val) * 100
+                                    score = max(0.0, 1.0 - pct_deviation / 100)
                     elif "max" in spec_data:
                         max_val = spec_data["max"]
                         if value <= max_val:
                             score = 1.0
                         else:
-                            error = value - max_val
-                            normalized_error = min(error / abs(max_val), 1.0)
-                            score = 1.0 - normalized_error
+                            # Failed: above maximum
+                            if max_val == 0:
+                                score = max(0.0, 1.0 - abs(value))
+                            else:
+                                pct_deviation = abs((value - max_val) / max_val) * 100
+                                score = max(0.0, 1.0 - pct_deviation / 100)
                     else:
+                        # No spec criteria defined - skip this spec
                         continue
                     
-                    # Clamp score to [0, 1] to handle any floating point errors
+                    # Clamp score to [0, 1] and add to list
                     score = max(0.0, min(1.0, score))
                     spec_scores.append(score)
                 
+                # Return equally-weighted average of all spec scores
                 if spec_scores:
                     # Clamp final average to [0, 1]
                     return max(0.0, min(1.0, sum(spec_scores) / len(spec_scores)))
@@ -1826,11 +1906,12 @@ def main():
                                 # Compute objective score based on specifications
                                 objective_score = _compute_objective_score(sim_results.metrics, design_spec)
                                 
-                                # Store verification results
+                                # Store verification results (include design_spec for report)
                                 verification_results = {
                                     "passed": True,
                                     "metrics": sim_results.metrics,
-                                    "objective_score": objective_score
+                                    "objective_score": objective_score,
+                                    "design_spec": design_spec
                                 }
                             else:
                                 # Simulation failed
@@ -1853,7 +1934,9 @@ def main():
 
             # Judge
             judge = None
-            if not skip_judge:
+            # Skip judge if verification is enabled (use objective score instead)
+            verification_enabled = q.verification and q.verification.get("enabled")
+            if not skip_judge and not verification_enabled:
                 try:
                     from .scoring.judge_anchored import judge_answer as judge_call  # type: ignore
                 except Exception:
@@ -1971,7 +2054,8 @@ def main():
                     "simulation_passed": verification_results.get("passed", False),
                     "metrics": verification_results.get("metrics", {}),
                     "objective_score": verification_results.get("objective_score"),
-                    "error": verification_results.get("error") if not verification_results.get("passed") else None
+                    "error": verification_results.get("error") if not verification_results.get("passed") else None,
+                    "design_spec": verification_results.get("design_spec")  # Include design_spec for report
                 }
                 # Also add top-level metrics for easy access in reports
                 rec["verification_metrics"] = verification_results.get("metrics", {})

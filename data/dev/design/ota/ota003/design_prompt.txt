@@ -12,12 +12,6 @@
 - Input differential pair with additional gain stage
 - Optimized for rail-to-rail output swing
 
-**DESIGN CONSIDERATIONS:**
-- High output swing: Design for maximum voltage headroom
-- Use cascoded output stage for better swing
-- Choose VCM for input pair saturation
-- Size transistors for moderate inversion (Gm/ID ≈ 10-20 S/A)
-
 **INSTRUCTIONS:**
 
 1. **Copy the netlist template provided below**

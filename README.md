@@ -229,7 +229,7 @@ Design brief:
 
 ## Design Verification with SPICE
 
-**NEW**: AMSDesignBench now includes automated SPICE-based design verification to evaluate LLMs on their ability to **design** analog circuits (not just analyze them).
+AMSDesignBench includes automated SPICE-based design verification to evaluate LLMs on their ability to design analog circuits.
 
 ### Overview
 
@@ -286,13 +286,6 @@ Specifications:
   ✓ power: 235 µW (max: 500 µW) ✓
 ```
 
-### Documentation
-
-- 📖 **[Full Documentation](DESIGN_VERIFICATION_README.md)**: Comprehensive guide to design verification
-- 🚀 **[Quick Start Guide](QUICKSTART_DESIGN.md)**: Get started in 5 minutes
-- 📊 **[Integration Summary](INTEGRATION_SUMMARY.md)**: What was built and how it works
-- 🛠️ **[PDK Setup](pdk/skywater130/README.md)**: SkyWater 130nm PDK configuration
-
 ### Architecture
 
 ```
@@ -338,13 +331,5 @@ python harness/run_design_eval.py --model dummy --designs ota001
 - **Python 3.8+** with numpy, scipy
 - **ngspice** (external tool for simulation)
 - **LLM API keys** (OpenAI, Anthropic, etc.)
-- **SkyWater 130nm PDK** (optional, placeholder tables included)
+- **SkyWater 130nm PDK** (placeholder tables included)
 
-### Extending
-
-Add new OTA topologies:
-1. Create `data/dev/design/ota/ota00X/verification/design_spec.json`
-2. Add `testbench_template.sp` with measurement commands
-3. Run evaluation: `python harness/run_design_eval.py --designs ota00X`
-
-See [DESIGN_VERIFICATION_README.md](DESIGN_VERIFICATION_README.md) for details on adding custom specifications, PDKs, and circuit types.

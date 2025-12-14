@@ -40,19 +40,42 @@ meas ac peak_freq when vout_db=peak_gain_db
 
 * Find -3dB points
 let target_3db = peak_gain_db - 3
+
+* Strategy: For bandpass, we want the two crossings closest to peak_freq
+* cross=1 gives first crossing (should be lower freq)
+* cross=2 gives second crossing (should be upper freq for bandpass)
 meas ac fc_low when vout_db=target_3db cross=1
-meas ac fc_high when vout_db=target_3db cross=last
+meas ac fc_mid when vout_db=target_3db cross=2
+* cross=last gives the very last crossing
+meas ac fc_last when vout_db=target_3db cross=last
+
+* Determine which crossings to use based on peak frequency
+* If fc_mid is closer to peak than fc_last, use fc_low and fc_mid
+* Otherwise use fc_low and fc_last
+let dist_mid = abs(fc_mid - peak_freq)
+let dist_last = abs(fc_last - peak_freq)
+
+if dist_mid < dist_last
+  * fc_mid is closer to peak, so passband is between fc_low and fc_mid
+  let fc_high = fc_mid
+else
+  * fc_last is closer, use fc_low and fc_last
+  let fc_high = fc_last
+end
 
 * Calculate bandpass_bandwidth and quality factor
 let bandpass_bandwidth = fc_high - fc_low
-let center_freq_calc = sqrt(fc_low * fc_high)
-* Avoid division by zero for quality factor (use max to ensure denominator is at least 1)
-let bandpass_bandwidth_safe = max(bandpass_bandwidth, 1)
-let quality_factor = center_freq_calc / bandpass_bandwidth_safe
+* Use peak frequency as center for band-pass filters
+let center_frequency = peak_freq
 
-* Measure actual center frequency (for band-pass/band-stop)
-* For filters where fc_low = fc_high (like low-pass), use the geometric mean
-let center_frequency = center_freq_calc
+* Only calculate quality factor if bandwidth is reasonable
+* If bandwidth is too small (< 1 Hz) or fc_low = fc_high, Q is invalid
+if bandpass_bandwidth > 1
+  let quality_factor = center_frequency / bandpass_bandwidth
+else
+  * Set to a sentinel value that will be filtered out
+  let quality_factor = -1
+end
 
 * Measure gain at center/peak frequency (in V/V, not dB)
 let gain_linear = 10^(peak_gain_db/20)

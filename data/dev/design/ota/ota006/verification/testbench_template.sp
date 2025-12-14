@@ -3,6 +3,7 @@
 .title OTA006 Design Verification Testbench
 
 .option scale=1.0u
+.option savecurrents
 
 * SKY130 PDK Models (define parameters for nominal simulation)
 .param sky130_fd_pr__nfet_01v8__toxe_slope = 0
@@ -73,8 +74,12 @@ CL vout 0 10p
 
 .control
 op
-let power_w = 1.8 * abs(i(vdd))
-print power_w > {output_file}
+* Power Measurement: P = V * I for all voltage sources
+* VDD power (positive current flows out of positive terminal)
+* Robust power measurement (current through VDD source)
+let i_vdd = -i(vdd)
+let power_w = v(vdd) * i_vdd
+print power_w
 echo "DC Operating Point Analysis Complete"
 
 ac dec 100 1 1G
@@ -91,17 +96,44 @@ else
   end
 end
 
-let vout_mag = abs(output_node)
-let vout_db = db(vout_mag)
-let vout_phase = phase(output_node)
+* Determine input signal (prefer differential vip-vin / vinp-vinn)
+if length(v(vip)) > 0 & length(v(vin)) > 0
+  let input_node = v(vip) - v(vin)
+else
+  if length(v(vinp)) > 0 & length(v(vinn)) > 0
+    let input_node = v(vinp) - v(vinn)
+  else
+    if length(v(vin)) > 0
+      let input_node = v(vin)
+    else
+      * Fallback: assume 1V input to avoid divide-by-zero
+      let input_node = 1
+    end
+  end
+end
+
+* Small-signal gain (V/V)
+let gain = output_node / input_node
+let gain_mag = abs(gain)
+let vout_db = db(gain_mag)
+let vout_phase = phase(gain)
 
 meas ac dc_gain_db find vout_db at=10
 meas ac unity_gain_freq_hz when vout_db=0 cross=1
 meas ac phase_at_ugf find vout_phase when vout_db=0 cross=1
 
+* Phase margin: only valid if unity_gain_freq_hz was found
+if length(phase_at_ugf) > 0
+  let phase_margin_deg = 180 + phase_at_ugf
+else
+  let phase_margin_deg = -1
+end
+
 
 echo ""
 echo "=== BENCHMARK RESULTS ==="
+print power_w
+print phase_margin_deg
 print phase_at_ugf
 print unity_gain_freq_hz
 print dc_gain_db

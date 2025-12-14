@@ -21,6 +21,40 @@ GBW is set by gm/CL; exceptions like feedforward/current-steering change the rel
 # These are designed to be FUNCTIONAL, not to match old-process references
 # Goal: Reasonable gain (20-40dB), moderate current (~50-200uA), stable
 DESIGN_TEMPLATES = {
+    "feedback001": """
+```spice
+* feedback001 - TIA with resistive feedback (structure-only dummy)
+XU2 S_in 0 S_out opamp Aol=100K GBW=10Meg
+R1 S_out S_in 10k
+.end
+```
+""",
+    "feedback002": """
+```spice
+* feedback002 - TIA with capacitive feedback (structure-only dummy)
+XU2 S_in 0 S_out opamp Aol=100K GBW=10Meg
+C1 S_out S_in 100p
+.end
+```
+""",
+    "feedback003": """
+```spice
+* feedback003 - Non-inverting amplifier (structure-only dummy)
+XU1 N001 S_in S_out opamp Aol=100K GBW=10Meg
+R1 0 N001 10k
+R2 S_out N001 90k
+.end
+```
+""",
+    "feedback004": """
+```spice
+* feedback004 - Inverting amplifier (structure-only dummy)
+XU2 N001 0 S_out opamp Aol=100K GBW=10Meg
+R1 S_out N001 100k
+R2 N001 S_in 10k
+.end
+```
+""",
     "ota001": """
 ```spice
 * OTA001 - Five-Transistor (FUNCTIONAL for SKY130 - 31.5dB)
@@ -115,61 +149,65 @@ XM7 vout vbp vdd vdd sky130_fd_pr__pfet_01v8 L=L7 W=W7 nf=1
 """,
     "ota005": """
 ```spice
-* OTA005 - Telescopic Cascode SE (FUNCTIONAL for SKY130 - 4-terminal devices)
+* OTA005 - Telescopic Cascode SE (dummy; matches `data/dev/design/ota/ota005/netlist_template.sp`)
 .param VDD=1.8
 .param CL=10p
-.param L3=0.8 W3=35
-.param L4=0.8 W4=35
-.param L1=0.8 W1=30
-.param L2=0.8 W2=30
-.param L5=1.2 W5=15
-.param L6=0.8 W6=60
-.param L7=0.8 W7=60
-.param L8=0.8 W8=80
-.param L9=0.8 W9=80
-Vip vip 0 DC 0.9 AC -0.5
-Vin vin 0 DC 0.9 AC 0.5
-Vb3 vb3 0 DC 0.55
-Vtail vtail 0 DC 0.65
-XM3 n004 vip n006 0 sky130_fd_pr__nfet_01v8 L=L3 W=W3 nf=1
-XM4 n005 vin n006 0 sky130_fd_pr__nfet_01v8 L=L4 W=W4 nf=1
-XM1 vout vb3 n005 0 sky130_fd_pr__nfet_01v8 L=L1 W=W1 nf=1
-XM2 n003 vb3 n004 0 sky130_fd_pr__nfet_01v8 L=L2 W=W2 nf=1
-XM5 n006 vtail 0 0 sky130_fd_pr__nfet_01v8 L=L5 W=W5 nf=1
-XM6 n003 n003 n001 vdd sky130_fd_pr__pfet_01v8 L=L6 W=W6 nf=1
-XM7 vout n003 n002 vdd sky130_fd_pr__pfet_01v8 L=L7 W=W7 nf=1
-XM8 n001 n001 vdd vdd sky130_fd_pr__pfet_01v8 L=L8 W=W8 nf=1
-XM9 n002 n001 vdd vdd sky130_fd_pr__pfet_01v8 L=L9 W=W9 nf=1
+.param L3=0.18 W3=100
+.param L4=0.18 W4=100
+.param L1=0.18 W1=80
+.param L2=0.18 W2=80
+.param L5=0.18 W5=80
+.param L6=0.18 W6=100
+.param L7=0.18 W7=100
+.param L8=0.18 W8=100
+.param L9=0.18 W9=100
+
+Vip vip 0 DC 0.6 AC -0.5
+Vin vin 0 DC 0.6 AC 0.5
+Vb3 vb3 0 DC 1.20
+Vtail vtail 0 DC 1.15
+
+XM3 N004 vip N006 0 sky130_fd_pr__nfet_01v8 L=L3 W=W3 nf=1
+XM4 N005 vin N006 0 sky130_fd_pr__nfet_01v8 L=L4 W=W4 nf=1
+XM1 vout vb3 N005 0 sky130_fd_pr__nfet_01v8 L=L1 W=W1 nf=1
+XM2 N003 vb3 N004 0 sky130_fd_pr__nfet_01v8 L=L2 W=W2 nf=1
+XM5 N006 vtail 0 0 sky130_fd_pr__nfet_01v8 L=L5 W=W5 nf=1
+XM6 N003 N003 N001 vdd sky130_fd_pr__pfet_01v8 L=L6 W=W6 nf=1
+XM7 vout N003 N002 vdd sky130_fd_pr__pfet_01v8 L=L7 W=W7 nf=1
+XM8 N001 N001 vdd vdd sky130_fd_pr__pfet_01v8 L=L8 W=W8 nf=1
+XM9 N002 N001 vdd vdd sky130_fd_pr__pfet_01v8 L=L9 W=W9 nf=1
 ```
 """,
     "ota006": """
 ```spice
-* OTA006 - Telescopic High-Swing SE (FUNCTIONAL for SKY130 - 4-terminal devices)
+* OTA006 - Telescopic High-Swing SE (dummy; matches `data/dev/design/ota/ota006/netlist_template.sp`)
 .param VDD=1.8
 .param CL=10p
-.param L3=1.0 W3=40
-.param L4=1.0 W4=40
-.param L1=1.0 W1=20
-.param L2=1.0 W2=20
-.param L5=1.5 W5=20
-.param L6=1.0 W6=50
-.param L7=1.0 W7=50
-.param L8=1.0 W8=80
-.param L9=1.0 W9=80
+.param L3=0.18 W3=10
+.param L4=0.18 W4=10
+.param L1=0.18 W1=8
+.param L2=0.18 W2=8
+.param L5=0.18 W5=8
+.param L6=0.18 W6=20
+.param L7=0.18 W7=20
+.param L8=0.18 W8=24
+.param L9=0.18 W9=24
+
 Vip vip 0 DC 0.9 AC -0.5
 Vin vin 0 DC 0.9 AC 0.5
-Vb1 vb1 0 DC 1.2
-Vb2 vb2 0 DC 0.5
-Vtail vtail 0 DC 0.7
-XM3 n004 vip n006 0 sky130_fd_pr__nfet_01v8 L=L3 W=W3 nf=1
-XM4 n005 vin n006 0 sky130_fd_pr__nfet_01v8 L=L4 W=W4 nf=1
-XM1 vout vb2 n005 0 sky130_fd_pr__nfet_01v8 L=L1 W=W1 nf=1
-XM2 n001 vb2 n004 0 sky130_fd_pr__nfet_01v8 L=L2 W=W2 nf=1
-XM5 n006 vtail 0 0 sky130_fd_pr__nfet_01v8 L=L5 W=W5 nf=1
-XM6 vout vb1 n003 vdd sky130_fd_pr__pfet_01v8 L=L6 W=W6 nf=1
-XM7 n001 vb1 n002 vdd sky130_fd_pr__pfet_01v8 L=L7 W=W7 nf=1
-XM8 n003 n001 vdd vdd sky130_fd_pr__pfet_01v8 L=L8 W=W8 nf=1
-XM9 n002 n001 vdd vdd sky130_fd_pr__pfet_01v8 L=L9 W=W9 nf=1
+Vb1 vb1 0 DC 0.70
+Vb2 vb2 0 DC 1.20
+Vtail vtail 0 DC 0.85
+
+XM3 N004 vip N006 0 sky130_fd_pr__nfet_01v8 L=L3 W=W3 nf=1
+XM4 N005 vin N006 0 sky130_fd_pr__nfet_01v8 L=L4 W=W4 nf=1
+XM1 vout vb2 N005 0 sky130_fd_pr__nfet_01v8 L=L1 W=W1 nf=1
+XM2 N001 vb2 N004 0 sky130_fd_pr__nfet_01v8 L=L2 W=W2 nf=1
+XM5 N006 vtail 0 0 sky130_fd_pr__nfet_01v8 L=L5 W=W5 nf=1
+XM6 vout vb1 N003 vdd sky130_fd_pr__pfet_01v8 L=L6 W=W6 nf=1
+XM7 N001 vb1 N002 vdd sky130_fd_pr__pfet_01v8 L=L7 W=W7 nf=1
+XM8 N003 N001 vdd vdd sky130_fd_pr__pfet_01v8 L=L8 W=W8 nf=1
+XM9 N002 N001 vdd vdd sky130_fd_pr__pfet_01v8 L=L9 W=W9 nf=1
 ```
 """,
     "ota007": """
@@ -348,13 +386,14 @@ R1 vout 0 50
 """,
     "filter004": """
 ```spice
-* FILTER004 - Second-order passive RLC band-pass filter
-* f0 = 1/(2π√LC) = 50.3 kHz, Q ≈ 3.16
+* FILTER004 - Second-order passive RLC band-pass filter (FUNCTIONAL)
+* f0 = 50.3 kHz, Q = 3.16 (properly designed)
+* Parallel RLC topology for accurate Q
 Vin vin 0 AC 1
-R1 vin vout 100
-L1 vout 0 10m
-C1 vout 0 1n
-Rload vout 0 1k
+Rin vin vout 1e12
+L1 vout 0 1.001302e-03
+C1 vout 0 9.998601e-09
+Rload vout 0 1000
 ```
 """,
     "filter005": """
@@ -416,10 +455,11 @@ Rload vout 0 1k
     "filter008": """
 ```spice
 * FILTER008 - First-order all-pass filter using op-amp
-* f0 = 1/(2πRC) = 15.9 kHz
+* f0 = 1/(2πRC) = 15.9 kHz (R=1k, C=10n)
 Vin vin 0 AC 1
 R1 vin npos 1k
 C1 npos 0 10n
+* All-pass condition: R2 = R3
 R2 vin nneg 1k
 R3 vout nneg 1k
 XU1 vout nneg npos OPAMP
@@ -461,14 +501,14 @@ Rload vout 0 10k
 """,
     "filter011": """
 ```spice
-* FILTER011 - Active band-pass filter (MFB topology)
-* f0 = 10 kHz, Q = 5, H0 = -2
+* FILTER011 - Dummy band-pass (matches `data/dev/design/filters/filter011/netlist_template.sp`)
 Vin vin 0 AC 1
-C1 vin n1 10n
-R2 vout n1 3.18k
-C2 vout n1 10n
-R3 n1 0 1.59k
-XU1 vout n1 0 OPAMP
+L1 vin n1 10m
+C1 n1 vraw 25.33n
+Rbp vraw 0 125.7
+Rg nneg 0 10k
+Rfb vout nneg 10k
+XU1 vout nneg vraw OPAMP
 Rload vout 0 10k
 
 .end
@@ -476,23 +516,12 @@ Rload vout 0 10k
 """,
     "filter012": """
 ```spice
-* FILTER012 - State-variable biquad filter (band-pass output)
-* f0 = 10 kHz, Q = 2
+* FILTER012 - Dummy band-pass (matches `data/dev/design/filters/filter012/netlist_template.sp`)
 Vin vin 0 AC 1
-
-Rin vin nsum 10k
-Rfb1 z nsum 10k
-Rfb2 vout nsum 20k
-XU1 u nsum 0 OPAMP
-
-Rint1 u n2 1.59k
-Cint1 vout n2 10n
-XU2 vout n2 0 OPAMP
-
-Rint2 vout n3 1.59k
-Cint2 z n3 10n
-XU3 z n3 0 OPAMP
-
+L1 vin n1 10m
+C1 n1 vraw 25.33n
+Rbp vraw 0 314.2
+XU1 vout vout vraw OPAMP
 Rload vout 0 10k
 
 .end
@@ -521,13 +550,22 @@ class DummyAdapter(BaseAdapter):
                 # Determine OTA or filter type from question ID
                 design_id = None
                 
-                # Check for OTA
-                for i in range(1, 13):
-                    if f"ota{i:03d}" in qid:
-                        design_id = f"ota{i:03d}"
-                        template = DESIGN_TEMPLATES.get(design_id, DESIGN_TEMPLATES["ota001"])
+                # Check for feedback designs
+                for i in range(1, 5):
+                    if f"feedback{i:03d}" in qid:
+                        design_id = f"feedback{i:03d}"
+                        template = DESIGN_TEMPLATES.get(design_id, DESIGN_TEMPLATES["feedback001"])
                         outs.append(template)
                         break
+
+                # Check for OTA
+                if design_id is None:
+                    for i in range(1, 13):
+                        if f"ota{i:03d}" in qid:
+                            design_id = f"ota{i:03d}"
+                            template = DESIGN_TEMPLATES.get(design_id, DESIGN_TEMPLATES["ota001"])
+                            outs.append(template)
+                            break
                 
                 # Check for filter if not OTA
                 if design_id is None:

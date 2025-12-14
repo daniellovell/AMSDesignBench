@@ -14,7 +14,7 @@
       "tolerance": 0.3
     },
     "gain": {
-      "value": -2,
+      "value": 2,
       "unit": "V/V",
       "tolerance": 0.2
     }

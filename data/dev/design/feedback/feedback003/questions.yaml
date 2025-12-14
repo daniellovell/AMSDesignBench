@@ -2,9 +2,10 @@ questions:
 - id: feedback003_design_noninv
   track: design
   modality: auto
-  judge_prompt: ../judge_prompts/design_noninverting_amp.md
-  judge_id: design_noninverting_amp
   prompt_template: ../prompts/design_feedback.txt
+  verification:
+    enabled: true
+    spec_file: verification/design_spec.json
   meta:
     topology: noninverting_voltage_amp
     bench_version: 0.1.0
