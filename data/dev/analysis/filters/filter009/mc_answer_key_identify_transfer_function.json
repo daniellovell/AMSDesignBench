@@ -1,18 +1,18 @@
 {
   "question_id": "filter009_identify_mc",
   "correct_answer": "C",
-  "answer_text": "Correct answer for filter009_identify_mc",
+  "answer_text": "Transfer function: H(s) = (C1*C2*Cmid*R1*R2*Rload*Rmid*s^3 + C1*C2*R1*Rload*Rmid*s^2 + C1*C2*R2*Rload*Rmid*s^2 + C1*Rload*Rmid*s + C2*Rload*Rmid*s + Rload)/(C1*C2*Cmid*R1*R2*Rload*Rmid*s^3 + C1*C2*R1*Rload*Rmid*s^2 + C1*C2*R2*Rload*Rmid*s^2 + C1*Cmid*R1*R2*Rmid*s^2 + C1*Cmid*R1*Rload*Rmid*s^2 + C1*R1*Rmid*s + C1*R2*Rmid*s + C1*Rload*Rmid*s + C2*Cmid*R1*R2*Rload*s^2 + C2*Cmid*R1*R2*Rmid*s^2 + C2*Cmid*R1*Rload*Rmid*s^2 + C2*R1*Rload*s + C2*R1*Rmid*s + C2*R2*Rload*s + C2*R2*Rmid*s + C2*Rload*Rmid*s + Cmid*R1*R2*s + Cmid*R1*Rload*s + R1 + R2 + Rload)",
   "choices": {
-    "A": "Distractor 6 for filter009_identify_mc",
-    "B": "Distractor 5 for filter009_identify_mc",
-    "C": "Correct answer for filter009_identify_mc",
-    "D": "Distractor 2 for filter009_identify_mc",
-    "E": "Distractor 3 for filter009_identify_mc",
-    "F": "Distractor 4 for filter009_identify_mc",
-    "G": "Distractor 1 for filter009_identify_mc",
-    "H": "Distractor 7 for filter009_identify_mc",
-    "I": "Distractor 9 for filter009_identify_mc",
-    "J": "Distractor 8 for filter009_identify_mc"
+    "A": "Transfer function: H(s) = (C1*C2*C2*R1*R2*Rload*Rmid*s^3 + C1*C2*R1*Rload*Rmid*s^2 + C1*C2*R2*Rload*Rmid*s^2 + C1*Rload*Rmid*s + C2*Rload*Rmid*s + Rload)/(C1*C2*C2*R1*R2*Rload*Rmid*s^3 + C1*C2*R1*Rload*Rmid*s^2 + C1*C2*R2*Rload*Rmid*s^2 + C1*C2*R1*R2*Rmid*s^2 + C1*C2*R1*Rload*Rmid*s^2 + C1*R1*Rmid*s + C1*R2*Rmid*s + C1*Rload*Rmid*s + C2*C2*R1*R2*Rload*s^2 + C2*C2*R1*R2*Rmid*s^2 + C2*C2*R1*Rload*Rmid*s^2 + C2*R1*Rload*s + C2*R1*Rmid*s + C2*R2*Rload*s + C2*R2*Rmid*s + C2*Rload*Rmid*s + C2*R1*R2*s + C2*R1*Rload*s + R1 + R2 + Rload)",
+    "B": "Transfer function: H(s) = (C1*C2*C1*R1*R2*Rload*Rmid*s^3 + C1*C2*R1*Rload*Rmid*s^2 + C1*C2*R2*Rload*Rmid*s^2 + C1*Rload*Rmid*s + C2*Rload*Rmid*s + Rload)/(C1*C2*C1*R1*R2*Rload*Rmid*s^3 + C1*C2*R1*Rload*Rmid*s^2 + C1*C2*R2*Rload*Rmid*s^2 + C1*C1*R1*R2*Rmid*s^2 + C1*C1*R1*Rload*Rmid*s^2 + C1*R1*Rmid*s + C1*R2*Rmid*s + C1*Rload*Rmid*s + C2*C1*R1*R2*Rload*s^2 + C2*C1*R1*R2*Rmid*s^2 + C2*C1*R1*Rload*Rmid*s^2 + C2*R1*Rload*s + C2*R1*Rmid*s + C2*R2*Rload*s + C2*R2*Rmid*s + C2*Rload*Rmid*s + C1*R1*R2*s + C1*R1*Rload*s + R1 + R2 + Rload)",
+    "C": "Transfer function: H(s) = (C1*C2*Cmid*R1*R2*Rload*Rmid*s^3 + C1*C2*R1*Rload*Rmid*s^2 + C1*C2*R2*Rload*Rmid*s^2 + C1*Rload*Rmid*s + C2*Rload*Rmid*s + Rload)/(C1*C2*Cmid*R1*R2*Rload*Rmid*s^3 + C1*C2*R1*Rload*Rmid*s^2 + C1*C2*R2*Rload*Rmid*s^2 + C1*Cmid*R1*R2*Rmid*s^2 + C1*Cmid*R1*Rload*Rmid*s^2 + C1*R1*Rmid*s + C1*R2*Rmid*s + C1*Rload*Rmid*s + C2*Cmid*R1*R2*Rload*s^2 + C2*Cmid*R1*R2*Rmid*s^2 + C2*Cmid*R1*Rload*Rmid*s^2 + C2*R1*Rload*s + C2*R1*Rmid*s + C2*R2*Rload*s + C2*R2*Rmid*s + C2*Rload*Rmid*s + Cmid*R1*R2*s + Cmid*R1*Rload*s + R1 + R2 + Rload)",
+    "D": "Transfer function: H(s) = (C2*C2*Cmid*R1*R2*Rload*Rmid*s^3 + C2*C2*R1*Rload*Rmid*s^2 + C2*C2*R2*Rload*Rmid*s^2 + C2*Rload*Rmid*s + C2*Rload*Rmid*s + Rload)/(C2*C2*Cmid*R1*R2*Rload*Rmid*s^3 + C2*C2*R1*Rload*Rmid*s^2 + C2*C2*R2*Rload*Rmid*s^2 + C2*Cmid*R1*R2*Rmid*s^2 + C2*Cmid*R1*Rload*Rmid*s^2 + C2*R1*Rmid*s + C2*R2*Rmid*s + C2*Rload*Rmid*s + C2*Cmid*R1*R2*Rload*s^2 + C2*Cmid*R1*R2*Rmid*s^2 + C2*Cmid*R1*Rload*Rmid*s^2 + C2*R1*Rload*s + C2*R1*Rmid*s + C2*R2*Rload*s + C2*R2*Rmid*s + C2*Rload*Rmid*s + Cmid*R1*R2*s + Cmid*R1*Rload*s + R1 + R2 + Rload)",
+    "E": "Transfer function: H(s) = (C1*Cmid*Cmid*R1*R2*Rload*Rmid*s^3 + C1*Cmid*R1*Rload*Rmid*s^2 + C1*Cmid*R2*Rload*Rmid*s^2 + C1*Rload*Rmid*s + Cmid*Rload*Rmid*s + Rload)/(C1*Cmid*Cmid*R1*R2*Rload*Rmid*s^3 + C1*Cmid*R1*Rload*Rmid*s^2 + C1*Cmid*R2*Rload*Rmid*s^2 + C1*Cmid*R1*R2*Rmid*s^2 + C1*Cmid*R1*Rload*Rmid*s^2 + C1*R1*Rmid*s + C1*R2*Rmid*s + C1*Rload*Rmid*s + Cmid*Cmid*R1*R2*Rload*s^2 + Cmid*Cmid*R1*R2*Rmid*s^2 + Cmid*Cmid*R1*Rload*Rmid*s^2 + Cmid*R1*Rload*s + Cmid*R1*Rmid*s + Cmid*R2*Rload*s + Cmid*R2*Rmid*s + Cmid*Rload*Rmid*s + Cmid*R1*R2*s + Cmid*R1*Rload*s + R1 + R2 + Rload)",
+    "F": "Transfer function: H(s) = (C1*C1*Cmid*R1*R2*Rload*Rmid*s^3 + C1*C1*R1*Rload*Rmid*s^2 + C1*C1*R2*Rload*Rmid*s^2 + C1*Rload*Rmid*s + C1*Rload*Rmid*s + Rload)/(C1*C1*Cmid*R1*R2*Rload*Rmid*s^3 + C1*C1*R1*Rload*Rmid*s^2 + C1*C1*R2*Rload*Rmid*s^2 + C1*Cmid*R1*R2*Rmid*s^2 + C1*Cmid*R1*Rload*Rmid*s^2 + C1*R1*Rmid*s + C1*R2*Rmid*s + C1*Rload*Rmid*s + C1*Cmid*R1*R2*Rload*s^2 + C1*Cmid*R1*R2*Rmid*s^2 + C1*Cmid*R1*Rload*Rmid*s^2 + C1*R1*Rload*s + C1*R1*Rmid*s + C1*R2*Rload*s + C1*R2*Rmid*s + C1*Rload*Rmid*s + Cmid*R1*R2*s + Cmid*R1*Rload*s + R1 + R2 + Rload)",
+    "G": "Transfer function: H(s) = (Cmid*C2*Cmid*R1*R2*Rload*Rmid*s^3 + Cmid*C2*R1*Rload*Rmid*s^2 + Cmid*C2*R2*Rload*Rmid*s^2 + Cmid*Rload*Rmid*s + C2*Rload*Rmid*s + Rload)/(Cmid*C2*Cmid*R1*R2*Rload*Rmid*s^3 + Cmid*C2*R1*Rload*Rmid*s^2 + Cmid*C2*R2*Rload*Rmid*s^2 + Cmid*Cmid*R1*R2*Rmid*s^2 + Cmid*Cmid*R1*Rload*Rmid*s^2 + Cmid*R1*Rmid*s + Cmid*R2*Rmid*s + Cmid*Rload*Rmid*s + C2*Cmid*R1*R2*Rload*s^2 + C2*Cmid*R1*R2*Rmid*s^2 + C2*Cmid*R1*Rload*Rmid*s^2 + C2*R1*Rload*s + C2*R1*Rmid*s + C2*R2*Rload*s + C2*R2*Rmid*s + C2*Rload*Rmid*s + Cmid*R1*R2*s + Cmid*R1*Rload*s + R1 + R2 + Rload)",
+    "H": "Transfer function: H(s) = 1/(1 + s*R1*Cmid)",
+    "I": "Transfer function: H(s) = 1/(s^2*R1*R2*Cmid*C1 + s*(R1*Cmid + R2*C1) + 1)",
+    "J": "Transfer function: H(s) = (s*R1*Cmid)/(1 + s*R1*Cmid)"
   },
   "track": "analysis",
   "aspect": "identify_transfer_function"

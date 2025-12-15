@@ -1438,6 +1438,10 @@ def main():
             choices = ""
             mc_answer_key = None
             prompt_variant = q.meta.get("prompt_variant", "short_form")
+            mc_choices_token = "__MC_CHOICES__"
+            # If we rename instance names for MC artifacts, store the mapping so we can
+            # update any choices that reference those instance names.
+            mc_instance_rename_map: Dict[str, str] = {}
             if prompt_variant == "multiple_choice":
                 # Load MC answer key based on aspect
                 aspect = q.meta.get("aspect", "")
@@ -1449,12 +1453,9 @@ def main():
                 if mc_key_path.exists():
                     try:
                         mc_answer_key = json.loads(mc_key_path.read_text(encoding='utf-8'))
-                        # Format choices as A. ... B. ... etc.
-                        choice_lines = []
-                        for letter in sorted(mc_answer_key.get("choices", {}).keys()):
-                            choice_text = mc_answer_key["choices"][letter]
-                            choice_lines.append(f"{letter}. {choice_text}")
-                        choices = "\n".join(choice_lines)
+                        # Defer rendering choices until after artifact is finalized (MCQs may
+                        # substitute placeholder device IDs based on the attached netlist).
+                        choices = mc_choices_token
                     except Exception as e:
                         print(f"Warning: Could not load MC answer key for {q.id}: {e}", file=sys.stderr)
                         choices = "(MC choices unavailable)"
@@ -1566,6 +1567,23 @@ def main():
                 except Exception:
                     pass
                 return fallback
+
+            def _template_artifact_path(modality: str) -> Optional[Path]:
+                """Return absolute path to canonical template artifact (if available)."""
+                meta_path = item_dir / "meta.json"
+                if not meta_path.exists():
+                    return None
+                try:
+                    m = json.loads(meta_path.read_text(encoding='utf-8'))
+                    tpath = m.get("template_path") or m.get("template")
+                    if not isinstance(tpath, str) or not tpath.strip():
+                        return None
+                    tdir = (item_dir / tpath).resolve()
+                    ext_map = {"spice_netlist": "sp", "casIR": "cir", "cascode": "cas"}
+                    template_file = tdir / f"netlist.{ext_map.get(modality, 'sp')}"
+                    return template_file if template_file.exists() else None
+                except Exception:
+                    return None
             
             def _get_meta_seed() -> int:
                 """Get gen_seed from meta.json or compute from item_dir hash."""
@@ -1634,7 +1652,132 @@ def main():
                         "Check that the template/netlist contains NMOS/PMOS identifiers in code contexts."
                     )
 
-            if q.modality == "spice_netlist" and artifact_used:
+            # For analysis track, always use canonical template artifacts (no randomization/shuffling),
+            # so the model sees the exact reference netlist under data/<split>/templates/...
+            if str(q.track).lower() == "analysis":
+                tpl_ap = _template_artifact_path(q.modality)
+                if tpl_ap is not None:
+                    art_path = tpl_ap
+                    artifact_used = _load_template_text(q.modality, artifact_used)
+                    rand_info = {"source": "template"}
+
+            # For MCQs, attach a template SPICE netlist with SHUFFLED transistor instance names
+            # (topology unchanged). This enables distractors that swap the wrong subscript.
+            if (
+                str(q.track).lower() == "analysis"
+                and (q.meta or {}).get("prompt_variant") == "multiple_choice"
+                and q.modality == "spice_netlist"
+                and artifact_used
+            ):
+                def _shuffle_instance_names(
+                    netlist: str,
+                    seed: int,
+                    prefixes: tuple[str, ...],
+                ) -> tuple[str, dict[str, str]]:
+                    """
+                    Rename instance names (first token) for specified prefixes without changing topology.
+                    IMPORTANT: we rename EVERY matched instance to a fresh new name (not just shuffle),
+                    so the output visibly changes and doesn't accidentally keep many original IDs.
+                    """
+                    import re
+                    import random
+
+                    rnd = random.Random(seed)
+                    lines = netlist.splitlines()
+
+                    # Collect instance IDs per prefix (preserve first-seen order)
+                    ids_by_pref: dict[str, list[str]] = {p: [] for p in prefixes}
+                    seen_by_pref: dict[str, set[str]] = {p: set() for p in prefixes}
+                    for ln in lines:
+                        s = ln.lstrip()
+                        if not s:
+                            continue
+                        head = s.split(None, 1)[0]
+                        if not head:
+                            continue
+                        pref = head[:1].upper()
+                        if pref in ids_by_pref and head not in seen_by_pref[pref]:
+                            ids_by_pref[pref].append(head)
+                            seen_by_pref[pref].add(head)
+
+                    # Build mapping
+                    mapping: dict[str, str] = {}
+                    all_existing = {s.split(None, 1)[0] for s in lines if s.strip()}
+
+                    def _fresh_name(prefix: str) -> str:
+                        # Keep SPICE element prefix letter; create a reasonably short deterministic suffix
+                        # from the seeded RNG.
+                        for _ in range(200):
+                            cand = f"{prefix}{rnd.randrange(1, 10**9)}"
+                            if cand not in all_existing and cand not in mapping.values():
+                                return cand
+                        # Fallback (should never happen)
+                        return f"{prefix}{seed}"
+
+                    for pref, ids in ids_by_pref.items():
+                        if not ids:
+                            continue
+                        # Rename every instance to a fresh unique name (never equal to old).
+                        for old in ids:
+                            mapping[old] = _fresh_name(pref)
+
+                    if not mapping:
+                        return netlist, {}
+
+                    # Rewrite first tokens
+                    out_lines: list[str] = []
+                    for ln in lines:
+                        if not ln.strip():
+                            out_lines.append(ln)
+                            continue
+                        parts = ln.split()
+                        if not parts:
+                            out_lines.append(ln)
+                            continue
+                        old_id = parts[0]
+                        new_id = mapping.get(old_id)
+                        if not new_id:
+                            out_lines.append(ln)
+                            continue
+                        leading = ln[: len(ln) - len(ln.lstrip())]
+                        out_lines.append(leading + " ".join([new_id] + parts[1:]))
+
+                    return "\n".join(out_lines) + ("\n" if netlist.endswith("\n") else ""), mapping
+
+                meta_seed = _get_meta_seed()
+                # IMPORTANT: include run_id so renaming changes from run to run (user request).
+                # run_id is the timestamped run directory name, e.g. run_20251215_014050
+                shuf_seed = int.from_bytes(
+                    hashlib.sha256(f"{run_id}:{meta_seed}:{Path(it.item_dir).name}:{q.id}:mc_shuf_ids".encode()).digest()[:8],
+                    "big",
+                )
+                # Always rename/shuffle MOSFET instance names. Also rename R/C instance names for MCQs,
+                # but DO NOT do so for analysis/feedback where choices explicitly use R1/R2/C1 notation.
+                is_feedback_analysis = "data/dev/analysis/feedback" in str(item_dir).replace("\\", "/")
+                # For analysis/filters, also rename inductors (L*) so TF questions can't be memorized via L1 etc.
+                prefixes = ("M",) if is_feedback_analysis else ("M", "R", "C", "L")
+                shuffled_text, id_map = _shuffle_instance_names(artifact_used, shuf_seed, prefixes=prefixes)
+                if id_map:
+                    mc_instance_rename_map = id_map
+                    # Write a derived artifact next to the item for transparency/debugging
+                    # IMPORTANT: this must be per-question. Otherwise multiple questions within the same
+                    # item overwrite the same file, and the report ends up showing an artifact that
+                    # doesn't match the prompt's substituted IDs.
+                    safe_qid = "".join(ch if (ch.isalnum() or ch in {"_", "-", "."}) else "_" for ch in str(q.id))
+                    shuf_path = item_dir / f"netlist_mc_shuffled_{safe_qid}.sp"
+                    try:
+                        shuf_path.write_text(shuffled_text, encoding="utf-8")
+                        art_path = shuf_path
+                    except Exception:
+                        # If write fails, still use the shuffled text in-memory
+                        pass
+                    artifact_used = shuffled_text
+                    # Also update inventory IDs shown to the model to match renamed transistors
+                    inv_ids = [id_map.get(x, x) for x in inv_ids]
+                    rand_info = {"source": "template", "mc_shuffled_ids": True, "seed": shuf_seed}
+
+            # For non-analysis tracks, randomize SPICE netlist ordering to reduce memorization.
+            if str(q.track).lower() != "analysis" and q.modality == "spice_netlist" and artifact_used:
                 meta_seed = _get_meta_seed()
                 per_item_seed = int.from_bytes(
                     hashlib.sha256(f"{meta_seed}:{Path(it.item_dir).name}:{q.id}".encode()).digest()[:8],
@@ -1643,6 +1786,603 @@ def main():
                 artifact_used = randomize_spice(artifact_used, per_item_seed)
                 rand_info = {"seed": per_item_seed}
 
+            # If MC choices were deferred, render them now so any {IN}/{OUTN}/{OUTP} placeholders
+            # can be replaced using the final (possibly shuffled) SPICE netlist.
+            if prompt_variant == "multiple_choice" and mc_answer_key and mc_choices_token in prompt:
+                def _parse_mos(netlist: str) -> List[Dict[str, str]]:
+                    mos: List[Dict[str, str]] = []
+                    for raw in (netlist or "").splitlines():
+                        s = raw.strip()
+                        if not s or s.startswith(("*", ";", "//")):
+                            continue
+                        if not s[:1].upper().startswith("M"):
+                            continue
+                        parts = s.split()
+                        if len(parts) < 6:
+                            continue
+                        mid, d, g, src, b, model = parts[:6]
+                        mos.append({"id": mid, "d": d, "g": g, "s": src, "b": b, "model": model.lower()})
+                    return mos
+
+                def _is_supply(net: str) -> bool:
+                    n = (net or "").lower()
+                    return n in {"0", "gnd", "vss"} or n == "vdd" or n.startswith("vdd")
+
+                def _role_candidates(netlist: str) -> Dict[str, List[str]]:
+                    """Return candidate device IDs for IN/OUTN/OUTP to avoid post-substitution duplicates."""
+                    mos = _parse_mos(netlist)
+                    default_id = mos[0]["id"] if mos else "M1"
+                    input_gate_nets = {
+                        "vinp", "vinn", "vip", "vin", "inp", "inn", "in_p", "in_n", "in", "in+", "in-",
+                    }
+                    in_cands = [m["id"] for m in mos if (m.get("g") or "").lower() in input_gate_nets]
+                    if not in_cands and mos:
+                        in_cands = [mos[0]["id"]]
+                    in_set = set(in_cands)
+
+                    # Guess output node. Prefer explicit naming (vout/out*) over heuristics.
+                    bad = set(input_gate_nets) | {"vbias", "vbias_n", "vbiasp", "vbiasn", "bias", "ntail", "tail"}
+                    nets: List[str] = []
+                    for m in mos:
+                        for k in ("d", "s"):
+                            nn = (m.get(k) or "").strip()
+                            if not nn:
+                                continue
+                            nlow = nn.lower()
+                            if _is_supply(nn) or nlow in bad or "bias" in nlow:
+                                continue
+                            nets.append(nn)
+                    out_node = ""
+                    # Strong preference for canonical output net names
+                    for pref in ("vout", "voutp", "voutn", "vop", "von", "outp", "outn", "out"):
+                        for nn in nets:
+                            nlow = nn.lower()
+                            if nlow == pref or nlow.startswith(pref):
+                                out_node = nn
+                                break
+                        if out_node:
+                            break
+                    if not out_node:
+                        counts: Dict[str, int] = {}
+                        for nn in nets:
+                            counts[nn] = counts.get(nn, 0) + 1
+                        out_node = max(counts.items(), key=lambda kv: kv[1])[0] if counts else ""
+
+                    # Support both Sky130-ish model names (nfet/pfet) and generic NMOS/PMOS.
+                    nmos = [
+                        m for m in mos
+                        if ("nch" in m["model"]) or ("nfet" in m["model"]) or ("nmos" in m["model"])
+                    ]
+                    pmos = [
+                        m for m in mos
+                        if ("pch" in m["model"]) or ("pfet" in m["model"]) or ("pmos" in m["model"])
+                    ]
+                    # If a circuit is single-polarity in the template (e.g. generic NMOS-only toy netlists),
+                    # fall back to the available devices rather than collapsing to a single ID.
+                    if not nmos and pmos:
+                        nmos = pmos
+                    if not pmos and nmos:
+                        pmos = nmos
+
+                    # Output-connected devices (drain OR source tied to output node).
+                    # IMPORTANT: exclude the input pair devices from OUTN/OUTP candidates.
+                    # Otherwise, for single-ended OTAs where one input device drain is vout,
+                    # distractors like gm_{OUTN}/CL can become equally-correct gm_{IN}/CL.
+                    out_connected = [
+                        m for m in mos
+                        if out_node
+                        and (m.get("d") == out_node or m.get("s") == out_node)
+                        and (m.get("id") not in in_set)
+                    ]
+                    nmos_out = [
+                        m for m in nmos
+                        if out_node
+                        and (m.get("d") == out_node or m.get("s") == out_node)
+                        and (m.get("id") not in in_set)
+                    ]
+                    pmos_out = [
+                        m for m in pmos
+                        if out_node
+                        and (m.get("d") == out_node or m.get("s") == out_node)
+                        and (m.get("id") not in in_set)
+                    ]
+
+                    # Candidate ordering: keep OUTN/OUTP polarity-pure.
+                    # Mixing polarities here can collapse OUTN and OUTP to the same single device in
+                    # small OTAs (e.g. only PMOS tied to vout besides the input device).
+                    outn_cands = [m["id"] for m in nmos_out]
+                    outp_cands = [m["id"] for m in pmos_out]
+                    if not outn_cands:
+                        # Fall back to any NMOS device, but never pick input-pair devices.
+                        outn_cands = [m["id"] for m in nmos if m.get("id") not in in_set]
+                        if not outn_cands:
+                            outn_cands = [m["id"] for m in mos if m.get("id") not in in_set]
+                    if not outp_cands:
+                        # Fall back to any PMOS device, but never pick input-pair devices.
+                        outp_cands = [m["id"] for m in pmos if m.get("id") not in in_set]
+                        if not outp_cands:
+                            outp_cands = [m["id"] for m in mos if m.get("id") not in in_set]
+                    if not outn_cands:
+                        outn_cands = [m["id"] for m in mos]
+                    if not outp_cands:
+                        outp_cands = [m["id"] for m in mos]
+                    # Cap to a few to keep combinatorics small
+                    # Also provide a pool of "other" devices for distractors that intentionally use
+                    # the wrong transistor's parameters (e.g., gm_{X1} instead of gm_{IN}).
+                    other_pool = [m["id"] for m in mos if m.get("id") and (m.get("id") not in in_set)]
+
+                    # Swing-specific: pick device stacks from output to rails to support Vov subscripts
+                    # that correspond to the correct transistors in the netlist.
+                    def _is_ground(net: str) -> bool:
+                        n = (net or "").lower()
+                        return n in {"0", "gnd", "vss"}
+
+                    def _find_supply_node() -> str:
+                        # Prefer canonical VDD net if present in the netlist.
+                        nets_seen: List[str] = []
+                        for m in mos:
+                            for k in ("d", "g", "s", "b"):
+                                nn = (m.get(k) or "").strip()
+                                if nn:
+                                    nets_seen.append(nn)
+                        for nn in nets_seen:
+                            if nn.lower() == "vdd":
+                                return nn
+                        for nn in nets_seen:
+                            if nn.lower().startswith("vdd"):
+                                return nn
+                        return "VDD"
+
+                    vdd_node = _find_supply_node()
+
+                    def _build_adj(pol: str) -> Dict[str, List[tuple[str, str]]]:
+                        adj: Dict[str, List[tuple[str, str]]] = {}
+                        for m in mos:
+                            mid = m.get("id") or ""
+                            if not mid:
+                                continue
+                            model = (m.get("model") or "").lower()
+                            is_n = ("nch" in model) or ("nfet" in model) or ("nmos" in model)
+                            is_p = ("pch" in model) or ("pfet" in model) or ("pmos" in model)
+                            if pol == "n" and not is_n:
+                                continue
+                            if pol == "p" and not is_p:
+                                continue
+                            a = (m.get("d") or "").strip()
+                            b = (m.get("s") or "").strip()
+                            if not a or not b:
+                                continue
+                            adj.setdefault(a, []).append((b, mid))
+                            adj.setdefault(b, []).append((a, mid))
+                        return adj
+
+                    def _shortest_dev_path(adj: Dict[str, List[tuple[str, str]]], start: str, targets: set[str], max_devs: int) -> List[str]:
+                        from collections import deque
+                        # BFS on nodes, tracking device path
+                        q = deque()
+                        q.append((start, []))
+                        seen: set[tuple[str, int]] = {(start, 0)}
+                        best: List[str] | None = None
+                        while q:
+                            node, dpath = q.popleft()
+                            if node in targets:
+                                if best is None or len(dpath) < len(best) or (len(dpath) == len(best) and tuple(dpath) < tuple(best)):
+                                    best = dpath
+                                continue
+                            if len(dpath) >= max_devs:
+                                continue
+                            for nxt, did in adj.get(node, []):
+                                st = (nxt, len(dpath) + 1)
+                                if st in seen:
+                                    continue
+                                seen.add(st)
+                                q.append((nxt, dpath + [did]))
+                        return best or []
+
+                    n_adj = _build_adj("n")
+                    p_adj = _build_adj("p")
+                    n_path = _shortest_dev_path(n_adj, out_node, targets={"0", "gnd", "vss"}, max_devs=3) if out_node else []
+                    p_path = _shortest_dev_path(p_adj, out_node, targets={vdd_node, "vdd", "VDD"}, max_devs=2) if out_node else []
+
+                    swing_roles: Dict[str, List[str]] = {}
+                    if n_path:
+                        swing_roles["N1"] = [n_path[0]]
+                    if len(n_path) > 1:
+                        swing_roles["N2"] = [n_path[1]]
+                    if len(n_path) > 2:
+                        swing_roles["N3"] = [n_path[2]]
+                    if p_path:
+                        swing_roles["P1"] = [p_path[0]]
+                    if len(p_path) > 1:
+                        swing_roles["P2"] = [p_path[1]]
+
+                    return {
+                        "IN": in_cands[:4] if in_cands else [default_id],
+                        "OUTN": outn_cands[:4] if outn_cands else [default_id],
+                        "OUTP": outp_cands[:4] if outp_cands else [default_id],
+                        "X": other_pool[:12] if other_pool else [default_id],
+                        **swing_roles,
+                    }
+
+                def _pick_role_map(netlist: str, mc_choices: Dict[str, str]) -> Dict[str, str]:
+                    cands = _role_candidates(netlist)
+
+                    def _subst(text: str, rm: Dict[str, str]) -> str:
+                        for k, v in rm.items():
+                            text = text.replace("{" + k + "}", v)
+                        return text
+
+                    def _norm(s: str) -> str:
+                        return s.lower().replace(" ", "")
+
+                    # Try combinations; maximize distinct IDs first, but accept fewer if it yields unique rendered choices.
+                    combos = []
+                    for in_id in cands["IN"]:
+                        for outn_id in cands["OUTN"]:
+                            for outp_id in cands["OUTP"]:
+                                combos.append((len({in_id, outn_id, outp_id}), in_id, outn_id, outp_id))
+                    combos.sort(key=lambda t: (-t[0], t[1], t[2], t[3]))
+
+                    for _, in_id, outn_id, outp_id in combos:
+                        # Prefer distinct role IDs when possible; avoids duplicate-choice issues like
+                        # gm_{OUTN}/Cload == gm_{OUTP}/Cload.
+                        if outn_id == outp_id:
+                            continue
+                        rm = {"IN": in_id, "OUTN": outn_id, "OUTP": outp_id}
+                        rendered = [_norm(_subst(str(mc_choices[k]), rm)) for k in sorted(mc_choices.keys())]
+                        if len(set(rendered)) == len(rendered):
+                            return rm
+
+                    # As a last resort, prefer IN != OUTN if possible (helps many formula-style MCQs).
+                    for _, in_id, outn_id, outp_id in combos:
+                        if in_id != outn_id:
+                            # Also try to pick OUTP distinct from OUTN when possible
+                            outp = outp_id
+                            if outp == outn_id:
+                                for cand_outp in cands.get("OUTP", []) or []:
+                                    if cand_outp != outn_id:
+                                        outp = cand_outp
+                                        break
+                            return {"IN": in_id, "OUTN": outn_id, "OUTP": outp}
+                    # Final fallback: pick firsts but enforce OUTP != OUTN if possible
+                    in0 = cands["IN"][0]
+                    outn0 = cands["OUTN"][0]
+                    outp0 = cands["OUTP"][0]
+                    if outp0 == outn0:
+                        for cand_outp in cands.get("OUTP", []) or []:
+                            if cand_outp != outn0:
+                                outp0 = cand_outp
+                                break
+                    return {"IN": in0, "OUTN": outn0, "OUTP": outp0}
+
+                role_map: Dict[str, str] = {}
+                if q.modality == "spice_netlist" and artifact_used:
+                    def _needed_keys(mc_choices: Dict[str, str]) -> set[str]:
+                        blob = " ".join(str(v) for v in (mc_choices or {}).values())
+                        needed = set()
+                        for k in ("IN", "OUTN", "OUTP", "X1", "X2", "X3", "N1", "N2", "N3", "P1", "P2"):
+                            if "{" + k + "}" in blob:
+                                needed.add(k)
+                        return needed
+
+                    def _pick_role_map_all(netlist: str, mc_choices: Dict[str, str]) -> Dict[str, str]:
+                        """
+                        Pick role IDs (IN/OUTN/OUTP and optional X1/X2/X3) such that rendered MC choices
+                        are unique. This prevents duplicate options and “multiple correct” cases that
+                        arise when symmetric devices are used in distractors.
+                        """
+                        needed = _needed_keys(mc_choices)
+                        cands = _role_candidates(netlist)
+
+                        def _subst(text: str, rm: Dict[str, str]) -> str:
+                            for k, v in rm.items():
+                                text = text.replace("{" + k + "}", v)
+                            return text
+
+                        def _norm(s: str) -> str:
+                            return s.lower().replace(" ", "")
+
+                        # Never use literal "M1" as a fallback (might not exist after renaming).
+                        # Prefer any available candidate from the netlist-derived pools.
+                        any_id = (cands.get("IN") or cands.get("OUTN") or cands.get("OUTP") or cands.get("X") or ["M1"])[0]
+                        in_list = list(cands.get("IN", []) or [any_id])
+                        outn_list = list(cands.get("OUTN", []) or [any_id])
+                        outp_list = list(cands.get("OUTP", []) or [any_id])
+                        x_list = list(cands.get("X", []) or [any_id])
+
+                        # Keep search small/deterministic
+                        in_list = in_list[:4]
+                        outn_list = outn_list[:4]
+                        outp_list = outp_list[:4]
+                        x_list = x_list[:10]
+
+                        # Search combos; require OUTN != OUTP when both are needed
+                        for in_id in in_list:
+                            for outn_id in outn_list:
+                                for outp_id in outp_list:
+                                    if "OUTN" in needed and "OUTP" in needed and outn_id == outp_id:
+                                        continue
+                                    rm_base = {"IN": in_id, "OUTN": outn_id, "OUTP": outp_id}
+                                    # Fixed swing roles from netlist-derived stacks (if needed)
+                                    for k in ("N1", "N2", "N3", "P1", "P2"):
+                                        if k in needed:
+                                            vals = cands.get(k, [])
+                                            if vals:
+                                                rm_base[k] = vals[0]
+                                    # Choose extra roles if needed
+                                    used = set(rm_base.values()) | set(in_list)  # exclude other input-pair devices too
+                                    extras_pool = [x for x in x_list if x not in used]
+                                    # Build candidate assignments for X roles
+                                    x_assignments = [({},)]  # type: ignore
+                                    if any(k in needed for k in ("X1", "X2", "X3")):
+                                        # Greedy permutations
+                                        xs = extras_pool[:6] if extras_pool else x_list[:6]
+                                        perms = []
+                                        for a in xs:
+                                            for b in xs:
+                                                if b == a:
+                                                    continue
+                                                for c in xs:
+                                                    if c in {a, b}:
+                                                        continue
+                                                    perms.append({"X1": a, "X2": b, "X3": c})
+                                        x_assignments = perms or [{"X1": xs[0] if xs else "M1", "X2": xs[1] if len(xs) > 1 else "M1", "X3": xs[2] if len(xs) > 2 else "M1"}]
+
+                                    for xa in x_assignments:
+                                        rm = dict(rm_base)
+                                        # Only include keys that are needed (keeps substitution stable)
+                                        for k in ("X1", "X2", "X3"):
+                                            if k in needed:
+                                                rm[k] = xa.get(k, rm_base.get("OUTN", "M1"))
+                                        rendered = [_norm(_subst(str(mc_choices[k]), rm)) for k in sorted(mc_choices.keys())]
+                                        if len(set(rendered)) == len(rendered):
+                                            # Return only needed keys (plus IN/OUTN/OUTP for compatibility)
+                                            out = {k: rm[k] for k in ("IN", "OUTN", "OUTP", "N1", "N2", "N3", "P1", "P2") if k in rm}
+                                            for k in ("X1", "X2", "X3"):
+                                                if k in needed:
+                                                    out[k] = rm[k]
+                                            return out
+
+                        # Fallback: preserve legacy selection, but ALWAYS fill any needed X roles
+                        # so placeholders never leak into the rendered prompt.
+                        base = _pick_role_map(netlist, mc_choices)
+                        if not base:
+                            base = {"IN": in_list[0], "OUTN": outn_list[0], "OUTP": outp_list[0]}
+
+                        # Ensure OUTP != OUTN when both are needed (best effort)
+                        if "OUTN" in needed and "OUTP" in needed and base.get("OUTN") == base.get("OUTP"):
+                            for cand_outp in outp_list:
+                                if cand_outp != base.get("OUTN"):
+                                    base["OUTP"] = cand_outp
+                                    break
+
+                        if any(k in needed for k in ("X1", "X2", "X3")):
+                            used = set(base.values()) | set(in_list)
+                            pool = [x for x in x_list if x not in used] or [x for x in x_list if x not in set(base.values())] or x_list
+                            # deterministic pick
+                            picks = []
+                            for x in pool:
+                                if x not in picks:
+                                    picks.append(x)
+                                if len(picks) >= 3:
+                                    break
+                            while len(picks) < 3:
+                                picks.append(pool[0] if pool else base.get("OUTN", any_id))
+                            if "X1" in needed:
+                                base["X1"] = picks[0]
+                            if "X2" in needed:
+                                base["X2"] = picks[1]
+                            if "X3" in needed:
+                                base["X3"] = picks[2]
+
+                        # As a last guard: if this fallback still yields duplicates, strip OUTP (when unused)
+                        # and keep mapping minimal.
+                        return base
+
+                    try:
+                        role_map = _pick_role_map_all(artifact_used, mc_answer_key.get("choices", {}))
+                    except Exception:
+                        role_map = {}
+
+                def _subst_placeholders(s: str) -> str:
+                    if not s:
+                        return s
+                    for k, v in (role_map or {}).items():
+                        s = s.replace("{" + k + "}", v)
+                    return s
+
+                def _apply_instance_renames(s: str) -> str:
+                    """Replace any literal instance IDs in choices with their renamed IDs."""
+                    if not s or not mc_instance_rename_map:
+                        return s
+                    import re
+                    # Use conservative boundaries: SPICE IDs are typically [A-Za-z0-9_]+
+                    for old, new in mc_instance_rename_map.items():
+                        if old == new:
+                            continue
+                        pat = re.compile(rf"(?<![A-Za-z0-9_]){re.escape(old)}(?![A-Za-z0-9_])")
+                        s = pat.sub(new, s)
+                    return s
+
+                choice_lines: List[str] = []
+                rendered_choices: Dict[str, str] = {}
+                for letter in sorted(mc_answer_key.get("choices", {}).keys()):
+                    choice_text = str(mc_answer_key["choices"][letter])
+                    choice_text = _subst_placeholders(choice_text)
+                    choice_text = _apply_instance_renames(choice_text)
+                    rendered_choices[letter] = choice_text
+
+                # Final guard: ensure MC choices are unique after substitution/renaming.
+                # This prevents "multiple correct answers" caused by symmetric devices (e.g. input pair)
+                # or tiny netlists with too few distinct devices for OUTN/OUTP/X roles.
+                correct_letter = str(mc_answer_key.get("correct_answer", "")).strip().upper()
+                def _norm_choice(s: str) -> str:
+                    return (s or "").lower().replace(" ", "")
+
+                def _gbw_fallbacks(correct: str) -> List[str]:
+                    # Extract gm_* and capacitor token (C*) from the correct option.
+                    import re
+                    gm = None
+                    cap = None
+                    m = re.search(r"(gm_[A-Za-z0-9_]+)", correct)
+                    if m:
+                        gm = m.group(1)
+                    m = re.search(r"/(C[A-Za-z0-9_]+)", correct)
+                    if m:
+                        cap = m.group(1)
+                    if not gm or not cap:
+                        return []
+                    return [
+                        f"GBW ≈ {gm}/(2·{cap})",
+                        f"GBW ≈ ( {gm} )²/{cap}".replace(" ( ", "(").replace(" )", ")"),
+                        f"GBW ≈ {cap}/{gm}",
+                        f"GBW ≈ {gm}·{cap}",
+                        f"GBW ≈ {gm}/(2π{cap})",
+                        f"GBW ≈ {gm}/(3·{cap})",
+                        f"GBW ≈ {gm}/{cap}²",
+                    ]
+
+                def _gain_dc_fallbacks(correct: str) -> List[str]:
+                    import re
+                    gm = None
+                    ro = None
+                    m = re.search(r"(gm_[A-Za-z0-9_]+)", correct)
+                    if m:
+                        gm = m.group(1)
+                    m = re.search(r"(ro_[A-Za-z0-9_]+)", correct)
+                    if m:
+                        ro = m.group(1)
+                    if not gm or not ro:
+                        return []
+                    return [
+                        f"DC gain A0 ≈ {gm}·{ro}",
+                        f"DC gain A0 ≈ {gm}·{ro}/4",
+                        f"DC gain A0 ≈ 2·{gm}·{ro}",
+                        f"DC gain A0 ≈ {gm}/{ro}",
+                        f"DC gain A0 ≈ ({gm}·{ro})²/2",
+                    ]
+
+                def _noise_fallbacks(correct: str) -> List[str]:
+                    import re
+                    gm = None
+                    m = re.search(r"(gm_[A-Za-z0-9_]+)", correct)
+                    if m:
+                        gm = m.group(1)
+                    if not gm:
+                        return []
+                    return [
+                        f"Vn,out² ≈ 16kT/(3{gm})",
+                        f"Vn,out² ≈ 8kT/(3{gm})",  # canonical
+                        f"Vn,out² ≈ 8kT/({gm})",
+                        f"Vn,out² ≈ 8kT·{gm}",
+                        f"Vn,out² ≈ 8kT/(3{gm}²)",
+                    ]
+
+                def _rout_fallbacks(correct: str) -> List[str]:
+                    import re
+                    ro = None
+                    m = re.search(r"(ro_[A-Za-z0-9_]+)", correct)
+                    if m:
+                        ro = m.group(1)
+                    if not ro:
+                        return []
+                    return [
+                        f"rout ≈ {ro}/2",
+                        f"rout ≈ 2·{ro}",
+                        f"rout ≈ {ro} + {ro}",
+                        f"rout ≈ {ro}·{ro}",
+                        f"rout ≈ √({ro})",
+                    ]
+
+                aspect = str((q.meta or {}).get("aspect") or "").strip()
+                correct_text = rendered_choices.get(correct_letter, "")
+                if aspect == "gbw":
+                    pool = _gbw_fallbacks(correct_text)
+                elif aspect == "gain_dc":
+                    pool = _gain_dc_fallbacks(correct_text)
+                elif aspect == "noise_white":
+                    pool = _noise_fallbacks(correct_text)
+                elif aspect == "rout":
+                    pool = _rout_fallbacks(correct_text)
+                else:
+                    pool = []
+
+                # Expand fallback pools to reliably break duplicates even when many common forms are already present.
+                # (These extra variants remain plausible "wrong math" distractors.)
+                if aspect == "gbw" and correct_text:
+                    pool = pool + [
+                        pool[0].replace("/(2·", "/(4·") if pool else "",
+                        pool[0].replace("/(2·", "/(8·") if pool else "",
+                    ]
+                elif aspect == "gain_dc" and correct_text:
+                    pool = pool + [
+                        "DC gain A0 ≈ " + correct_text.split("≈", 1)[-1].strip().replace("/2", "/8"),
+                        "DC gain A0 ≈ " + correct_text.split("≈", 1)[-1].strip().replace("/2", "/16"),
+                        "DC gain A0 ≈ √(" + correct_text.split("≈", 1)[-1].strip().replace("/2", "") + ")",
+                    ]
+                elif aspect == "noise_white" and correct_text:
+                    # Introduce more constant-factor variants using the same gm token.
+                    pool = pool + [
+                        correct_text.replace("8kT/(3", "4kT/(3"),
+                        correct_text.replace("8kT/(3", "32kT/(3"),
+                        correct_text.replace("8kT/(3", "8kT/(6"),
+                    ]
+                elif aspect == "rout" and correct_text:
+                    pool = pool + [
+                        correct_text.replace("rout ≈", "rout ≈ 3·"),
+                    ]
+
+                # Deterministically enforce uniqueness: walk choices and replace duplicates with fresh pool entries.
+                letters = sorted(rendered_choices.keys())
+                norms: Dict[str, str] = {}
+
+                def _pick_replacement(used_norms: set[str]) -> str | None:
+                    for cand in pool:
+                        cn = _norm_choice(cand)
+                        if not cn:
+                            continue
+                        if cn in used_norms:
+                            continue
+                        if correct_text and cn == _norm_choice(correct_text):
+                            continue
+                        return cand
+                    return None
+
+                # First pass: if the correct choice collides with another, we will replace the other.
+                for letter in letters:
+                    t = rendered_choices[letter]
+                    n = _norm_choice(t)
+                    if n and n not in norms:
+                        norms[n] = letter
+
+                # Second pass: replace duplicates (never modify correct choice text)
+                used_norms = set(norms.keys())
+                for letter in letters:
+                    t = rendered_choices[letter]
+                    n = _norm_choice(t)
+                    first = norms.get(n)
+                    if not n or first is None:
+                        continue
+                    if first == letter:
+                        continue
+                    # If current is correct, replace the earlier duplicate (if allowed).
+                    if letter == correct_letter and first != correct_letter:
+                        repl = _pick_replacement(used_norms)
+                        if repl:
+                            rendered_choices[first] = repl
+                            used_norms.add(_norm_choice(repl))
+                        continue
+                    # Otherwise, replace current if it's not correct.
+                    if letter != correct_letter:
+                        repl = _pick_replacement(used_norms)
+                        if repl:
+                            rendered_choices[letter] = repl
+                            used_norms.add(_norm_choice(repl))
+
+                for letter in sorted(rendered_choices.keys()):
+                    choice_lines.append(f"{letter}. {rendered_choices[letter]}")
+                prompt = prompt.replace(mc_choices_token, "\n".join(choice_lines))
+
             # Predict
             error_msg: str | None = None
             pred_timer = perf_counter() if profiling.is_enabled() else None
@@ -1650,7 +2390,7 @@ def main():
                 pred = adapter.predict([
                     {
                         "prompt": prompt,
-                        "artifact_path": str(item_dir / q.artifact_path),
+                        "artifact_path": str(art_path),
                         "artifact": artifact_used,
                         "inventory_ids": inv_ids,
                         "question": q.model_dump(),

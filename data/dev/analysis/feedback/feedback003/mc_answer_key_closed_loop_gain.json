@@ -1,18 +1,18 @@
 {
   "question_id": "feedback003_closed_loop_gain_mc",
   "correct_answer": "J",
-  "answer_text": "T = A0",
+  "answer_text": "Vout/Vin = 1 + R2/R1",
   "choices": {
-    "A": "T = A0/(1+A0\u00b7\u03b2)",
-    "B": "T = 1/(1+A0\u00b7\u03b2)",
-    "C": "T = A0\u00b2",
-    "D": "T = (A0\u00b7\u03b2)/2",
-    "E": "T = \u03b2/A0",
-    "F": "T = A0/(1+\u03b2)",
-    "G": "T = \u03b2",
-    "H": "T = \u221a(A0\u00b7\u03b2)",
-    "I": "T = A0\u00b7\u03b2",
-    "J": "T = A0"
+    "A": "Vout/Vin = 1 - R2/R1",
+    "B": "Vout/Vin = R1/(R1+R2)",
+    "C": "Vout/Vin = -(R1+R2)/R1",
+    "D": "Vout/Vin = 1/(1+R2/R1)",
+    "E": "Vout/Vin = R2/R1",
+    "F": "Vout/Vin = R2/(R1+R2)",
+    "G": "Vout/Vin = (R1+R2)/R1",
+    "H": "Vout/Vin = (R1+R2)/R2",
+    "I": "Vout/Vin = 1 + R1/R2",
+    "J": "Vout/Vin = 1 + R2/R1"
   },
   "track": "analysis",
   "aspect": "closed_loop_gain"

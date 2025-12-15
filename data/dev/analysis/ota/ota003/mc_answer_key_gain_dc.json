@@ -1,18 +1,18 @@
 {
   "question_id": "ota003_gain_dc_mc",
   "correct_answer": "H",
-  "answer_text": "DC gain A0 \u2248 gm\u00b7ro/2",
+  "answer_text": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{OUTN}/2",
   "choices": {
-    "A": "DC gain A0 \u2248 \u221a(gm\u00b7ro)",
-    "B": "DC gain A0 \u2248 gm\u00b7ro\u00b2",
-    "C": "DC gain A0 \u2248 (gm\u00b7ro)\u00b3",
-    "D": "DC gain A0 \u2248 gm\u00b7ro/4",
-    "E": "DC gain A0 \u2248 gm/ro",
-    "F": "DC gain A0 \u2248 4\u00b7gm\u00b7ro",
-    "G": "DC gain A0 \u2248 2\u00b7gm\u00b7ro",
-    "H": "DC gain A0 \u2248 gm\u00b7ro/2",
-    "I": "DC gain A0 \u2248 gm\u00b2\u00b7ro",
-    "J": "DC gain A0 \u2248 (gm\u00b7ro)\u00b3/2"
+    "A": "DC gain A0 \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2/2",
+    "B": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{OUTN}",
+    "C": "DC gain A0 \u2248 gm_{X1}\u00b7ro_{OUTN}/2",
+    "D": "DC gain A0 \u2248 gm_{IN}/ro_{OUTN}",
+    "E": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{IN}/2",
+    "F": "DC gain A0 \u2248 gm_{OUTN}\u00b7ro_{OUTN}/2",
+    "G": "DC gain A0 \u2248 2\u00b7gm_{IN}\u00b7ro_{OUTN}",
+    "H": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{OUTN}/2",
+    "I": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{OUTN}/4",
+    "J": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{X2}/2"
   },
   "track": "analysis",
   "aspect": "gain_dc"

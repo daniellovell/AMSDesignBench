@@ -1,18 +1,18 @@
 {
   "question_id": "filter001_identify_mc",
   "correct_answer": "E",
-  "answer_text": "Correct answer for filter001_identify_mc",
+  "answer_text": "Transfer function: H(s) = 1/(1 + (R1)*(s*C1))",
   "choices": {
-    "A": "Distractor 9 for filter001_identify_mc",
-    "B": "Distractor 7 for filter001_identify_mc",
-    "C": "Distractor 8 for filter001_identify_mc",
-    "D": "Distractor 3 for filter001_identify_mc",
-    "E": "Correct answer for filter001_identify_mc",
-    "F": "Distractor 2 for filter001_identify_mc",
-    "G": "Distractor 4 for filter001_identify_mc",
-    "H": "Distractor 6 for filter001_identify_mc",
-    "I": "Distractor 1 for filter001_identify_mc",
-    "J": "Distractor 5 for filter001_identify_mc"
+    "A": "Transfer function: H(s) = (R1)*(s*C1)/(1 + (R1)*(s*C1))",
+    "B": "Transfer function: H(s) = 1/(1 + (R1)*(s*C1)^2)",
+    "C": "Transfer function: H(s) = 1/(1 - (R1)*(s*C1))",
+    "D": "Transfer function: H(s) = (R1)/((R1) + 1/(s*C1))",
+    "E": "Transfer function: H(s) = 1/(1 + (R1)*(s*C1))",
+    "F": "Transfer function: H(s) = 1/(1 + (s*C1)/(R1))",
+    "G": "Transfer function: H(s) = 1/(1 + (R1)*(s*C1) + 1)",
+    "H": "Transfer function: H(s) = 1/(1 + (R1)*(2*(s*C1)))",
+    "I": "Transfer function: H(s) = 1/(1 + (R1)/(s*C1))",
+    "J": "Transfer function: H(s) = 1/(1 + (2*R1)*(s*C1))"
   },
   "track": "analysis",
   "aspect": "identify_transfer_function"

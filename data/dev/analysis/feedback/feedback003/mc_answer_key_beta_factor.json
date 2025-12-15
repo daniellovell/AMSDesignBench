@@ -3,16 +3,16 @@
   "correct_answer": "G",
   "answer_text": "\u03b2 = R1/(R1+R2)",
   "choices": {
-    "A": "\u03b2 = 1/(R1+R2)",
-    "B": "\u03b2 = R2/(R1+R2)",
-    "C": "\u03b2 = R1",
-    "D": "\u03b2 = 0",
-    "E": "\u03b2 = R1/R2",
-    "F": "\u03b2 = R1\u00b7R2",
+    "A": "\u03b2 = 2R1/(R1+R2)",
+    "B": "\u03b2 = (R1+R2)/R1",
+    "C": "\u03b2 = R1/R2",
+    "D": "\u03b2 = R2/(R1+R2)",
+    "E": "\u03b2 = 0",
+    "F": "\u03b2 = 1/(R1+R2)",
     "G": "\u03b2 = R1/(R1+R2)",
-    "H": "\u03b2 = 2R1/(R1+R2)",
-    "I": "\u03b2 = 1/R1",
-    "J": "\u03b2 = (R1+R2)/R1"
+    "H": "\u03b2 = 1/R1",
+    "I": "\u03b2 = R2/R1",
+    "J": "\u03b2 = R1"
   },
   "track": "analysis",
   "aspect": "beta_factor"

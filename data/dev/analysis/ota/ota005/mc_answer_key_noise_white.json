@@ -1,18 +1,18 @@
 {
   "question_id": "ota005_noise_white_mc",
   "correct_answer": "E",
-  "answer_text": "Vn,out\u00b2 \u2248 8kT/(3gm)\u00b7(1 + gmcas/gmdiff)",
+  "answer_text": "Vn,out\u00b2 \u2248 8kT/(3gm_{IN})",
   "choices": {
-    "A": "Vn,out\u00b2 \u2248 16kT/(3gm)",
-    "B": "Vn,out\u00b2 \u2248 8kT/(3gm\u00b2)",
-    "C": "Vn,out\u00b2 \u2248 4kT\u00b7(2/3gm)",
-    "D": "Vn,out\u00b2 \u2248 \u221a(8kT/(3gm))",
-    "E": "Vn,out\u00b2 \u2248 8kT/(3gm)\u00b7(1 + gmcas/gmdiff)",
-    "F": "Vn,out\u00b2 \u2248 8kT\u00b7gm",
-    "G": "Vn,out\u00b2 \u2248 8kT/(gm\u00b7\u221a3)",
-    "H": "Vn,out\u00b2 \u2248 8kT\u00b7ro/(3gm)",
-    "I": "Vn,out\u00b2 \u2248 16kT/gm",
-    "J": "Vn,out\u00b2 \u2248 4kT/(gm\u00b7ro)"
+    "A": "Vn,out\u00b2 \u2248 8kT/(gm_{IN}\u00b7\u221a3)",
+    "B": "Vn,out\u00b2 \u2248 4kT/(gm_{IN}\u00b7(ro_{OUTN} || ro_{OUTP}))",
+    "C": "Vn,out\u00b2 \u2248 16kT/(3gm_{IN})",
+    "D": "Vn,out\u00b2 \u2248 8kT/(3gm_{IN}\u00b2)",
+    "E": "Vn,out\u00b2 \u2248 8kT/(3gm_{IN})",
+    "F": "Vn,out\u00b2 \u2248 8kT/(3gm_{X1})",
+    "G": "Vn,out\u00b2 \u2248 8kT\u00b7gm_{IN}",
+    "H": "Vn,out\u00b2 \u2248 \u221a(8kT/(3gm_{IN}))",
+    "I": "Vn,out\u00b2 \u2248 8kT/(3gm_{OUTN})",
+    "J": "Vn,out\u00b2 \u2248 8kT/(gm_{IN})"
   },
   "track": "analysis",
   "aspect": "noise_white"

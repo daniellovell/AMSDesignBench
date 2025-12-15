@@ -1,18 +1,18 @@
 {
   "question_id": "ota007_power_quiescent_mc",
-  "correct_answer": "J",
+  "correct_answer": "D",
   "answer_text": "P = VDD\u00b7(Imain + Iaux_amps)",
   "choices": {
-    "A": "P = VDD\u00b2\u00b7gm",
-    "B": "P = VDD\u00b7Itail\u00b7gm",
-    "C": "P = VDD\u00b7Itail/(1 + A0)",
-    "D": "P = (VDD - VTH)\u00b7Itail",
-    "E": "P = VDD\u00b7(Itail + IDD)",
-    "F": "P = VDD\u00b7Itail/2",
-    "G": "P = 2\u00b7VDD\u00b7Itail",
-    "H": "P = VDD\u00b2/Rtail",
-    "I": "P = VDD\u00b7\u221a(Itail)",
-    "J": "P = VDD\u00b7(Imain + Iaux_amps)"
+    "A": "P = VDD\u00b2/Rtail",
+    "B": "P = VDD\u00b7Itail/(1 + A0)",
+    "C": "P = (VDD - VTH)\u00b7Itail",
+    "D": "P = VDD\u00b7(Imain + Iaux_amps)",
+    "E": "P = VDD\u00b7Itail/2",
+    "F": "P = 2\u00b7VDD\u00b7Itail",
+    "G": "P = VDD\u00b2\u00b7gm",
+    "H": "P = VDD\u00b7\u221a(Itail)",
+    "I": "P = VDD\u00b7(Itail + IDD)",
+    "J": "P = VDD\u00b7Itail\u00b7gm"
   },
   "track": "analysis",
   "aspect": "power_quiescent"

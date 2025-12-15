@@ -1,0 +1,9 @@
+Vin vin 0 AC 1
+R245200610 vin npos BLANK
+C651355256 npos 0 BLANK
+R316489856 vin nneg BLANK
+R379602810 vout nneg BLANK
+XU1 vout nneg npos OPAMP
+R358042144 vout 0 BLANK
+
+.end

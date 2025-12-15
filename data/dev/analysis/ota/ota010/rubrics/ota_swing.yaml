@@ -1,2 +1,2 @@
-relation_target: "High-side: VDD - Vov_pcas; Low-side: Vov_ncas (folded cascode, fewer stacked devices)"
+relation_target: "Low-side: Vov_M10 + Vov_M11; High-side: VDD - Vov_M6 - Vov_M4"
 {path:_ota_rubric_template.yaml}

@@ -1,18 +1,18 @@
 {
   "question_id": "ota005_swing_mc",
   "correct_answer": "F",
-  "answer_text": "Max swing \u2248 VDD - 4\u00b7|VDsat|",
+  "answer_text": "Low-side: Vov_{N1} + Vov_{N2} + Vov_{N3}; High-side: VDD - Vov_{P1} - Vov_{P2}",
   "choices": {
-    "A": "Max swing \u2248 VDD/2",
-    "B": "Max swing \u2248 VDD - 6\u00b7|VDsat|",
-    "C": "Max swing \u2248 VDD - 5\u00b7|VDsat|",
-    "D": "Max swing \u2248 VDD - |VGS - VTH|",
-    "E": "Max swing \u2248 VDD - |VDsat|",
-    "F": "Max swing \u2248 VDD - 4\u00b7|VDsat|",
-    "G": "Max swing \u2248 VDD - 3\u00b7|VDsat|",
-    "H": "Max swing \u2248 VDD\u00b7(1 - VDsat/VDD)",
-    "I": "Max swing \u2248 VDD - 2\u00b7VTH",
-    "J": "Max swing \u2248 VDD - VTH"
+    "A": "Low-side: Vov_{N1} + Vov_{N2} + Vov_{N3}; High-side: VDD - Vov_{P1}",
+    "B": "Low-side: Vov_{N1} + Vov_{N2} + Vov_{N3}; High-side: VDD - Vov_{P1} - Vov_{P1}",
+    "C": "Low-side: Vov_{N2} + Vov_{N2}; High-side: VDD - Vov_{P1} - Vov_{P2}",
+    "D": "Low-side: Vov_{N1} + Vov_{N2} + Vov_{N3}; High-side: VDD + Vov_{P1} + Vov_{P2}",
+    "E": "Low-side: Vov_{N1} + Vov_{N2}; High-side: VDD - Vov_{P1} - Vov_{P2}",
+    "F": "Low-side: Vov_{N1} + Vov_{N2} + Vov_{N3}; High-side: VDD - Vov_{P1} - Vov_{P2}",
+    "G": "Low-side: Vov_{N1} + Vov_{N1}; High-side: VDD - Vov_{P1} - Vov_{P2}",
+    "H": "Low-side: Vov_{N1} - Vov_{N2}; High-side: VDD - Vov_{P1} - Vov_{P2}",
+    "I": "Low-side: Vov_{N1}\u00b7Vov_{N2}; High-side: VDD - Vov_{P1} - Vov_{P2}",
+    "J": "Low-side: VDD - Vov_{P1} - Vov_{P2}; High-side: Vov_{N1} + Vov_{N2} + Vov_{N3}"
   },
   "track": "analysis",
   "aspect": "swing"

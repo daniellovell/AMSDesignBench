@@ -1,18 +1,18 @@
 {
   "question_id": "ota008_psrr_mc",
-  "correct_answer": "E",
-  "answer_text": "PSRR+ \u2248 (gm\u00b7ro)\u00b3",
+  "correct_answer": "I",
+  "answer_text": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b3",
   "choices": {
-    "A": "PSRR+ \u2248 \u221a(gm\u00b7ro)",
-    "B": "PSRR+ \u2248 ro/gm",
-    "C": "PSRR+ \u2248 (gm\u00b7ro)/2",
-    "D": "PSRR+ \u2248 A0\u00b7CMRR",
-    "E": "PSRR+ \u2248 (gm\u00b7ro)\u00b3",
-    "F": "PSRR+ \u2248 gm/ro",
-    "G": "PSRR+ \u2248 (gm\u00b7ro)\u00b3/2",
-    "H": "PSRR+ \u2248 2\u00b7gm\u00b7ro",
-    "I": "PSRR+ \u2248 gm\u00b7(ro || rds)",
-    "J": "PSRR+ \u2248 gm\u00b2\u00b7ro"
+    "A": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2/2",
+    "B": "PSRR+ \u2248 (gm_{OUTP}\u00b7ro_{OUTN})\u00b3",
+    "C": "PSRR+ \u2248 \u221a(gm_{IN}\u00b7ro_{OUTN})",
+    "D": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b3 + 1",
+    "E": "PSRR+ \u2248 (ro_{OUTN})\u00b3",
+    "F": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2",
+    "G": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b3/2",
+    "H": "PSRR+ \u2248 (gm_{IN})\u00b3\u00b7ro_{OUTN}",
+    "I": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b3",
+    "J": "PSRR+ \u2248 gm_{IN}\u00b7ro_{OUTN}"
   },
   "track": "analysis",
   "aspect": "psrr"

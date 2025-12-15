@@ -1,18 +1,18 @@
 {
   "question_id": "feedback004_signal_modality_mc",
   "correct_answer": "A",
-  "answer_text": "Correct answer for feedback004_signal_modality_mc",
+  "answer_text": "Vout/Vin",
   "choices": {
-    "A": "Correct answer for feedback004_signal_modality_mc",
-    "B": "Distractor 5 for feedback004_signal_modality_mc",
-    "C": "Distractor 3 for feedback004_signal_modality_mc",
-    "D": "Distractor 1 for feedback004_signal_modality_mc",
-    "E": "Distractor 6 for feedback004_signal_modality_mc",
-    "F": "Distractor 4 for feedback004_signal_modality_mc",
-    "G": "Distractor 7 for feedback004_signal_modality_mc",
-    "H": "Distractor 9 for feedback004_signal_modality_mc",
-    "I": "Distractor 8 for feedback004_signal_modality_mc",
-    "J": "Distractor 2 for feedback004_signal_modality_mc"
+    "A": "Vout/Vin",
+    "B": "Iout/Vdiff",
+    "C": "Iout/Iin",
+    "D": "Vout/Iin",
+    "E": "Vout/Idiff",
+    "F": "Vout/Vdiff",
+    "G": "Iout/Idiff",
+    "H": "Iout/Vcm",
+    "I": "Vout/Vcm",
+    "J": "Iout/Vin"
   },
   "track": "analysis",
   "aspect": "signal_modality"

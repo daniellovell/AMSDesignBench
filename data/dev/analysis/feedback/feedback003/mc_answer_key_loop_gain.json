@@ -1,18 +1,18 @@
 {
   "question_id": "feedback003_loop_gain_mc",
   "correct_answer": "D",
-  "answer_text": "T = A0",
+  "answer_text": "T = A0\u00b7R1/(R1+R2)",
   "choices": {
-    "A": "T = \u221a(A0\u00b7\u03b2)",
-    "B": "T = 1/(1+A0\u00b7\u03b2)",
-    "C": "T = A0\u00b7\u03b2",
-    "D": "T = A0",
-    "E": "T = A0/(1+\u03b2)",
-    "F": "T = A0/(1+A0\u00b7\u03b2)",
-    "G": "T = (A0\u00b7\u03b2)/2",
-    "H": "T = \u03b2/A0",
-    "I": "T = A0\u00b2",
-    "J": "T = \u03b2"
+    "A": "T = 1/(1 + A0\u00b7R1/(R1+R2))",
+    "B": "T = A0\u00b7(R1+R2)/R1",
+    "C": "T = A0",
+    "D": "T = A0\u00b7R1/(R1+R2)",
+    "E": "T = A0\u00b7(R1+R2)/R2",
+    "F": "T = A0/(1 + A0\u00b7R1/(R1+R2))",
+    "G": "T = R1/(R1+R2)",
+    "H": "T = A0\u00b7R2/(R1+R2)",
+    "I": "T = A0/R1",
+    "J": "T = A0\u00b7R1/R2"
   },
   "track": "analysis",
   "aspect": "loop_gain"

@@ -1,18 +1,18 @@
 {
   "question_id": "ota009_gbw_mc",
   "correct_answer": "G",
-  "answer_text": "GBW \u2248 gm/CL",
+  "answer_text": "GBW \u2248 gm_{IN}/Cload",
   "choices": {
-    "A": "GBW \u2248 gm1/(Cc+CL)",
-    "B": "GBW \u2248 gm/(2\u03c0CL)",
-    "C": "GBW \u2248 gm1\u00b7Cc/CL",
-    "D": "GBW \u2248 gm\u00b7CL",
-    "E": "GBW \u2248 gm/(Cc\u00b7CL)",
-    "F": "GBW \u2248 \u03c9t = gm\u00b7CL",
-    "G": "GBW \u2248 gm/CL",
-    "H": "GBW \u2248 gm/Cc",
-    "I": "GBW \u2248 (gm/CL)\u00b7(Cc/CL)",
-    "J": "GBW \u2248 A0\u00b7\u03c9p"
+    "A": "GBW \u2248 gm_{X2}/Cload",
+    "B": "GBW \u2248 gm_{OUTP}/Cload",
+    "C": "GBW \u2248 gm_{X1}/Cload",
+    "D": "GBW \u2248 gm_{OUTN}/Cload",
+    "E": "GBW \u2248 gm_{IN}/(2\u03c0Cload)",
+    "F": "GBW \u2248 (gm_{IN})\u00b2/Cload",
+    "G": "GBW \u2248 gm_{IN}/Cload",
+    "H": "GBW \u2248 Cload/gm_{IN}",
+    "I": "GBW \u2248 gm_{IN}\u00b7Cload",
+    "J": "GBW \u2248 gm_{IN}/(2\u00b7Cload)"
   },
   "track": "analysis",
   "aspect": "gbw"

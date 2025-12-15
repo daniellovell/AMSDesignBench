@@ -1,18 +1,18 @@
 {
   "question_id": "filter007_identify_mc",
   "correct_answer": "J",
-  "answer_text": "Correct answer for filter007_identify_mc",
+  "answer_text": "Transfer function: H(s) = 1/(1 + (s*L1)*(1/R1 + 1/Rload))",
   "choices": {
-    "A": "Distractor 1 for filter007_identify_mc",
-    "B": "Distractor 9 for filter007_identify_mc",
-    "C": "Distractor 7 for filter007_identify_mc",
-    "D": "Distractor 4 for filter007_identify_mc",
-    "E": "Distractor 6 for filter007_identify_mc",
-    "F": "Distractor 5 for filter007_identify_mc",
-    "G": "Distractor 3 for filter007_identify_mc",
-    "H": "Distractor 2 for filter007_identify_mc",
-    "I": "Distractor 8 for filter007_identify_mc",
-    "J": "Correct answer for filter007_identify_mc"
+    "A": "Transfer function: H(s) = 1/(1 + (s*L1)*(1/Rload + 1/Rload))",
+    "B": "Transfer function: H(s) = 1/(1 + (s*L1)*(1/R1 + 1/Rload) + 1)",
+    "C": "Transfer function: H(s) = 1/(1 + (1/R1 + 1/Rload)/(s*L1))",
+    "D": "Transfer function: H(s) = 1/(1 + (s*L1)*(1/Rload))",
+    "E": "Transfer function: H(s) = 1/(1 + (s*L1)/(1/R1 + 1/Rload))",
+    "F": "Transfer function: H(s) = 1/(1 + (s*L1)*(1/R1 - 1/Rload))",
+    "G": "Transfer function: H(s) = 1/(1 + (s*L1)*(1/R1))",
+    "H": "Transfer function: H(s) = 1/(1 + (s*L1)*(1/R1 + 1/R1))",
+    "I": "Transfer function: H(s) = (s*L1)/((s*L1) + 1/(1/R1 + 1/Rload))",
+    "J": "Transfer function: H(s) = 1/(1 + (s*L1)*(1/R1 + 1/Rload))"
   },
   "track": "analysis",
   "aspect": "identify_transfer_function"

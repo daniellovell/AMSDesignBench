@@ -1,18 +1,18 @@
 {
   "question_id": "feedback002_closed_loop_gain_mc",
   "correct_answer": "G",
-  "answer_text": "T = A0",
+  "answer_text": "Vout/Iin = -1/(s*C1)",
   "choices": {
-    "A": "T = \u221a(A0\u00b7\u03b2)",
-    "B": "T = A0\u00b2",
-    "C": "T = A0/(1+A0\u00b7\u03b2)",
-    "D": "T = A0/(1+\u03b2)",
-    "E": "T = (A0\u00b7\u03b2)/2",
-    "F": "T = A0\u00b7\u03b2",
-    "G": "T = A0",
-    "H": "T = 1/(1+A0\u00b7\u03b2)",
-    "I": "T = \u03b2",
-    "J": "T = \u03b2/A0"
+    "A": "Vout/Iin = -1/(s*C1) - 1",
+    "B": "Vout/Iin = -1/(s*C1)\u00b2",
+    "C": "Vout/Iin = -1/(s*\u221aC1)",
+    "D": "Vout/Iin = -1/(s*2*C1)",
+    "E": "Vout/Iin = -1/(s*C1) + 1",
+    "F": "Vout/Iin = +1/(s*C1)",
+    "G": "Vout/Iin = -1/(s*C1)",
+    "H": "Vout/Iin = -s*C1",
+    "I": "Vout/Iin = -1/(s*(C1/2))",
+    "J": "Vout/Iin = -1/(C1)"
   },
   "track": "analysis",
   "aspect": "closed_loop_gain"

@@ -1,18 +1,18 @@
 {
   "question_id": "feedback001_closed_loop_gain_mc",
   "correct_answer": "C",
-  "answer_text": "T = A0",
+  "answer_text": "Vout/Iin = -R1",
   "choices": {
-    "A": "T = A0/(1+\u03b2)",
-    "B": "T = A0\u00b7\u03b2",
-    "C": "T = A0",
-    "D": "T = (A0\u00b7\u03b2)/2",
-    "E": "T = A0/(1+A0\u00b7\u03b2)",
-    "F": "T = 1/(1+A0\u00b7\u03b2)",
-    "G": "T = \u03b2",
-    "H": "T = \u03b2/A0",
-    "I": "T = A0\u00b2",
-    "J": "T = \u221a(A0\u00b7\u03b2)"
+    "A": "Vout/Iin = -2\u00b7R1",
+    "B": "Vout/Iin = -R1/2",
+    "C": "Vout/Iin = -R1",
+    "D": "Vout/Iin = -\u221aR1",
+    "E": "Vout/Iin = -R1\u00b2",
+    "F": "Vout/Iin = -1/R1",
+    "G": "Vout/Iin = +R1",
+    "H": "Vout/Iin = R1",
+    "I": "Vout/Iin = +R1/2",
+    "J": "Vout/Iin = -R1/4"
   },
   "track": "analysis",
   "aspect": "closed_loop_gain"

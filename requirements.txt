@@ -9,3 +9,4 @@ anthropic>=0.39.0
 numpy>=1.20.0
 scipy>=1.7.0
 google-genai
+sympy>=1.12
