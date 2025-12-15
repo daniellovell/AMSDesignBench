@@ -229,107 +229,54 @@ Design brief:
 
 ## Design Verification with SPICE
 
-AMSDesignBench includes automated SPICE-based design verification to evaluate LLMs on their ability to design analog circuits.
+The benchmark includes automated SPICE-based verification for evaluating LLM-generated analog circuit designs. The pipeline extracts netlists from model responses, simulates them with ngspice, and scores performance against specifications using weighted rubrics and an LLM judge.
 
-### Overview
+### Workflow
 
-The design verification system:
-1. **Prompts LLMs** to design an OTA meeting specific specifications
-2. **Extracts SPICE netlists** from LLM responses using intelligent parsing
-3. **Simulates designs** using ngspice with realistic testbenches
-4. **Judges performance** using both rule-based spec checking and LLM-based evaluation
-5. **Generates reports** with detailed scores, metrics, and recommendations
+```
+LLM Response -> Netlist Parser -> SPICE Simulation -> Spec Checker + LLM Judge -> Score
+```
 
-### Key Features
+Each design task provides transistor characterization data (gm/ID lookup tables) and requires the model to generate a SPICE netlist meeting specifications such as DC gain, GBW, phase margin, power, output swing, and ICMR.
 
-- ✅ **Automated Netlist Parsing**: Extracts SPICE from markdown responses
-- ✅ **SPICE Simulation**: Runs ngspice with AC, DC, transient analysis
-- ✅ **Gm/ID Lookup Tables**: Provides transistor characterization data to LLMs
-- ✅ **Weighted Scoring**: Specifications weighted by importance (DC gain, GBW, phase margin, power, etc.)
-- ✅ **LLM Judge**: Intelligent analysis of trade-offs and design recommendations
-- ✅ **Production Ready**: Full documentation, smoke tests, and examples
-
-### Quick Start
+### Usage
 
 ```bash
-# 1. Install ngspice
+# Install ngspice
 brew install ngspice  # macOS
 sudo apt-get install ngspice  # Linux
 
-# 2. Install Python dependencies (includes numpy, scipy)
-pip install -r requirements.txt
-
-# 3. Run verification smoke test
-python scripts/design_smoke_test.py
-
-# 4. Evaluate a model on OTA design
+# Run design evaluation
 python harness/run_design_eval.py --model openai:gpt-4o-mini --designs ota001
 
-# 5. View results
+# View results
 cat outputs/design_run_*/gpt-4o-mini_design_report.txt
 ```
 
-### Example Output
-
+Example output:
 ```
 [1/1] Evaluating ota001...
   → Requesting design from LLM...
-  → Parsing netlist...
   → Running SPICE simulation...
   → Evaluating against specifications...
-  ✓ Score: 82.5/100 - PASS
+  Score: 82.5/100 - PASS
 
 Specifications:
-  ✓ dc_gain: 45.2 dB (min: 40 dB) ✓
-  ✓ gbw: 52 MHz (min: 10 MHz) ✓
-  ✓ phase_margin: 62.3° (min: 55°) ✓
-  ✓ power: 235 µW (max: 500 µW) ✓
+  dc_gain: 45.2 dB (min: 40 dB) ✓
+  gbw: 52 MHz (min: 10 MHz) ✓
+  phase_margin: 62.3° (min: 55°) ✓
+  power: 235 µW (max: 500 µW) ✓
 ```
 
-### Architecture
+### Directory Structure
 
-```
-LLM → Netlist Parser → SPICE Runner (ngspice) → Design Judge (LLM + Rules) → Score/Report
-```
-
-### Design Specifications
-
-Each OTA design includes specifications like:
-- **DC Gain**: Minimum/target in dB
-- **GBW**: Gain-bandwidth product in Hz
-- **Phase Margin**: Stability margin in degrees
-- **Power**: Maximum power consumption in W
-- **Output Swing**: Rail-to-rail capability in V
-- **ICMR**: Input common-mode range in V
-
-### Components
-
-| Component | Purpose |
-|-----------|---------|
-| `harness/design_verification/` | Core verification modules |
-| `harness/run_design_eval.py` | Main evaluation runner |
-| `pdk/skywater130/` | PDK models and Gm/ID tables |
+| Path | Contents |
+|------|----------|
+| `harness/design_verification/` | Netlist parsing, SPICE runner, judge |
+| `harness/run_design_eval.py` | Evaluation entry point |
+| `pdk/skywater130/` | PDK models and gm/ID tables |
 | `data/dev/design/ota/*/verification/` | Design specs and testbenches |
-| `scripts/design_smoke_test.py` | Quick validation test |
-| `scripts/verify_design_setup.py` | Setup checker |
+| `scripts/design_smoke_test.py` | Smoke test (no API keys) |
+| `scripts/verify_design_setup.py` | Environment validation |
 
-### Testing
-
-```bash
-# Run smoke tests (no API keys required)
-python scripts/design_smoke_test.py
-
-# Verify setup
-python scripts/verify_design_setup.py
-
-# Test with dummy adapter (no simulation)
-python harness/run_design_eval.py --model dummy --designs ota001
-```
-
-### Requirements
-
-- **Python 3.8+** with numpy, scipy
-- **ngspice** (external tool for simulation)
-- **LLM API keys** (OpenAI, Anthropic, etc.)
-- **SkyWater 130nm PDK** (placeholder tables included)
 
