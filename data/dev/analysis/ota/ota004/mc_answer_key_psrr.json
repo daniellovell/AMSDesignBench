@@ -1,19 +1,20 @@
 {
   "question_id": "ota004_psrr_mc",
-  "correct_answer": "A",
-  "answer_text": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2",
+  "correct_answer": "C",
+  "answer_text": "PSRR+ \u2248 |A0 / (ro_{M6}/(ro_{M6}+ro_{M7}) + gm_{M6}\u00b7(ro_{M6}||ro_{M7})\u00b7(ro_{M2}/(ro_{M2}+ro_{M4})))|",
   "choices": {
-    "A": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2",
-    "B": "PSRR+ \u2248 (ro_{OUTN})\u00b2",
-    "C": "PSRR+ \u2248 gm_{IN}\u00b7ro_{OUTN}",
-    "D": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2 + 1",
-    "E": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b3",
-    "F": "PSRR+ \u2248 \u221a(gm_{IN}\u00b7ro_{OUTN})",
-    "G": "PSRR+ \u2248 (gm_{OUTN}\u00b7ro_{OUTN})\u00b2",
-    "H": "PSRR+ \u2248 (gm_{IN})\u00b2\u00b7ro_{OUTN}",
-    "I": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})",
-    "J": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2/2"
+    "A": "PSRR+ \u2248 |A0 / (ro_{M6}/(ro_{M6}+ro_{M7}) + gm_{X3}\u00b7(ro_{M6}||ro_{M7})\u00b7(ro_{M2}/(ro_{M2}+ro_{M4})))|",
+    "B": "PSRR+ \u2248 2\u00b7(|A0 / (ro_{M6}/(ro_{M6}+ro_{M7}) + gm_{M6}\u00b7(ro_{M6}||ro_{M7})\u00b7(ro_{M2}/(ro_{M2}+ro_{M4})))|)",
+    "C": "PSRR+ \u2248 |A0 / (ro_{M6}/(ro_{M6}+ro_{M7}) + gm_{M6}\u00b7(ro_{M6}||ro_{M7})\u00b7(ro_{M2}/(ro_{M2}+ro_{M4})))|",
+    "D": "PSRR+ \u2248 |A0 / (ro_{M6}/(ro_{M6}+ro_{X2}) + gm_{M6}\u00b7(ro_{M6}||ro_{M7})\u00b7(ro_{M2}/(ro_{M2}+ro_{M4})))|",
+    "E": "PSRR+ \u2248 4\u00b7(|A0 / (ro_{M6}/(ro_{M6}+ro_{M7}) + gm_{M6}\u00b7(ro_{M6}||ro_{M7})\u00b7(ro_{M2}/(ro_{M2}+ro_{M4})))|)",
+    "F": "PSRR+ \u2248 (|A0 / (ro_{M6}/(ro_{M6}+ro_{M7}) + gm_{M6}\u00b7(ro_{M6}||ro_{M7})\u00b7(ro_{M2}/(ro_{M2}+ro_{M4})))|)/2",
+    "G": "PSRR+ \u2248 |A0 / (ro_{M6}/(ro_{M6}+ro_{M7}) + gm_{X2}\u00b7(ro_{M6}||ro_{M7})\u00b7(ro_{M2}/(ro_{M2}+ro_{M4})))|",
+    "H": "PSRR+ \u2248 |A0 / (ro_{X3}/(ro_{M6}+ro_{M7}) + gm_{M6}\u00b7(ro_{M6}||ro_{M7})\u00b7(ro_{M2}/(ro_{M2}+ro_{M4})))|",
+    "I": "PSRR+ \u2248 \u221a(|A0 / (ro_{M6}/(ro_{M6}+ro_{M7}) + gm_{M6}\u00b7(ro_{M6}||ro_{M7})\u00b7(ro_{M2}/(ro_{M2}+ro_{M4})))|)",
+    "J": "PSRR+ \u2248 (|A0 / (ro_{M6}/(ro_{M6}+ro_{M7}) + gm_{M6}\u00b7(ro_{M6}||ro_{M7})\u00b7(ro_{M2}/(ro_{M2}+ro_{M4})))|)/4"
   },
   "track": "analysis",
-  "aspect": "psrr"
+  "aspect": "psrr",
+  "template_role_map": {}
 }

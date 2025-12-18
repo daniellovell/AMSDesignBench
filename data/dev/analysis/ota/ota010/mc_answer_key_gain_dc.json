@@ -1,19 +1,20 @@
 {
   "question_id": "ota010_gain_dc_mc",
-  "correct_answer": "B",
-  "answer_text": "DC gain A0 \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2/2",
+  "correct_answer": "F",
+  "answer_text": "|A0,od| \u2248 (1/2)\u00b7[gm_{M1}\u00b7((ro_{M6}+ro_{M4}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M4}) || (ro_{M10}+ro_{M11}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M11})) + gm_{M2}\u00b7((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}) || (ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9}))]",
   "choices": {
-    "A": "DC gain A0 \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2/8",
-    "B": "DC gain A0 \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2/2",
-    "C": "DC gain A0 \u2248 (gm_{OUTN}\u00b7ro_{OUTN})\u00b2/2",
-    "D": "DC gain A0 \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2/4",
-    "E": "DC gain A0 \u2248 (gm_{X1}\u00b7ro_{OUTN})\u00b2/2",
-    "F": "DC gain A0 \u2248 (gm_{IN}\u00b7ro_{IN})\u00b2/2",
-    "G": "DC gain A0 \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b3/2",
-    "H": "DC gain A0 \u2248 \u221a(gm_{IN}\u00b7ro_{OUTN})",
-    "I": "DC gain A0 \u2248 (gm_{IN}\u00b7ro_{X2})\u00b2/2",
-    "J": "DC gain A0 \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2"
+    "A": "|A0,od| \u2248 2\u00b7((1/2)\u00b7[gm_{M1}\u00b7((ro_{M6}+ro_{M4}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M4}) || (ro_{M10}+ro_{M11}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M11})) + gm_{M2}\u00b7((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}) || (ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9}))])",
+    "B": "|A0,od| \u2248 (1/2)\u00b7[gm_{M1}\u00b7((ro_{M6}+ro_{M4}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M4}) + (ro_{M10}+ro_{M11}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M11})) + gm_{M2}\u00b7((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}) + (ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9}))]",
+    "C": "|A0,od| \u2248 (1/2)\u00b7[gm_{M1}\u00b7((ro_{M6}+ro_{M4}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M4}) + (ro_{M10}+ro_{M11}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M11})) + gm_{M2}\u00b7((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}) || (ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9}))]",
+    "D": "|A0,od| \u2248 (1/2)\u00b7[gm_{M1}\u00b7((ro_{X2}+ro_{M4}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M4}) || (ro_{M10}+ro_{M11}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M11})) + gm_{M2}\u00b7((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}) || (ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9}))]",
+    "E": "|A0,od| \u2248 (1/4)\u00b7[gm_{M1}\u00b7((ro_{M6}+ro_{M4}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M4}) || (ro_{M10}+ro_{M11}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M11})) + gm_{M2}\u00b7((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}) || (ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9}))]",
+    "F": "|A0,od| \u2248 (1/2)\u00b7[gm_{M1}\u00b7((ro_{M6}+ro_{M4}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M4}) || (ro_{M10}+ro_{M11}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M11})) + gm_{M2}\u00b7((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}) || (ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9}))]",
+    "G": "|A0,od| \u2248 ((1/2)\u00b7[gm_{M1}\u00b7((ro_{M6}+ro_{M4}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M4}) || (ro_{M10}+ro_{M11}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M11})) + gm_{M2}\u00b7((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}) || (ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9}))])/4",
+    "H": "|A0,od| \u2248 4\u00b7((1/2)\u00b7[gm_{M1}\u00b7((ro_{M6}+ro_{M4}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M4}) || (ro_{M10}+ro_{M11}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M11})) + gm_{M2}\u00b7((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}) || (ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9}))])",
+    "I": "|A0,od| \u2248 (1/2)\u00b7[gm_{M1}\u00b7((ro_{M6}+ro_{M4}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M4}) || (ro_{M10}+ro_{M11}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M11})) || gm_{M2}\u00b7((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}) || (ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9}))]",
+    "J": "|A0,od| \u2248 (1/2)\u00b7[gm_{X2}\u00b7((ro_{M6}+ro_{M4}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M4}) || (ro_{M10}+ro_{M11}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M11})) + gm_{M2}\u00b7((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}) || (ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9}))]"
   },
   "track": "analysis",
-  "aspect": "gain_dc"
+  "aspect": "gain_dc",
+  "template_role_map": {}
 }

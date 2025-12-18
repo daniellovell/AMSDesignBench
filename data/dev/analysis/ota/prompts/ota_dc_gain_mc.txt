@@ -1,6 +1,8 @@
 You are an expert analog IC designer.
 From the {modality} artifact, answer the question about open-loop DC gain (A0) for the given circuit.
 
+IMPORTANT: Report DC gain as a positive magnitude (|A0| for single-ended, |A0,od| for fully differential) in V/V.
+
 **INSTRUCTIONS:** Select the single best answer from the multiple choice options below.
 
 **MULTIPLE CHOICE OPTIONS:**

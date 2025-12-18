@@ -1,2 +1,10 @@
-relation_target: "Valid ANY device current (all in series). I_M1 ≈ I_M2 ≈ I_M3 ≈ ... ≈ I_M6"
+relation_target: "P_q ≈ VDD·I_D,M4"
+relation_equivalents: |
+  - P_q ≈ VDD·I_D,M3
+  - P_q ≈ VDD·I_D,M2
+  - P_q ≈ VDD·I_D,M1
 {path:_ota_rubric_template.yaml}
+relation_equivalents: |
+  - P_q ≈ VDD·I_D,M3
+  - P_q ≈ VDD·I_D,M2
+  - P_q ≈ VDD·I_D,M1

@@ -1,19 +1,20 @@
 {
   "question_id": "ota006_rout_mc",
-  "correct_answer": "H",
-  "answer_text": "rout \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b7ro_{OUTN}",
+  "correct_answer": "G",
+  "answer_text": "rout \u2248 (ro_{M6}+ro_{M7}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M7}) || (ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2})",
   "choices": {
-    "A": "rout \u2248 gm_{IN}\u00b7ro_{OUTN}",
-    "B": "rout \u2248 (gm_{IN})\u00b2\u00b7ro_{OUTN}",
-    "C": "rout \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b7ro_{IN}",
-    "D": "rout \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2\u00b7ro_{OUTN}",
-    "E": "rout \u2248 ro_{OUTN} + ro_{OUTN}",
-    "F": "rout \u2248 (gm_{OUTP}\u00b7ro_{OUTN})\u00b7ro_{OUTN}",
-    "G": "rout \u2248 \u221a(ro_{OUTN})",
-    "H": "rout \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b7ro_{OUTN}",
-    "I": "rout \u2248 ro_{OUTN}\u00b7ro_{OUTN}",
-    "J": "rout \u2248 ro_{OUTN}"
+    "A": "rout \u2248 (ro_{X2}+ro_{M7}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M7}) || (ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2})",
+    "B": "rout \u2248 (ro_{M6}+ro_{M7}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M7}) || (ro_{M1}+ro_{M2}+gm_{X2}\u00b7ro_{M1}\u00b7ro_{M2})",
+    "C": "rout \u2248 ((ro_{M6}+ro_{M7}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M7}) || (ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}))/4",
+    "D": "rout \u2248 (ro_{M6}+ro_{M7}+gm_{X3}\u00b7ro_{M6}\u00b7ro_{M7}) || (ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2})",
+    "E": "rout \u2248 \u221a((ro_{M6}+ro_{M7}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M7}) || (ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}))",
+    "F": "rout \u2248 (ro_{M6}+ro_{M7}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M7}) + (ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2})",
+    "G": "rout \u2248 (ro_{M6}+ro_{M7}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M7}) || (ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2})",
+    "H": "rout \u2248 2\u00b7((ro_{M6}+ro_{M7}+gm_{M6}\u00b7ro_{M6}\u00b7ro_{M7}) || (ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}))",
+    "I": "rout \u2248 (ro_{M6}+ro_{M7}+gm_{X2}\u00b7ro_{M6}\u00b7ro_{M7}) || (ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2})",
+    "J": "rout \u2248 (ro_{M6}+ro_{M7}+gm_{X1}\u00b7ro_{M6}\u00b7ro_{M7}) || (ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2})"
   },
   "track": "analysis",
-  "aspect": "rout"
+  "aspect": "rout",
+  "template_role_map": {}
 }

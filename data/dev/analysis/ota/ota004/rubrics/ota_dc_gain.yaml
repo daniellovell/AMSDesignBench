@@ -1,2 +1,2 @@
-relation_target: "DC Gain ≈ (gm1 * ro1 / 2) * (gm2 * ro2 / 2) = (gm * ro)² / 4 for two-stage OTA (both stages have current mirror loads with ro/2 output resistance each)"
+relation_target: "|A0| ≈ ((gm_M1+gm_M2)/2)·(ro_M2||ro_M4)·gm_M6·(ro_M6||ro_M7)"
 {path:_ota_rubric_template.yaml}

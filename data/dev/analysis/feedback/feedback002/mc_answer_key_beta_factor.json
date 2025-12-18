@@ -1,19 +1,20 @@
 {
   "question_id": "feedback002_beta_factor_mc",
-  "correct_answer": "D",
+  "correct_answer": "G",
   "answer_text": "\u03b2 = 1",
   "choices": {
-    "A": "\u03b2 = 1/2",
-    "B": "\u03b2 = 0",
-    "C": "\u03b2 = -1/2",
-    "D": "\u03b2 = 1",
-    "E": "\u03b2 = -1",
+    "A": "\u03b2 = -1/2",
+    "B": "\u03b2 = 1/4",
+    "C": "\u03b2 = 1/2",
+    "D": "\u03b2 = 4",
+    "E": "\u03b2 = -2",
     "F": "\u03b2 = 2",
-    "G": "\u03b2 = 4",
+    "G": "\u03b2 = 1",
     "H": "\u03b2 = 1/10",
-    "I": "\u03b2 = 1/4",
-    "J": "\u03b2 = -2"
+    "I": "\u03b2 = 0",
+    "J": "\u03b2 = -1"
   },
   "track": "analysis",
-  "aspect": "beta_factor"
+  "aspect": "beta_factor",
+  "template_role_map": {}
 }

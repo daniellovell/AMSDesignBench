@@ -1,2 +1,8 @@
-relation_target: "Telescopic cascode: Valid I_tail OR (I_M1 + I_M2). NOT individual I_M1 or I_M2."
+relation_target: "P_q ≈ VDD·(I_D,M3 + I_D,M4 + I_D,M5 + I_D,M6)"
+relation_equivalents: |
+  - P_q ≈ VDD·(I_D,M1 + I_D,M2 + I_D,M7 + I_D,M8)
+  - P_q ≈ VDD·(I_D,Mtail + I_D,M7 + I_D,M8)
 {path:_ota_rubric_template.yaml}
+relation_equivalents: |
+  - P_q ≈ VDD·(I_D,M1 + I_D,M2 + I_D,M7 + I_D,M8)
+  - P_q ≈ VDD·(I_D,Mtail + I_D,M7 + I_D,M8)

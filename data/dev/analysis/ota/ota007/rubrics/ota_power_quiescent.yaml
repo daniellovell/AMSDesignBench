@@ -1,2 +1,6 @@
-relation_target: "P_quiescent ≈ VDD * I_M_in"
+relation_target: "P_q ≈ VDD·I_D,M1"
+relation_equivalents: |
+  - P_q ≈ VDD·I_D,M2
 {path:_ota_rubric_template.yaml}
+relation_equivalents: |
+  - P_q ≈ VDD·I_D,M2

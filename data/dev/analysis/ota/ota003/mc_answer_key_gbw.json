@@ -1,19 +1,20 @@
 {
   "question_id": "ota003_gbw_mc",
-  "correct_answer": "A",
-  "answer_text": "GBW \u2248 gm_{IN}/Cload",
+  "correct_answer": "H",
+  "answer_text": "GBW \u2248 |A0|\u00b7(1/((ro_{M6}||ro_{M8})\u00b7Cload))/(2\u03c0)",
   "choices": {
-    "A": "GBW \u2248 gm_{IN}/Cload",
-    "B": "GBW \u2248 gm_{X1}/Cload",
-    "C": "GBW \u2248 gm_{IN}/(2\u03c0Cload)",
-    "D": "GBW \u2248 Cload/gm_{IN}",
-    "E": "GBW \u2248 gm_{IN}\u00b7Cload",
-    "F": "GBW \u2248 gm_{OUTP}/Cload",
-    "G": "GBW \u2248 (gm_{IN})\u00b2/Cload",
-    "H": "GBW \u2248 gm_{OUTN}/Cload",
-    "I": "GBW \u2248 gm_{IN}/(2\u00b7Cload)",
-    "J": "GBW \u2248 gm_{X2}/Cload"
+    "A": "GBW \u2248 |A0|\u00b7(1/((ro_{M6}||ro_{M8})\u00b7Cload))/(4\u03c0)",
+    "B": "GBW \u2248 4\u00b7(|A0|\u00b7(1/((ro_{M6}||ro_{M8})\u00b7Cload))/(2\u03c0))",
+    "C": "GBW \u2248 2\u00b7(|A0|\u00b7(1/((ro_{M6}||ro_{M8})\u00b7Cload))/(2\u03c0))",
+    "D": "GBW \u2248 |A0|\u00b7(1/((ro_{M6}||ro_{M8})\u00b7(Cload/2)))/(2\u03c0)",
+    "E": "GBW \u2248 \u03c0\u00b7(|A0|\u00b7(1/((ro_{M6}||ro_{M8})\u00b7Cload))/(2\u03c0))",
+    "F": "GBW \u2248 |A0|\u00b7(1/((ro_{M6}||ro_{M8})\u00b7Cload))/(8\u03c0)",
+    "G": "GBW \u2248 (|A0|\u00b7(1/((ro_{M6}||ro_{M8})\u00b7Cload))/(2\u03c0))/2",
+    "H": "GBW \u2248 |A0|\u00b7(1/((ro_{M6}||ro_{M8})\u00b7Cload))/(2\u03c0)",
+    "I": "GBW \u2248 (|A0|\u00b7(1/((ro_{M6}||ro_{M8})\u00b7Cload))/(2\u03c0))/\u03c0",
+    "J": "GBW \u2248 |A0|\u00b7(1/((ro_{M6}||ro_{M8})\u00b72\u00b7Cload))/(2\u03c0)"
   },
   "track": "analysis",
-  "aspect": "gbw"
+  "aspect": "gbw",
+  "template_role_map": {}
 }

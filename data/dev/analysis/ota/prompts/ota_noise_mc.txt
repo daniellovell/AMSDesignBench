@@ -1,5 +1,5 @@
 You are an expert analog IC designer.
-From the {modality} artifact, answer the question about input-referred white noise for the given circuit.
+From the {modality} artifact, answer the question about output-referred white noise for the given circuit.
 
 **INSTRUCTIONS:** Select the single best answer from the multiple choice options below.
 

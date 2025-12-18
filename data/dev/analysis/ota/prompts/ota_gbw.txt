@@ -1,1 +1,1 @@
-Unity‑gain bandwidth (GBW); key relation (≈ gm/CL), cite CL, final expression.
+Unity‑gain bandwidth (GBW); report in Hz (cycles/second), not rad/s; use 1/(2π) consistently; cite CL; final expression.

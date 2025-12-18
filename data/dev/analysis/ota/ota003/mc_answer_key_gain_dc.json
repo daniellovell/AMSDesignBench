@@ -1,19 +1,20 @@
 {
   "question_id": "ota003_gain_dc_mc",
-  "correct_answer": "H",
-  "answer_text": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{OUTN}/2",
+  "correct_answer": "D",
+  "answer_text": "|A0| \u2248 (ro_{M6} || ro_{M8})\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7((gm_{M1}+gm_{M2})/2)",
   "choices": {
-    "A": "DC gain A0 \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2/2",
-    "B": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{OUTN}",
-    "C": "DC gain A0 \u2248 gm_{X1}\u00b7ro_{OUTN}/2",
-    "D": "DC gain A0 \u2248 gm_{IN}/ro_{OUTN}",
-    "E": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{IN}/2",
-    "F": "DC gain A0 \u2248 gm_{OUTN}\u00b7ro_{OUTN}/2",
-    "G": "DC gain A0 \u2248 2\u00b7gm_{IN}\u00b7ro_{OUTN}",
-    "H": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{OUTN}/2",
-    "I": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{OUTN}/4",
-    "J": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{X2}/2"
+    "A": "|A0| \u2248 (ro_{M6} || ro_{M8})\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7((gm_{M1}+gm_{M2}))",
+    "B": "|A0| \u2248 (ro_{M6} || ro_{M8})\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7((gm_{M2}+gm_{M2})/2)",
+    "C": "|A0| \u2248 (ro_{X2} || ro_{M8})\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7((gm_{M1}+gm_{M2})/2)",
+    "D": "|A0| \u2248 (ro_{M6} || ro_{M8})\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7((gm_{M1}+gm_{M2})/2)",
+    "E": "|A0| \u2248 (ro_{M6} || ro_{M8})\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7((gm_{M1}+gm_{M2})/4)",
+    "F": "|A0| \u2248 (ro_{M8} || ro_{M8})\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7((gm_{M1}+gm_{M2})/2)",
+    "G": "|A0| \u2248 \u221a((ro_{M6} || ro_{M8})\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7((gm_{M1}+gm_{M2})/2))",
+    "H": "|A0| \u2248 4\u00b7((ro_{M6} || ro_{M8})\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7((gm_{M1}+gm_{M2})/2))",
+    "I": "|A0| \u2248 2\u00b7((ro_{M6} || ro_{M8})\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7((gm_{M1}+gm_{M2})/2))",
+    "J": "|A0| \u2248 (ro_{M6} + ro_{M8})\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7((gm_{M1}+gm_{M2})/2)"
   },
   "track": "analysis",
-  "aspect": "gain_dc"
+  "aspect": "gain_dc",
+  "template_role_map": {}
 }

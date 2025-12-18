@@ -1652,8 +1652,8 @@ def main():
                         "Check that the template/netlist contains NMOS/PMOS identifiers in code contexts."
                     )
 
-            # For analysis track, always use canonical template artifacts (no randomization/shuffling),
-            # so the model sees the exact reference netlist under data/<split>/templates/...
+            # For analysis track, default to canonical template artifacts so the model sees the exact
+            # reference netlist under data/<split>/templates/...
             if str(q.track).lower() == "analysis":
                 tpl_ap = _template_artifact_path(q.modality)
                 if tpl_ap is not None:
@@ -1661,11 +1661,12 @@ def main():
                     artifact_used = _load_template_text(q.modality, artifact_used)
                     rand_info = {"source": "template"}
 
-            # For MCQs, attach a template SPICE netlist with SHUFFLED transistor instance names
-            # (topology unchanged). This enables distractors that swap the wrong subscript.
+            # For analysis SPICE-netlist questions (MC + short-form), attach a template netlist with
+            # SHUFFLED instance names (topology unchanged). This prevents memorization and keeps
+            # MC choices + short-form answer keys aligned to the shown subscripts.
             if (
                 str(q.track).lower() == "analysis"
-                and (q.meta or {}).get("prompt_variant") == "multiple_choice"
+                and prompt_variant in ("multiple_choice", "short_form")
                 and q.modality == "spice_netlist"
                 and artifact_used
             ):
@@ -1751,11 +1752,10 @@ def main():
                     hashlib.sha256(f"{run_id}:{meta_seed}:{Path(it.item_dir).name}:{q.id}:mc_shuf_ids".encode()).digest()[:8],
                     "big",
                 )
-                # Always rename/shuffle MOSFET instance names. Also rename R/C instance names for MCQs,
-                # but DO NOT do so for analysis/feedback where choices explicitly use R1/R2/C1 notation.
-                is_feedback_analysis = "data/dev/analysis/feedback" in str(item_dir).replace("\\", "/")
-                # For analysis/filters, also rename inductors (L*) so TF questions can't be memorized via L1 etc.
-                prefixes = ("M",) if is_feedback_analysis else ("M", "R", "C", "L")
+                # Always rename instance names for MCQs so the output visibly changes from run to run.
+                # For analysis/filters, include inductors (L*) so TF questions can't be memorized via L1 etc.
+                # For analysis/feedback, we also rename R/C now; choice rendering replaces instance IDs accordingly.
+                prefixes = ("M", "R", "C", "L")
                 shuffled_text, id_map = _shuffle_instance_names(artifact_used, shuf_seed, prefixes=prefixes)
                 if id_map:
                     mc_instance_rename_map = id_map
@@ -1775,6 +1775,29 @@ def main():
                     # Also update inventory IDs shown to the model to match renamed transistors
                     inv_ids = [id_map.get(x, x) for x in inv_ids]
                     rand_info = {"source": "template", "mc_shuffled_ids": True, "seed": shuf_seed}
+
+            # Helper: apply runtime instance renames inside text (used for MC choices and for short-form
+            # rubric/judge rendering so answer keys match shuffled subscripts).
+            def _apply_instance_renames_any(s: str) -> str:
+                if not s or not mc_instance_rename_map:
+                    return s
+                import re
+                out = s
+                # Replace plain instance IDs as whole tokens
+                for old, new in mc_instance_rename_map.items():
+                    out = re.sub(rf"(?<![A-Za-z0-9_]){re.escape(old)}(?![A-Za-z0-9_])", new, out)
+                # Replace embedded IDs inside gm_/ro_/γ_/Vov_/(W/L)_/I_D, tokens too
+                # (keeps the token prefix; only rewrites the suffix ID).
+                def _sub_embedded(prefix_pat: str, text: str) -> str:
+                    def repl(m: re.Match) -> str:
+                        pref = m.group(1)
+                        mid = m.group(2)
+                        return pref + str(mc_instance_rename_map.get(mid, mid))
+                    return re.sub(prefix_pat, repl, text)
+                out = _sub_embedded(r"((?:gm_|ro_|γ_|Vov_)\s*)([A-Za-z0-9_]+)", out)
+                out = _sub_embedded(r"(\(W/L\)_\s*)([A-Za-z0-9_]+)", out)
+                out = _sub_embedded(r"(I_D,\s*)([A-Za-z0-9_]+)", out)
+                return out
 
             # For non-analysis tracks, randomize SPICE netlist ordering to reduce memorization.
             if str(q.track).lower() != "analysis" and q.modality == "spice_netlist" and artifact_used:
@@ -1815,10 +1838,20 @@ def main():
                     input_gate_nets = {
                         "vinp", "vinn", "vip", "vin", "inp", "inn", "in_p", "in_n", "in", "in+", "in-",
                     }
+                    in_p_nets = {"vinp", "vip", "inp", "in_p", "in+"}
+                    in_n_nets = {"vinn", "inn", "in_n", "in-"}
                     in_cands = [m["id"] for m in mos if (m.get("g") or "").lower() in input_gate_nets]
                     if not in_cands and mos:
                         in_cands = [mos[0]["id"]]
+                    # Separate input pair candidates (for formulas using (gm_inp + gm_inn)/2)
+                    inp_cands = [m["id"] for m in mos if (m.get("g") or "").lower() in in_p_nets]
+                    inn_cands = [m["id"] for m in mos if (m.get("g") or "").lower() in in_n_nets]
+                    # If a netlist uses a single 'vin' net, treat both as the same input device pool.
+                    if not inp_cands and not inn_cands:
+                        inp_cands = in_cands[:]
+                        inn_cands = in_cands[:]
                     in_set = set(in_cands)
+                    in_set |= set(inp_cands) | set(inn_cands)
 
                     # Guess output node. Prefer explicit naming (vout/out*) over heuristics.
                     bad = set(input_gate_nets) | {"vbias", "vbias_n", "vbiasp", "vbiasn", "bias", "ntail", "tail"}
@@ -1981,27 +2014,96 @@ def main():
 
                     n_adj = _build_adj("n")
                     p_adj = _build_adj("p")
-                    n_path = _shortest_dev_path(n_adj, out_node, targets={"0", "gnd", "vss"}, max_devs=3) if out_node else []
-                    p_path = _shortest_dev_path(p_adj, out_node, targets={vdd_node, "vdd", "VDD"}, max_devs=2) if out_node else []
+
+                    def _swing_roles_for_output(out_node_local: str) -> Dict[str, List[str]]:
+                        # Swing uses the full output->rail stack (including tail device when present),
+                        # and keeps the historical ordering (closest-to-output first).
+                        n_path = _shortest_dev_path(n_adj, out_node_local, targets={"0", "gnd", "vss"}, max_devs=3) if out_node_local else []
+                        p_path = _shortest_dev_path(p_adj, out_node_local, targets={vdd_node, "vdd", "VDD"}, max_devs=2) if out_node_local else []
+                        out: Dict[str, List[str]] = {}
+                        if n_path:
+                            out["N1"] = [n_path[0]]
+                        if len(n_path) > 1:
+                            out["N2"] = [n_path[1]]
+                        if len(n_path) > 2:
+                            out["N3"] = [n_path[2]]
+                        if p_path:
+                            out["P1"] = [p_path[0]]
+                        if len(p_path) > 1:
+                            out["P2"] = [p_path[1]]
+                        return out
+
+                    def _rout_roles_for_output(out_node_local: str) -> Dict[str, List[str]]:
+                        # Rout/gain use a trimmed NMOS stack stopping at the input device (exclude tail),
+                        # and a bottom-first ordering:
+                        # RN1 = bottom device whose ro is multiplied (typically the input device),
+                        # RN2/RN3 = cascodes above it; RP1/RP2 follow output->VDD order.
+                        n_path = _shortest_dev_path(n_adj, out_node_local, targets={"0", "gnd", "vss"}, max_devs=3) if out_node_local else []
+                        p_path = _shortest_dev_path(p_adj, out_node_local, targets={vdd_node, "vdd", "VDD"}, max_devs=2) if out_node_local else []
+                        if n_path:
+                            id_to_gate = {m.get("id"): (m.get("g") or "").lower() for m in mos}
+                            input_ids = set(in_cands) | set(inp_cands) | set(inn_cands)
+                            last_in_idx = None
+                            for i in range(len(n_path) - 1, -1, -1):
+                                did = n_path[i]
+                                if did in input_ids or id_to_gate.get(did, "") in input_gate_nets:
+                                    last_in_idx = i
+                                    break
+                            if last_in_idx is not None:
+                                n_path = n_path[: last_in_idx + 1]
+                        out: Dict[str, List[str]] = {}
+                        if n_path:
+                            out["RN1"] = [n_path[-1]]
+                        if len(n_path) > 1:
+                            out["RN2"] = [n_path[-2]]
+                        if len(n_path) > 2:
+                            out["RN3"] = [n_path[-3]]
+                        if p_path:
+                            out["RP1"] = [p_path[0]]
+                        if len(p_path) > 1:
+                            out["RP2"] = [p_path[1]]
+                        return out
+
+                    # Detect fully-differential outputs and compute stack roles for each side.
+                    # Prefer voutn/voutp, then von/vop, then outn/outp.
+                    nodes = set()
+                    for m in mos:
+                        nodes.add((m.get("d") or "").lower())
+                        nodes.add((m.get("s") or "").lower())
+                    neg_node = ""
+                    pos_node = ""
+                    if "voutn" in nodes and "voutp" in nodes:
+                        neg_node, pos_node = "voutn", "voutp"
+                    elif "von" in nodes and "vop" in nodes:
+                        neg_node, pos_node = "von", "vop"
+                    elif "outn" in nodes and "outp" in nodes:
+                        neg_node, pos_node = "outn", "outp"
 
                     swing_roles: Dict[str, List[str]] = {}
-                    if n_path:
-                        swing_roles["N1"] = [n_path[0]]
-                    if len(n_path) > 1:
-                        swing_roles["N2"] = [n_path[1]]
-                    if len(n_path) > 2:
-                        swing_roles["N3"] = [n_path[2]]
-                    if p_path:
-                        swing_roles["P1"] = [p_path[0]]
-                    if len(p_path) > 1:
-                        swing_roles["P2"] = [p_path[1]]
+                    rout_roles: Dict[str, List[str]] = {}
+                    if neg_node and pos_node:
+                        # Swing roles (use negative output by convention)
+                        swing_roles = _swing_roles_for_output(neg_node)
+                        # Rout roles for both outputs (side-specific)
+                        neg_r = _rout_roles_for_output(neg_node)
+                        pos_r = _rout_roles_for_output(pos_node)
+                        for k, v in neg_r.items():
+                            rout_roles[k + "N"] = v
+                        for k, v in pos_r.items():
+                            rout_roles[k + "P"] = v
+                    else:
+                        swing_roles = _swing_roles_for_output(out_node) if out_node else {}
+                        rout_roles = _rout_roles_for_output(out_node) if out_node else {}
 
                     return {
                         "IN": in_cands[:4] if in_cands else [default_id],
+                        "INP": inp_cands[:4] if inp_cands else ([in_cands[0]] if in_cands else [default_id]),
+                        "INN": inn_cands[:4] if inn_cands else ([in_cands[0]] if in_cands else [default_id]),
                         "OUTN": outn_cands[:4] if outn_cands else [default_id],
                         "OUTP": outp_cands[:4] if outp_cands else [default_id],
                         "X": other_pool[:12] if other_pool else [default_id],
                         **swing_roles,
+                        **rout_roles,
                     }
 
                 def _pick_role_map(netlist: str, mc_choices: Dict[str, str]) -> Dict[str, str]:
@@ -2029,6 +2131,10 @@ def main():
                         if outn_id == outp_id:
                             continue
                         rm = {"IN": in_id, "OUTN": outn_id, "OUTP": outp_id}
+                        # Also provide INP/INN so formulas like gm_{INP} render even if we later fall back.
+                        # In the simple role picker we don't try to optimize INP/INN distinctness; _pick_role_map_all does.
+                        rm["INP"] = (cands.get("INP", []) or [in_id])[0]
+                        rm["INN"] = (cands.get("INN", []) or [in_id])[0]
                         rendered = [_norm(_subst(str(mc_choices[k]), rm)) for k in sorted(mc_choices.keys())]
                         if len(set(rendered)) == len(rendered):
                             return rm
@@ -2043,7 +2149,13 @@ def main():
                                     if cand_outp != outn_id:
                                         outp = cand_outp
                                         break
-                            return {"IN": in_id, "OUTN": outn_id, "OUTP": outp}
+                            return {
+                                "IN": in_id,
+                                "INP": (cands.get("INP", []) or [in_id])[0],
+                                "INN": (cands.get("INN", []) or [in_id])[0],
+                                "OUTN": outn_id,
+                                "OUTP": outp,
+                            }
                     # Final fallback: pick firsts but enforce OUTP != OUTN if possible
                     in0 = cands["IN"][0]
                     outn0 = cands["OUTN"][0]
@@ -2053,14 +2165,30 @@ def main():
                             if cand_outp != outn0:
                                 outp0 = cand_outp
                                 break
-                    return {"IN": in0, "OUTN": outn0, "OUTP": outp0}
+                    return {
+                        "IN": in0,
+                        "INP": (cands.get("INP", []) or [in0])[0],
+                        "INN": (cands.get("INN", []) or [in0])[0],
+                        "OUTN": outn0,
+                        "OUTP": outp0,
+                    }
 
                 role_map: Dict[str, str] = {}
                 if q.modality == "spice_netlist" and artifact_used:
                     def _needed_keys(mc_choices: Dict[str, str]) -> set[str]:
                         blob = " ".join(str(v) for v in (mc_choices or {}).values())
                         needed = set()
-                        for k in ("IN", "OUTN", "OUTP", "X1", "X2", "X3", "N1", "N2", "N3", "P1", "P2"):
+                        for k in (
+                            "IN", "INP", "INN", "OUTN", "OUTP",
+                            "X1", "X2", "X3",
+                            # swing roles
+                            "N1", "N2", "N3", "P1", "P2",
+                            # rout/gain roles (single-ended)
+                            "RN1", "RN2", "RN3", "RP1", "RP2",
+                            # rout/gain roles (fully differential)
+                            "RN1N", "RN2N", "RN3N", "RP1N", "RP2N",
+                            "RN1P", "RN2P", "RN3P", "RP1P", "RP2P",
+                        ):
                             if "{" + k + "}" in blob:
                                 needed.add(k)
                         return needed
@@ -2086,62 +2214,88 @@ def main():
                         # Prefer any available candidate from the netlist-derived pools.
                         any_id = (cands.get("IN") or cands.get("OUTN") or cands.get("OUTP") or cands.get("X") or ["M1"])[0]
                         in_list = list(cands.get("IN", []) or [any_id])
+                        inp_list = list(cands.get("INP", []) or in_list or [any_id])
+                        inn_list = list(cands.get("INN", []) or in_list or [any_id])
                         outn_list = list(cands.get("OUTN", []) or [any_id])
                         outp_list = list(cands.get("OUTP", []) or [any_id])
                         x_list = list(cands.get("X", []) or [any_id])
 
                         # Keep search small/deterministic
                         in_list = in_list[:4]
+                        inp_list = inp_list[:4]
+                        inn_list = inn_list[:4]
                         outn_list = outn_list[:4]
                         outp_list = outp_list[:4]
                         x_list = x_list[:10]
 
                         # Search combos; require OUTN != OUTP when both are needed
                         for in_id in in_list:
-                            for outn_id in outn_list:
-                                for outp_id in outp_list:
-                                    if "OUTN" in needed and "OUTP" in needed and outn_id == outp_id:
+                            for inp_id in (inp_list if "INP" in needed else [in_id]):
+                                for inn_id in (inn_list if "INN" in needed else [in_id]):
+                                    if "INP" in needed and "INN" in needed and inp_id == inn_id and len(inp_list) > 1:
+                                        # prefer distinct input devices when possible
                                         continue
-                                    rm_base = {"IN": in_id, "OUTN": outn_id, "OUTP": outp_id}
-                                    # Fixed swing roles from netlist-derived stacks (if needed)
-                                    for k in ("N1", "N2", "N3", "P1", "P2"):
-                                        if k in needed:
-                                            vals = cands.get(k, [])
-                                            if vals:
-                                                rm_base[k] = vals[0]
-                                    # Choose extra roles if needed
-                                    used = set(rm_base.values()) | set(in_list)  # exclude other input-pair devices too
-                                    extras_pool = [x for x in x_list if x not in used]
-                                    # Build candidate assignments for X roles
-                                    x_assignments = [({},)]  # type: ignore
-                                    if any(k in needed for k in ("X1", "X2", "X3")):
-                                        # Greedy permutations
-                                        xs = extras_pool[:6] if extras_pool else x_list[:6]
-                                        perms = []
-                                        for a in xs:
-                                            for b in xs:
-                                                if b == a:
-                                                    continue
-                                                for c in xs:
-                                                    if c in {a, b}:
-                                                        continue
-                                                    perms.append({"X1": a, "X2": b, "X3": c})
-                                        x_assignments = perms or [{"X1": xs[0] if xs else "M1", "X2": xs[1] if len(xs) > 1 else "M1", "X3": xs[2] if len(xs) > 2 else "M1"}]
-
-                                    for xa in x_assignments:
-                                        rm = dict(rm_base)
-                                        # Only include keys that are needed (keeps substitution stable)
-                                        for k in ("X1", "X2", "X3"):
-                                            if k in needed:
-                                                rm[k] = xa.get(k, rm_base.get("OUTN", "M1"))
-                                        rendered = [_norm(_subst(str(mc_choices[k]), rm)) for k in sorted(mc_choices.keys())]
-                                        if len(set(rendered)) == len(rendered):
-                                            # Return only needed keys (plus IN/OUTN/OUTP for compatibility)
-                                            out = {k: rm[k] for k in ("IN", "OUTN", "OUTP", "N1", "N2", "N3", "P1", "P2") if k in rm}
-                                            for k in ("X1", "X2", "X3"):
+                                    for outn_id in outn_list:
+                                        for outp_id in outp_list:
+                                            if "OUTN" in needed and "OUTP" in needed and outn_id == outp_id:
+                                                continue
+                                            rm_base = {"IN": in_id, "OUTN": outn_id, "OUTP": outp_id}
+                                            if "INP" in needed:
+                                                rm_base["INP"] = inp_id
+                                            if "INN" in needed:
+                                                rm_base["INN"] = inn_id
+                                            # Fixed swing roles from netlist-derived stacks (if needed)
+                                            for k in (
+                                                "N1", "N2", "N3", "P1", "P2",
+                                                "RN1", "RN2", "RN3", "RP1", "RP2",
+                                                "RN1N", "RN2N", "RN3N", "RP1N", "RP2N",
+                                                "RN1P", "RN2P", "RN3P", "RP1P", "RP2P",
+                                            ):
                                                 if k in needed:
-                                                    out[k] = rm[k]
-                                            return out
+                                                    vals = cands.get(k, [])
+                                                    if vals:
+                                                        rm_base[k] = vals[0]
+                                            # Choose extra roles if needed
+                                            used = set(rm_base.values()) | set(in_list)  # exclude other input-pair devices too
+                                            extras_pool = [x for x in x_list if x not in used]
+                                            # Build candidate assignments for X roles
+                                            x_assignments = [({},)]  # type: ignore
+                                            if any(k in needed for k in ("X1", "X2", "X3")):
+                                                # Greedy permutations
+                                                xs = extras_pool[:6] if extras_pool else x_list[:6]
+                                                perms = []
+                                                for a in xs:
+                                                    for b in xs:
+                                                        if b == a:
+                                                            continue
+                                                        for c in xs:
+                                                            if c in {a, b}:
+                                                                continue
+                                                            perms.append({"X1": a, "X2": b, "X3": c})
+                                                x_assignments = perms or [{"X1": xs[0] if xs else "M1", "X2": xs[1] if len(xs) > 1 else "M1", "X3": xs[2] if len(xs) > 2 else "M1"}]
+
+                                            for xa in x_assignments:
+                                                rm = dict(rm_base)
+                                                # Only include keys that are needed (keeps substitution stable)
+                                                for k in ("X1", "X2", "X3"):
+                                                    if k in needed:
+                                                        rm[k] = xa.get(k, rm_base.get("OUTN", "M1"))
+                                                rendered = [_norm(_subst(str(mc_choices[k]), rm)) for k in sorted(mc_choices.keys())]
+                                                if len(set(rendered)) == len(rendered):
+                                                    # Return only needed keys (plus common ones for compatibility).
+                                                    # Include side-specific stack roles (N*{N|P}, P*{N|P}) for fully differential OTAs.
+                                                    out_keys = (
+                                                        "IN", "INP", "INN", "OUTN", "OUTP",
+                                                        "N1", "N2", "N3", "P1", "P2",
+                                                        "RN1", "RN2", "RN3", "RP1", "RP2",
+                                                        "RN1N", "RN2N", "RN3N", "RP1N", "RP2N",
+                                                        "RN1P", "RN2P", "RN3P", "RP1P", "RP2P",
+                                                    )
+                                                    out = {k: rm[k] for k in out_keys if k in rm}
+                                                    for k in ("X1", "X2", "X3"):
+                                                        if k in needed:
+                                                            out[k] = rm[k]
+                                                    return out
 
                         # Fallback: preserve legacy selection, but ALWAYS fill any needed X roles
                         # so placeholders never leak into the rendered prompt.
@@ -2193,22 +2347,40 @@ def main():
 
                 def _apply_instance_renames(s: str) -> str:
                     """Replace any literal instance IDs in choices with their renamed IDs."""
-                    if not s or not mc_instance_rename_map:
+                    return _apply_instance_renames_any(s)
+
+                def _subst_template_role_placeholders(s: str) -> str:
+                    """
+                    Replace {Role} placeholders using optional mc_answer_key['template_role_map'].
+                    This lets scripts generate formulas in terms of canonical role names (e.g. {M1a})
+                    while preserving per-run instance renaming.
+                    """
+                    if not s:
+                        return s
+                    tmpl_rm = (mc_answer_key or {}).get("template_role_map") or {}
+                    if not isinstance(tmpl_rm, dict):
+                        tmpl_rm = {}
+                    if not tmpl_rm and not mc_instance_rename_map:
                         return s
                     import re
-                    # Use conservative boundaries: SPICE IDs are typically [A-Za-z0-9_]+
-                    for old, new in mc_instance_rename_map.items():
-                        if old == new:
-                            continue
-                        pat = re.compile(rf"(?<![A-Za-z0-9_]){re.escape(old)}(?![A-Za-z0-9_])")
-                        s = pat.sub(new, s)
-                    return s
+                    def repl(m: re.Match) -> str:
+                        key = m.group(1)
+                        # First: map canonical role -> template instance id
+                        if key in tmpl_rm:
+                            tid = str(tmpl_rm[key])
+                            return str(mc_instance_rename_map.get(tid, tid)) if mc_instance_rename_map else tid
+                        # Second: allow direct template instance placeholders like {M2}
+                        if mc_instance_rename_map and key in mc_instance_rename_map:
+                            return str(mc_instance_rename_map[key])
+                        return m.group(0)
+                    return re.sub(r"\{([A-Za-z0-9_]+)\}", repl, s)
 
                 choice_lines: List[str] = []
                 rendered_choices: Dict[str, str] = {}
                 for letter in sorted(mc_answer_key.get("choices", {}).keys()):
                     choice_text = str(mc_answer_key["choices"][letter])
                     choice_text = _subst_placeholders(choice_text)
+                    choice_text = _subst_template_role_placeholders(choice_text)
                     choice_text = _apply_instance_renames(choice_text)
                     rendered_choices[letter] = choice_text
 
@@ -2217,7 +2389,145 @@ def main():
                 # or tiny netlists with too few distinct devices for OUTN/OUTP/X roles.
                 correct_letter = str(mc_answer_key.get("correct_answer", "")).strip().upper()
                 def _norm_choice(s: str) -> str:
-                    return (s or "").lower().replace(" ", "")
+                    """
+                    Canonicalize choice text so commutative reorderings don't bypass the dedupe guard.
+                    Handles +, *, ·, and || as commutative+associative. Everything else is left ordered.
+                    """
+                    import re
+                    if not s:
+                        return ""
+                    x = (s or "").strip()
+                    x = x.replace("·", "*")
+                    x = x.replace("²", "^2").replace("³", "^3")
+                    x = re.sub(r"\s+", "", x.lower())
+
+                    # Split "LHS ≈ RHS" (or "=") and canonicalize RHS only. Keep LHS+op fixed.
+                    lhs_prefix = ""
+                    op = None
+                    if "≈" in x:
+                        lhs_prefix, x = x.split("≈", 1)
+                        op = "≈"
+                    elif "=" in x:
+                        lhs_prefix, x = x.split("=", 1)
+                        op = "="
+                    if op is not None:
+                        lhs_prefix = lhs_prefix + op
+                    # Normalize wrappers we use in formulas but don't tokenize as operators.
+                    x = x.replace("|", "")
+                    x = x.replace("[", "(").replace("]", ")")
+
+                    toks: list[str] = []
+                    i = 0
+                    while i < len(x):
+                        if x.startswith("||", i):
+                            toks.append("||"); i += 2; continue
+                        ch = x[i]
+                        if ch in "+-*/()^":
+                            toks.append(ch); i += 1; continue
+                        if ch == "√":
+                            toks.append("sqrt"); i += 1; continue
+                        j = i
+                        while j < len(x):
+                            if x.startswith("||", j): break
+                            if x[j] in "+-*/()^": break
+                            j += 1
+                        toks.append(x[i:j]); i = j
+
+                    pos = 0
+                    def peek() -> str | None:
+                        return toks[pos] if pos < len(toks) else None
+                    def take() -> str:
+                        nonlocal pos
+                        t = toks[pos]; pos += 1; return t
+
+                    def parse_atom():
+                        t = peek()
+                        if t is None: return ("lit", "")
+                        if t == "(":
+                            take()
+                            n = parse_add()
+                            if peek() == ")": take()
+                            return n
+                        return ("lit", take())
+
+                    def parse_unary():
+                        t = peek()
+                        if t in ("+", "-"):
+                            op = take()
+                            return ("un", op, parse_unary())
+                        if t == "sqrt":
+                            take()
+                            if peek() == "(":
+                                take()
+                                inner = parse_add()
+                                if peek() == ")": take()
+                                return ("fn", "sqrt", inner)
+                            return ("fn", "sqrt", parse_unary())
+                        return parse_atom()
+
+                    def parse_pow():
+                        n = parse_unary()
+                        while peek() == "^":
+                            take()
+                            rhs = parse_unary()
+                            n = ("bin", "^", n, rhs)
+                        return n
+
+                    def parse_mul():
+                        n = parse_pow()
+                        while peek() in ("*", "/"):
+                            op = take()
+                            rhs = parse_pow()
+                            n = ("bin", op, n, rhs)
+                        return n
+
+                    def parse_par():
+                        n = parse_mul()
+                        while peek() == "||":
+                            take()
+                            rhs = parse_mul()
+                            n = ("bin", "||", n, rhs)
+                        return n
+
+                    def parse_add():
+                        n = parse_par()
+                        while peek() in ("+", "-"):
+                            op = take()
+                            rhs = parse_par()
+                            n = ("bin", op, n, rhs)
+                        return n
+
+                    def canon(n) -> str:
+                        k = n[0]
+                        if k == "lit": return str(n[1])
+                        if k == "un": return f"({n[1]}{canon(n[2])})"
+                        if k == "fn": return f"({n[1]}{canon(n[2])})"
+                        if k == "bin":
+                            op = n[1]
+                            a = n[2]; b = n[3]
+                            if op in ("+", "*", "||"):
+                                parts: list = []
+                                def gather(m):
+                                    if m[0] == "bin" and m[1] == op:
+                                        gather(m[2]); gather(m[3])
+                                    else:
+                                        parts.append(m)
+                                gather(a); gather(b)
+                                cps = [canon(p) for p in parts]
+                                cps.sort()
+                                return f"({op}{','.join(cps)})"
+                            return f"({op}{canon(a)},{canon(b)})"
+                        return str(n)
+
+                    try:
+                        ast = parse_add()
+                        # If we didn't consume all tokens, the parse was partial; fall back so we
+                        # don't collapse distinct long formulas into the same dedupe key.
+                        if pos != len(toks):
+                            return lhs_prefix + x
+                        return lhs_prefix + canon(ast)
+                    except Exception:
+                        return lhs_prefix + x
 
                 def _gbw_fallbacks(correct: str) -> List[str]:
                     # Extract gm_* and capacitor token (C*) from the correct option.
@@ -2244,39 +2554,81 @@ def main():
 
                 def _gain_dc_fallbacks(correct: str) -> List[str]:
                     import re
+                    if not correct:
+                        return []
+                    s = str(correct)
+                    op = "≈" if "≈" in s else ("=" if "=" in s else None)
+                    if not op:
+                        return []
+                    lhs = s.split(op, 1)[0].strip()
                     gm = None
                     ro = None
-                    m = re.search(r"(gm_[A-Za-z0-9_]+)", correct)
+                    m = re.search(r"(gm_[A-Za-z0-9_]+)", s)
                     if m:
                         gm = m.group(1)
-                    m = re.search(r"(ro_[A-Za-z0-9_]+)", correct)
+                    m = re.search(r"(ro_[A-Za-z0-9_]+)", s)
                     if m:
                         ro = m.group(1)
                     if not gm or not ro:
                         return []
+                    def fmt(rhs: str) -> str:
+                        return f"{lhs} {op} {rhs}"
                     return [
-                        f"DC gain A0 ≈ {gm}·{ro}",
-                        f"DC gain A0 ≈ {gm}·{ro}/4",
-                        f"DC gain A0 ≈ 2·{gm}·{ro}",
-                        f"DC gain A0 ≈ {gm}/{ro}",
-                        f"DC gain A0 ≈ ({gm}·{ro})²/2",
+                        fmt(f"{gm}·{ro}"),
+                        fmt(f"{gm}·{ro}/4"),
+                        fmt(f"2·{gm}·{ro}"),
+                        fmt(f"{gm}/{ro}"),
+                        fmt(f"({gm}·{ro})²/2"),
                     ]
 
                 def _noise_fallbacks(correct: str) -> List[str]:
+                    """
+                    Noise fallback pool used only when runtime placeholder substitution yields duplicates.
+                    Keep SAME LHS/operator and remain device-grounded (gm/ro/γ terms) so the fallback
+                    doesn't introduce unrealistic or differently-typed options.
+                    """
                     import re
-                    gm = None
-                    m = re.search(r"(gm_[A-Za-z0-9_]+)", correct)
-                    if m:
-                        gm = m.group(1)
-                    if not gm:
+                    if not correct:
                         return []
-                    return [
-                        f"Vn,out² ≈ 16kT/(3{gm})",
-                        f"Vn,out² ≈ 8kT/(3{gm})",  # canonical
-                        f"Vn,out² ≈ 8kT/({gm})",
-                        f"Vn,out² ≈ 8kT·{gm}",
-                        f"Vn,out² ≈ 8kT/(3{gm}²)",
-                    ]
+                    s = str(correct)
+                    op = "≈" if "≈" in s else ("=" if "=" in s else None)
+                    if not op:
+                        return []
+                    lhs = s.split(op, 1)[0].strip()
+                    rhs = s.split(op, 1)[1].strip()
+
+                    def fmt(rhs_new: str) -> str:
+                        return f"{lhs} {op} {rhs_new}"
+
+                    out: List[str] = []
+                    # Constant factor mistakes
+                    out.append(fmt(rhs.replace("4kT", "8kT", 1)))
+                    out.append(fmt(rhs.replace("4kT", "2kT", 1)))
+                    out.append(fmt(rhs.replace("4kT", "16kT", 1)))
+                    # Missing rout square
+                    out.append(fmt(rhs.replace(")²·4kT", ")·4kT", 1)))
+                    # Parallel vs series slip
+                    out.append(fmt(rhs.replace(" || ", " + ", 1)))
+                    # Drop one gamma*gm term
+                    out.append(fmt(re.sub(r"\+\s*γ_[A-Za-z0-9_]+·gm_[A-Za-z0-9_]+", "", rhs, count=1)))
+                    # Mismatch gm / gamma subscripts
+                    gm_tokens = re.findall(r"gm_[A-Za-z0-9_]+", rhs)
+                    gam_tokens = re.findall(r"γ_[A-Za-z0-9_]+", rhs)
+                    if len(gm_tokens) >= 2:
+                        out.append(fmt(rhs.replace(gm_tokens[0], gm_tokens[1], 1)))
+                    if len(gam_tokens) >= 2:
+                        out.append(fmt(rhs.replace(gam_tokens[0], gam_tokens[1], 1)))
+
+                    # Filter empties and duplicates
+                    out2: List[str] = []
+                    seen: set[str] = set()
+                    for c in out:
+                        cn = _norm_choice(c)
+                        if not cn or cn in seen:
+                            continue
+                        seen.add(cn)
+                        out2.append(c)
+                    return out2
 
                 def _rout_fallbacks(correct: str) -> List[str]:
                     import re
@@ -2307,6 +2659,134 @@ def main():
                 else:
                     pool = []
 
+                # Also build a dynamic pool of device-/netlist-grounded mutations from the *rendered*
+                # choices, so we can always break runtime equivalences caused by role substitution.
+                def _collect_instance_ids(netlist: str) -> tuple[list[str], list[str], list[str], list[str]]:
+                    mos_ids: list[str] = []
+                    r_ids: list[str] = []
+                    c_ids: list[str] = []
+                    l_ids: list[str] = []
+                    seen: set[str] = set()
+                    for raw in (netlist or "").splitlines():
+                        s = raw.strip()
+                        if not s or s.startswith(("*", ";", "//", ".")):
+                            continue
+                        parts = s.split()
+                        if not parts:
+                            continue
+                        inst = parts[0]
+                        if inst in seen:
+                            continue
+                        seen.add(inst)
+                        pref = inst[:1].upper()
+                        if pref == "M":
+                            mos_ids.append(inst)
+                        elif pref == "R":
+                            r_ids.append(inst)
+                        elif pref == "C":
+                            c_ids.append(inst)
+                        elif pref == "L":
+                            l_ids.append(inst)
+                    return mos_ids, r_ids, c_ids, l_ids
+
+                mos_ids, r_ids, c_ids, l_ids = _collect_instance_ids(artifact_used or "")
+
+                def _dynamic_mutations(text: str, limit: int = 40) -> list[str]:
+                    import re
+                    out: list[str] = []
+                    if not text:
+                        return out
+                    # Mutate device-parameter tokens by swapping the instance ID suffix.
+                    # gm_/ro_/γ_/Vov_/(W/L)_/I_D,
+                    dev_tok_re = re.compile(r"\b(gm_|ro_|γ_|Vov_)([A-Za-z0-9_]+)\b")
+                    wl_re = re.compile(r"\(W/L\)_([A-Za-z0-9_]+)\b")
+                    id_re = re.compile(r"\bI_D,([A-Za-z0-9_]+)\b")
+                    cap_re = re.compile(r"\b(C[0-9][A-Za-z0-9_]*)\b")
+                    res_re = re.compile(r"\b(R[0-9][A-Za-z0-9_]*)\b")
+                    ind_re = re.compile(r"\b(L[0-9][A-Za-z0-9_]*)\b")
+
+                    # Swap one gm/ro/γ/Vov suffix to other MOS IDs
+                    m = dev_tok_re.search(text)
+                    if m and mos_ids:
+                        pref = m.group(1)
+                        old = m.group(2)
+                        for alt in mos_ids[: min(12, len(mos_ids))]:
+                            if alt == old:
+                                continue
+                            out.append(text[: m.start()] + f"{pref}{alt}" + text[m.end() :])
+                            if len(out) >= limit:
+                                return out
+
+                    # Swap one (W/L)_ suffix
+                    m = wl_re.search(text)
+                    if m and mos_ids:
+                        old = m.group(1)
+                        for alt in mos_ids[: min(12, len(mos_ids))]:
+                            if alt == old:
+                                continue
+                            out.append(wl_re.sub(f"(W/L)_{alt}", text, count=1))
+                            if len(out) >= limit:
+                                return out
+
+                    # Swap one I_D, suffix
+                    m = id_re.search(text)
+                    if m and mos_ids:
+                        old = m.group(1)
+                        for alt in mos_ids[: min(12, len(mos_ids))]:
+                            if alt == old:
+                                continue
+                            out.append(id_re.sub(f"I_D,{alt}", text, count=1))
+                            if len(out) >= limit:
+                                return out
+
+                    # Swap passives (R/C/L) to other existing IDs in this netlist
+                    m = cap_re.search(text)
+                    if m and c_ids:
+                        old = m.group(1)
+                        for alt in c_ids[: min(8, len(c_ids))]:
+                            if alt == old:
+                                continue
+                            out.append(cap_re.sub(alt, text, count=1))
+                            if len(out) >= limit:
+                                return out
+                    m = res_re.search(text)
+                    if m and r_ids:
+                        old = m.group(1)
+                        for alt in r_ids[: min(8, len(r_ids))]:
+                            if alt == old:
+                                continue
+                            out.append(res_re.sub(alt, text, count=1))
+                            if len(out) >= limit:
+                                return out
+                    m = ind_re.search(text)
+                    if m and l_ids:
+                        old = m.group(1)
+                        for alt in l_ids[: min(8, len(l_ids))]:
+                            if alt == old:
+                                continue
+                            out.append(ind_re.sub(alt, text, count=1))
+                            if len(out) >= limit:
+                                return out
+
+                    # Scalar / factor tweaks as a last resort (keeps units plausible-ish)
+                    if "≈" in text:
+                        lhs0, rhs0 = text.split("≈", 1)
+                        rhs0 = rhs0.strip()
+                        out.extend([f"{lhs0.strip()} ≈ 2·({rhs0})", f"{lhs0.strip()} ≈ ({rhs0})/2"])
+                    elif "=" in text:
+                        lhs0, rhs0 = text.split("=", 1)
+                        rhs0 = rhs0.strip()
+                        out.extend([f"{lhs0.strip()} = 2·({rhs0})", f"{lhs0.strip()} = ({rhs0})/2"])
+                    return out[:limit]
+
+                # Add dynamic mutations derived from existing pool and from current rendered choices.
+                dyn: list[str] = []
+                for base in ([correct_text] + list(rendered_choices.values()) + list(pool))[:12]:
+                    dyn.extend(_dynamic_mutations(base))
+                    if len(dyn) > 200:
+                        break
+                pool = list(pool) + dyn
+
                 # Expand fallback pools to reliably break duplicates even when many common forms are already present.
                 # (These extra variants remain plausible "wrong math" distractors.)
                 if aspect == "gbw" and correct_text:
@@ -2316,16 +2796,16 @@ def main():
                     ]
                 elif aspect == "gain_dc" and correct_text:
                     pool = pool + [
-                        "DC gain A0 ≈ " + correct_text.split("≈", 1)[-1].strip().replace("/2", "/8"),
-                        "DC gain A0 ≈ " + correct_text.split("≈", 1)[-1].strip().replace("/2", "/16"),
-                        "DC gain A0 ≈ √(" + correct_text.split("≈", 1)[-1].strip().replace("/2", "") + ")",
+                        (correct_text.split("≈", 1)[0].strip() + " ≈ " + correct_text.split("≈", 1)[-1].strip().replace("/2", "/8")) if "≈" in correct_text else correct_text,
+                        (correct_text.split("≈", 1)[0].strip() + " ≈ " + correct_text.split("≈", 1)[-1].strip().replace("/2", "/16")) if "≈" in correct_text else correct_text,
+                        (correct_text.split("≈", 1)[0].strip() + " ≈ √(" + correct_text.split("≈", 1)[-1].strip().replace("/2", "") + ")") if "≈" in correct_text else correct_text,
                     ]
                 elif aspect == "noise_white" and correct_text:
-                    # Introduce more constant-factor variants using the same gm token.
+                    # Add a few more constant-factor / exponent variants while preserving formatting.
                     pool = pool + [
-                        correct_text.replace("8kT/(3", "4kT/(3"),
-                        correct_text.replace("8kT/(3", "32kT/(3"),
-                        correct_text.replace("8kT/(3", "8kT/(6"),
+                        correct_text.replace("4kT", "8kT", 1),
+                        correct_text.replace("4kT", "2kT", 1),
+                        correct_text.replace(")²·4kT", ")·4kT", 1),
                     ]
                 elif aspect == "rout" and correct_text:
                     pool = pool + [
@@ -2378,6 +2858,30 @@ def main():
                         if repl:
                             rendered_choices[letter] = repl
                             used_norms.add(_norm_choice(repl))
+
+                # Final cleanup pass: if any duplicates still exist (e.g., extreme symmetry),
+                # keep trying to repair non-correct choices until stable or attempts exhausted.
+                for _ in range(30):
+                    norms2: Dict[str, str] = {}
+                    dups: list[tuple[str, str]] = []
+                    for L in letters:
+                        k = _norm_choice(rendered_choices[L])
+                        if not k:
+                            continue
+                        if k in norms2:
+                            dups.append((L, norms2[k]))
+                        else:
+                            norms2[k] = L
+                    if not dups:
+                        break
+                    used = set(norms2.keys())
+                    for L, _first in dups:
+                        if L == correct_letter:
+                            continue
+                        repl = _pick_replacement(used)
+                        if repl:
+                            rendered_choices[L] = repl
+                            used.add(_norm_choice(repl))
 
                 for letter in sorted(rendered_choices.keys()):
                     choice_lines.append(f"{letter}. {rendered_choices[letter]}")
@@ -2525,6 +3029,11 @@ def main():
                         # Render YAML as a template to allow includes and runtime vars
                         vars_yaml_text = vars_yaml.read_text(encoding='utf-8')
                         rendered_yaml = render_template(vars_yaml_text, runtime_vars, base_dir=vars_yaml.parent)
+                        # If we shuffled instance names for analysis SPICE-netlist (MC or short-form),
+                        # rewrite any instance IDs inside the rendered YAML so answer keys match the
+                        # netlist the model actually saw.
+                        if str(q.track).lower() == "analysis" and q.modality == "spice_netlist":
+                            rendered_yaml = _apply_instance_renames_any(rendered_yaml)
                         vars_map = yaml.safe_load(rendered_yaml) or {}
                     except Exception as e:
                         print(f"[yellow]Warning: Failed to render/parse {vars_yaml}: {e}[/yellow]")

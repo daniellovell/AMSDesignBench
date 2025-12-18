@@ -1,19 +1,20 @@
 {
   "question_id": "ota005_psrr_mc",
-  "correct_answer": "H",
-  "answer_text": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2",
+  "correct_answer": "E",
+  "answer_text": "PSRR+ \u2248 ((gm_{M2}+gm_{M3})/2)\u00b7((ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))",
   "choices": {
-    "A": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})",
-    "B": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2/2",
-    "C": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2 + 1",
-    "D": "PSRR+ \u2248 (ro_{OUTN})\u00b2",
-    "E": "PSRR+ \u2248 (gm_{OUTN}\u00b7ro_{OUTN})\u00b2",
-    "F": "PSRR+ \u2248 (gm_{IN})\u00b2\u00b7ro_{OUTN}",
-    "G": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b3",
-    "H": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2",
-    "I": "PSRR+ \u2248 gm_{IN}\u00b7ro_{OUTN}",
-    "J": "PSRR+ \u2248 \u221a(gm_{IN}\u00b7ro_{OUTN})"
+    "A": "PSRR+ \u2248 ((gm_{X1}+gm_{M3})/2)\u00b7((ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))",
+    "B": "PSRR+ \u2248 (((gm_{M2}+gm_{M3})/2)\u00b7((ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6})))/2",
+    "C": "PSRR+ \u2248 ((gm_{M2}+gm_{M3})/2)\u00b7((ro_{X1}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))",
+    "D": "PSRR+ \u2248 ((gm_{M2}+gm_{M3})/2)\u00b7((ro_{M10}+ro_{X1}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))",
+    "E": "PSRR+ \u2248 ((gm_{M2}+gm_{M3})/2)\u00b7((ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))",
+    "F": "PSRR+ \u2248 ((gm_{X2}+gm_{M3})/2)\u00b7((ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))",
+    "G": "PSRR+ \u2248 ((gm_{M2}+gm_{M3})/2)\u00b7((ro_{X2}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))",
+    "H": "PSRR+ \u2248 (((gm_{M2}+gm_{M3})/2)\u00b7((ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6})))/4",
+    "I": "PSRR+ \u2248 ((gm_{M2}+gm_{X1})/2)\u00b7((ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))",
+    "J": "PSRR+ \u2248 ((gm_{M2}+gm_{M3})/2)\u00b7((ro_{M10}+ro_{X2}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))"
   },
   "track": "analysis",
-  "aspect": "psrr"
+  "aspect": "psrr",
+  "template_role_map": {}
 }

@@ -1,13 +1,13 @@
-M519865464 n1 vinp ntail 0 nch W=2u L=0.18u
-M391704098 n2 vinn ntail 0 nch W=2u L=0.18u
-M863854431 ntail vbias_n 0 0 nch W=1u L=0.5u
-M860727569 n1 n1 VDD VDD pch W=2u L=0.18u
-M375084517 n2 n1 VDD VDD pch W=2u L=0.18u
-M553670952 nmir n1 VDD VDD pch W=4u L=0.18u
-M111520970 vout n1 VDD VDD pch W=4u L=0.18u
-M470892504 nmir nmir 0 0 nch W=2u L=0.18u
-M396159677 vout nmir 0 0 nch W=2u L=0.18u
+M858246145 n1 vinp ntail 0 nch W=2u L=0.18u
+M222255790 n2 vinn ntail 0 nch W=2u L=0.18u
+M892522530 ntail vbias_n 0 0 nch W=1u L=0.5u
+M366070349 n1 n1 VDD VDD pch W=2u L=0.18u
+M216574897 n2 n1 VDD VDD pch W=2u L=0.18u
+M380443487 nmir n1 VDD VDD pch W=4u L=0.18u
+M346339324 vout n1 VDD VDD pch W=4u L=0.18u
+M484076792 nmir nmir 0 0 nch W=2u L=0.18u
+M163771141 vout nmir 0 0 nch W=2u L=0.18u
 
 VDD VDD 0 1.8
-C724820184 vout 0 1p
+C382804494 vout 0 1p
 

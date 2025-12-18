@@ -1,19 +1,20 @@
 {
   "question_id": "ota002_power_quiescent_mc",
-  "correct_answer": "A",
-  "answer_text": "P = VDD\u00b7(Itail + Ibias_cascode)",
+  "correct_answer": "H",
+  "answer_text": "P_q \u2248 VDD\u00b7(I_D,{M8} + I_D,{M9})",
   "choices": {
-    "A": "P = VDD\u00b7(Itail + Ibias_cascode)",
-    "B": "P = VDD\u00b2/Rtail",
-    "C": "P = VDD\u00b7Itail/2",
-    "D": "P = VDD\u00b2\u00b7gm",
-    "E": "P = VDD\u00b7\u221a(Itail)",
-    "F": "P = 2\u00b7VDD\u00b7Itail",
-    "G": "P = (VDD - VTH)\u00b7Itail",
-    "H": "P = VDD\u00b7(Itail + IDD)",
-    "I": "P = VDD\u00b7Itail/(1 + A0)",
-    "J": "P = VDD\u00b7Itail\u00b7gm"
+    "A": "P_q \u2248 2\u00b7VDD\u00b7(I_D,{M8} + I_D,{M9})",
+    "B": "P_q \u2248 VDD\u00b7(I_D,{X2} + I_D,{M9})",
+    "C": "P_q \u2248 VDD\u00b7(I_D,{M8} + I_D,{M9})/2",
+    "D": "P_q \u2248 (VDD/2)\u00b7(I_D,{M8} + I_D,{M9})",
+    "E": "P_q \u2248 VDD\u00b7((I_D,{M8} + I_D,{M9}) + I_D,{X1})",
+    "F": "P_q \u2248 VDD\u00b7(I_D,{M8} + I_D,{X2})",
+    "G": "P_q \u2248 4\u00b7VDD\u00b7(I_D,{M8} + I_D,{M9})",
+    "H": "P_q \u2248 VDD\u00b7(I_D,{M8} + I_D,{M9})",
+    "I": "P_q \u2248 VDD\u00b7(I_D,{M8})",
+    "J": "P_q \u2248 VDD\u00b7(I_D,{M8} + I_D,{X1})"
   },
   "track": "analysis",
-  "aspect": "power_quiescent"
+  "aspect": "power_quiescent",
+  "template_role_map": {}
 }

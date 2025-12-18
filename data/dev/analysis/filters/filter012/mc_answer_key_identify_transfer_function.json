@@ -1,19 +1,20 @@
 {
   "question_id": "filter012_identify_mc",
-  "correct_answer": "F",
+  "correct_answer": "J",
   "answer_text": "Transfer function: H(s) = -Cint2*Rfb1*Rfb2*Rint2*s/(Cint2*Rfb1*Rin*Rint2*s - Rfb2*Rin)",
   "choices": {
     "A": "Transfer function: H(s) = -Cint1*Rfb1*Rfb2*Rint2*s/(Cint1*Rfb1*Rin*Rint2*s - Rfb2*Rin)",
-    "B": "Transfer function: H(s) = 1/(s^2*Rin*Rfb1*Cint1*Cint2 + s*(Rin*Cint1 + Rfb1*Cint2) + 1)",
+    "B": "Transfer function: H(s) = -Cint2*Rfb1*Rin*Rint2*s/(Cint2*Rfb1*Rin*Rint2*s - Rin*Rin)",
     "C": "Transfer function: H(s) = -Cint2*Rfb2*Rfb2*Rint2*s/(Cint2*Rfb2*Rin*Rint2*s - Rfb2*Rin)",
-    "D": "Transfer function: H(s) = 1/(1 + s*Rin*Cint1)",
-    "E": "Transfer function: H(s) = -Cint2*Rin*Rfb2*Rint2*s/(Cint2*Rin*Rin*Rint2*s - Rfb2*Rin)",
-    "F": "Transfer function: H(s) = -Cint2*Rfb1*Rfb2*Rint2*s/(Cint2*Rfb1*Rin*Rint2*s - Rfb2*Rin)",
-    "G": "Transfer function: H(s) = -Cint2*Rfb1*Rin*Rint2*s/(Cint2*Rfb1*Rin*Rint2*s - Rin*Rin)",
-    "H": "Transfer function: H(s) = -Cint2*Rint1*Rfb2*Rint2*s/(Cint2*Rint1*Rin*Rint2*s - Rfb2*Rin)",
+    "D": "Transfer function: H(s) = -Cint2*Rin*Rfb2*Rint2*s/(Cint2*Rin*Rin*Rint2*s - Rfb2*Rin)",
+    "E": "Transfer function: H(s) = -Cint2*Rint1*Rfb2*Rint2*s/(Cint2*Rint1*Rin*Rint2*s - Rfb2*Rin)",
+    "F": "Transfer function: H(s) = 1/(1 + s*Rin*Cint1)",
+    "G": "Transfer function: H(s) = -Cint2*Rfb1*Rfb1*Rint2*s/(Cint2*Rfb1*Rin*Rint2*s - Rfb1*Rin)",
+    "H": "Transfer function: H(s) = 1/(s^2*Rin*Rfb1*Cint1*Cint2 + s*(Rin*Cint1 + Rfb1*Cint2) + 1)",
     "I": "Transfer function: H(s) = (s*Rin*Cint1)/(1 + s*Rin*Cint1)",
-    "J": "Transfer function: H(s) = -Cint2*Rfb1*Rfb1*Rint2*s/(Cint2*Rfb1*Rin*Rint2*s - Rfb1*Rin)"
+    "J": "Transfer function: H(s) = -Cint2*Rfb1*Rfb2*Rint2*s/(Cint2*Rfb1*Rin*Rint2*s - Rfb2*Rin)"
   },
   "track": "analysis",
-  "aspect": "identify_transfer_function"
+  "aspect": "identify_transfer_function",
+  "template_role_map": {}
 }

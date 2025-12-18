@@ -1,2 +1,2 @@
-relation_target: "GBW ≈ (gm/CL)*k where k is mirror ratio from inner 5T core to output devices"
+relation_target: "GBW ≈ |A0|·(1/((ro_M6||ro_M8)·Cload))/(2π)"
 {path:_ota_rubric_template.yaml}

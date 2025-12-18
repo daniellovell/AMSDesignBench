@@ -1,19 +1,20 @@
 {
   "question_id": "ota007_gbw_mc",
-  "correct_answer": "J",
-  "answer_text": "GBW \u2248 gm_{IN}/Cload",
+  "correct_answer": "C",
+  "answer_text": "GBW \u2248 gm_{M2}/(2\u03c0\u00b7Cload)",
   "choices": {
-    "A": "GBW \u2248 gm_{IN}/(2\u03c0Cload)",
-    "B": "GBW \u2248 gm_{IN}/(2\u00b7Cload)",
-    "C": "GBW \u2248 Cload/gm_{IN}",
-    "D": "GBW \u2248 gm_{IN}\u00b7Cload",
-    "E": "GBW \u2248 gm_{OUTN}/Cload",
-    "F": "GBW \u2248 gm_{X1}/Cload",
-    "G": "GBW \u2248 gm_{OUTP}/Cload",
-    "H": "GBW \u2248 (gm_{IN})\u00b2/Cload",
-    "I": "GBW \u2248 gm_{X2}/Cload",
-    "J": "GBW \u2248 gm_{IN}/Cload"
+    "A": "GBW \u2248 (gm_{M2}/(2\u03c0\u00b7Cload))/4",
+    "B": "GBW \u2248 (gm_{M2}/(2\u03c0\u00b7Cload))/\u03c0",
+    "C": "GBW \u2248 gm_{M2}/(2\u03c0\u00b7Cload)",
+    "D": "GBW \u2248 2\u00b7(gm_{M2}/(2\u03c0\u00b7Cload))",
+    "E": "GBW \u2248 gm_{X3}/(2\u03c0\u00b7Cload)",
+    "F": "GBW \u2248 gm_{INP}/(2\u03c0\u00b7Cload)",
+    "G": "GBW \u2248 gm_{X1}/(2\u03c0\u00b7Cload)",
+    "H": "GBW \u2248 gm_{M2}/(8\u03c0\u00b7Cload)",
+    "I": "GBW \u2248 \u221a(gm_{M2}/(2\u03c0\u00b7Cload))",
+    "J": "GBW \u2248 gm_{OUTP}/(2\u03c0\u00b7Cload)"
   },
   "track": "analysis",
-  "aspect": "gbw"
+  "aspect": "gbw",
+  "template_role_map": {}
 }

@@ -1,19 +1,20 @@
 {
   "question_id": "ota001_gain_dc_mc",
-  "correct_answer": "I",
-  "answer_text": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{OUTN}/2",
+  "correct_answer": "G",
+  "answer_text": "|A0| \u2248 ((gm_{M1} + gm_{M2})/2)\u00b7(ro_{M2} || ro_{Mp1})",
   "choices": {
-    "A": "DC gain A0 \u2248 gm_{IN}/ro_{OUTN}",
-    "B": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{X2}/2",
-    "C": "DC gain A0 \u2248 gm_{X1}\u00b7ro_{OUTN}/2",
-    "D": "DC gain A0 \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2/2",
-    "E": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{OUTN}/4",
-    "F": "DC gain A0 \u2248 2\u00b7gm_{IN}\u00b7ro_{OUTN}",
-    "G": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{IN}/2",
-    "H": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{OUTN}",
-    "I": "DC gain A0 \u2248 gm_{IN}\u00b7ro_{OUTN}/2",
-    "J": "DC gain A0 \u2248 gm_{OUTN}\u00b7ro_{OUTN}/2"
+    "A": "|A0| \u2248 ((gm_{M1} || gm_{M2})/2)\u00b7(ro_{M2} || ro_{Mp1})",
+    "B": "|A0| \u2248 ((gm_{M1} + gm_{M2})/4)\u00b7(ro_{M2} || ro_{Mp1})",
+    "C": "|A0| \u2248 ((gm_{X1} + gm_{M2})/2)\u00b7(ro_{M2} || ro_{Mp1})",
+    "D": "|A0| \u2248 ((gm_{M1} + gm_{M2}))\u00b7(ro_{M2} || ro_{Mp1})",
+    "E": "|A0| \u2248 ((gm_{M1} + gm_{M2})/2)\u00b7(ro_{Mp1} || ro_{Mp1})",
+    "F": "|A0| \u2248 ((gm_{M1} + gm_{M2})/2)\u00b7(ro_{X2} || ro_{Mp1})",
+    "G": "|A0| \u2248 ((gm_{M1} + gm_{M2})/2)\u00b7(ro_{M2} || ro_{Mp1})",
+    "H": "|A0| \u2248 (((gm_{M1} + gm_{M2})/2)\u00b7(ro_{M2} || ro_{Mp1}))\u00b2",
+    "I": "|A0| \u2248 \u221a(((gm_{M1} + gm_{M2})/2)\u00b7(ro_{M2} || ro_{Mp1}))",
+    "J": "|A0| \u2248 4\u00b7(((gm_{M1} + gm_{M2})/2)\u00b7(ro_{M2} || ro_{Mp1}))"
   },
   "track": "analysis",
-  "aspect": "gain_dc"
+  "aspect": "gain_dc",
+  "template_role_map": {}
 }

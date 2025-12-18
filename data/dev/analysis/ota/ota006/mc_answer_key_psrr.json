@@ -1,19 +1,20 @@
 {
   "question_id": "ota006_psrr_mc",
-  "correct_answer": "J",
-  "answer_text": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2",
+  "correct_answer": "I",
+  "answer_text": "PSRR+ \u2248 ((gm_{M7}+gm_{M8})/2)\u00b7((ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}))",
   "choices": {
-    "A": "PSRR+ \u2248 (gm_{OUTN}\u00b7ro_{OUTN})\u00b2",
-    "B": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2 + 1",
-    "C": "PSRR+ \u2248 (ro_{OUTN})\u00b2",
-    "D": "PSRR+ \u2248 gm_{IN}\u00b7ro_{OUTN}",
-    "E": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2/2",
-    "F": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b3",
-    "G": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})",
-    "H": "PSRR+ \u2248 \u221a(gm_{IN}\u00b7ro_{OUTN})",
-    "I": "PSRR+ \u2248 (gm_{IN})\u00b2\u00b7ro_{OUTN}",
-    "J": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2"
+    "A": "PSRR+ \u2248 2\u00b7(((gm_{M7}+gm_{M8})/2)\u00b7((ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2})))",
+    "B": "PSRR+ \u2248 ((gm_{M7}+gm_{M8})/2)\u00b7((ro_{X2}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}))",
+    "C": "PSRR+ \u2248 ((gm_{X3}+gm_{M8})/2)\u00b7((ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}))",
+    "D": "PSRR+ \u2248 (((gm_{M7}+gm_{M8})/2)\u00b7((ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2})))/4",
+    "E": "PSRR+ \u2248 ((gm_{X1}+gm_{M8})/2)\u00b7((ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}))",
+    "F": "PSRR+ \u2248 ((gm_{X2}+gm_{M8})/2)\u00b7((ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}))",
+    "G": "PSRR+ \u2248 ((gm_{M7}+gm_{M8})/2)\u00b7((ro_{X3}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}))",
+    "H": "PSRR+ \u2248 ((gm_{M7}+gm_{M8})/2)\u00b7((ro_{M1}+ro_{X2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}))",
+    "I": "PSRR+ \u2248 ((gm_{M7}+gm_{M8})/2)\u00b7((ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}))",
+    "J": "PSRR+ \u2248 ((gm_{M7}+gm_{M8})/2)\u00b7((ro_{M1}+ro_{X1}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}))"
   },
   "track": "analysis",
-  "aspect": "psrr"
+  "aspect": "psrr",
+  "template_role_map": {}
 }

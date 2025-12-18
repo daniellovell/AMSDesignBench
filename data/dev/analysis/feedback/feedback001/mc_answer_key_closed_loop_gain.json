@@ -1,19 +1,20 @@
 {
   "question_id": "feedback001_closed_loop_gain_mc",
   "correct_answer": "C",
-  "answer_text": "Vout/Iin = -R1",
+  "answer_text": "Vout/Iin = R1",
   "choices": {
-    "A": "Vout/Iin = -2\u00b7R1",
-    "B": "Vout/Iin = -R1/2",
-    "C": "Vout/Iin = -R1",
-    "D": "Vout/Iin = -\u221aR1",
-    "E": "Vout/Iin = -R1\u00b2",
-    "F": "Vout/Iin = -1/R1",
-    "G": "Vout/Iin = +R1",
-    "H": "Vout/Iin = R1",
-    "I": "Vout/Iin = +R1/2",
-    "J": "Vout/Iin = -R1/4"
+    "A": "Vout/Iin = R1/2",
+    "B": "Vout/Iin = 1/R1",
+    "C": "Vout/Iin = R1",
+    "D": "Vout/Iin = \u221aR1",
+    "E": "Vout/Iin = R1/4",
+    "F": "Vout/Iin = 2\u00b7R1",
+    "G": "Vout/Iin = +R1/2",
+    "H": "Vout/Iin = 4\u00b7R1",
+    "I": "Vout/Iin = +R1",
+    "J": "Vout/Iin = R1\u00b2"
   },
   "track": "analysis",
-  "aspect": "closed_loop_gain"
+  "aspect": "closed_loop_gain",
+  "template_role_map": {}
 }

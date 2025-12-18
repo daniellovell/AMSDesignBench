@@ -1,2 +1,2 @@
-relation_target: "DC Gain ≈ gm * ro / 2 for folded cascode with current mirror load"
+relation_target: "|A0| ≈ ((gm_M1+gm_M2)/2)·(((ro_M7+ro_M5+gm_M7·ro_M7·ro_M5))||((ro_M8+ro_M9+gm_M8·ro_M8·ro_M9)))"
 {path:_ota_rubric_template.yaml}

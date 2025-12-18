@@ -15,5 +15,6 @@
     "J": "Current mirror is missing a device. Fix: add cascode MOSFET."
   },
   "track": "debugging",
-  "aspect": "device_swap"
+  "aspect": "device_swap",
+  "template_role_map": {}
 }

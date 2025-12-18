@@ -15,5 +15,6 @@
     "J": "M1 width/length ratio is incorrect. Fix: adjust W/L to match current requirement."
   },
   "track": "debugging",
-  "aspect": "device_swap"
+  "aspect": "device_swap",
+  "template_role_map": {}
 }

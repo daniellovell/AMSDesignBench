@@ -15,5 +15,6 @@
     "J": "The circuit has positive feedback instead of negative feedback. Fix: swap opamp inputs."
   },
   "track": "debugging",
-  "aspect": "feedback_polarity"
+  "aspect": "feedback_polarity",
+  "template_role_map": {}
 }

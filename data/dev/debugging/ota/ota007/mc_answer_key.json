@@ -15,5 +15,6 @@
     "J": "M5 is incorrectly typed as PMOS. Fix: change to NMOS."
   },
   "track": "debugging",
-  "aspect": "device_swap"
+  "aspect": "device_swap",
+  "template_role_map": {}
 }

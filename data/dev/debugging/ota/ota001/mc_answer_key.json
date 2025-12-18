@@ -15,5 +15,6 @@
     "J": "Differential pair devices are swapped. Fix: exchange drain connections."
   },
   "track": "debugging",
-  "aspect": "device_swap"
+  "aspect": "device_swap",
+  "template_role_map": {}
 }

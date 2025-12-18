@@ -13,7 +13,8 @@ Scoring: Compute `overall` as the weighted sum: 0.1*scores.topology + 0.6*scores
 
 ### key_relation
 - Target: {relation_target}.
-- Acceptable equivalents: {relation_equivalents}.
+- Acceptable equivalents:
+{relation_equivalents}
 
 ### device_specificity
 - Target: Use device-specific symbols (e.g., gm_Mi, ro_Mj) where applicable.

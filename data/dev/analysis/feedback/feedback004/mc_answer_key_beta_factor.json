@@ -1,19 +1,20 @@
 {
   "question_id": "feedback004_beta_factor_mc",
-  "correct_answer": "G",
-  "answer_text": "\u03b2 = R1/(R1+R2)",
+  "correct_answer": "J",
+  "answer_text": "\u03b2 = R2/(R1+R2)",
   "choices": {
-    "A": "\u03b2 = R2/R1",
-    "B": "\u03b2 = (R1+R2)/R1",
-    "C": "\u03b2 = 1/R1",
-    "D": "\u03b2 = R2/(R1+R2)",
-    "E": "\u03b2 = 2R1/(R1+R2)",
-    "F": "\u03b2 = R1/R2",
-    "G": "\u03b2 = R1/(R1+R2)",
-    "H": "\u03b2 = 0",
-    "I": "\u03b2 = R1",
-    "J": "\u03b2 = 1/(R1+R2)"
+    "A": "\u03b2 = R1/R2",
+    "B": "\u03b2 = R1/(R1+R1)",
+    "C": "\u03b2 = R2/R1",
+    "D": "\u03b2 = R1",
+    "E": "\u03b2 = 0",
+    "F": "\u03b2 = 1/R1",
+    "G": "\u03b2 = (R1+R2)/R1",
+    "H": "\u03b2 = 1/(R1+R2)",
+    "I": "\u03b2 = 2R1/(R1+R2)",
+    "J": "\u03b2 = R2/(R1+R2)"
   },
   "track": "analysis",
-  "aspect": "beta_factor"
+  "aspect": "beta_factor",
+  "template_role_map": {}
 }

@@ -1,19 +1,20 @@
 {
   "question_id": "ota004_swing_mc",
-  "correct_answer": "A",
+  "correct_answer": "E",
   "answer_text": "Low-side: Vov_{N1}; High-side: VDD - Vov_{P1}",
   "choices": {
-    "A": "Low-side: Vov_{N1}; High-side: VDD - Vov_{P1}",
-    "B": "Low-side: Vov_{N1}/2; High-side: VDD - Vov_{P1}",
-    "C": "Low-side: \u221a(Vov_{N1}); High-side: VDD - Vov_{P1}",
-    "D": "Low-side: Vov_{N1}; High-side: VDD + Vov_{P1}",
-    "E": "Low-side: Vov_{N1}\u00b2; High-side: VDD - Vov_{P1}",
-    "F": "Low-side: Vov_{N1}; High-side: VDD - Vov_{P1} - Vov_{P1}",
-    "G": "Low-side: Vov_{N1}\u00b7Vov_{N1}; High-side: VDD - Vov_{P1}",
-    "H": "Low-side: VDD - Vov_{P1}; High-side: Vov_{N1}",
-    "I": "Low-side: 2\u00b7Vov_{N1}; High-side: VDD - Vov_{P1}",
+    "A": "Low-side: Vov_{N1}; High-side: VDD - Vov_{P1} - Vov_{P1}",
+    "B": "Low-side: \u221a(Vov_{N1}); High-side: VDD - Vov_{P1}",
+    "C": "Low-side: VDD - Vov_{P1}; High-side: Vov_{N1}",
+    "D": "Low-side: Vov_{N1}\u00b7Vov_{N1}; High-side: VDD - Vov_{P1}",
+    "E": "Low-side: Vov_{N1}; High-side: VDD - Vov_{P1}",
+    "F": "Low-side: Vov_{N1}/2; High-side: VDD - Vov_{P1}",
+    "G": "Low-side: Vov_{N1}; High-side: VDD + Vov_{P1}",
+    "H": "Low-side: 2\u00b7Vov_{N1}; High-side: VDD - Vov_{P1}",
+    "I": "Low-side: Vov_{N1}\u00b2; High-side: VDD - Vov_{P1}",
     "J": "Low-side: Vov_{N1} + Vov_{N1}; High-side: VDD - Vov_{P1}"
   },
   "track": "analysis",
-  "aspect": "swing"
+  "aspect": "swing",
+  "template_role_map": {}
 }

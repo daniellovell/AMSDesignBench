@@ -1,19 +1,20 @@
 {
   "question_id": "ota009_psrr_mc",
-  "correct_answer": "G",
-  "answer_text": "PSRR+ \u2248 gm_{IN}\u00b7ro_{OUTN}",
+  "correct_answer": "B",
+  "answer_text": "PSRR+ \u2248 gm_{M1}\u00b7((ro_{M3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4}))",
   "choices": {
-    "A": "PSRR+ \u2248 2\u00b7gm_{IN}\u00b7ro_{OUTN}",
-    "B": "PSRR+ \u2248 gm_{IN}\u00b7ro_{IN}",
-    "C": "PSRR+ \u2248 ro_{OUTN}",
-    "D": "PSRR+ \u2248 gm_{X1}\u00b7ro_{OUTN}",
-    "E": "PSRR+ \u2248 (gm_{IN})\u00b2\u00b7ro_{OUTN}",
-    "F": "PSRR+ \u2248 gm_{OUTN}\u00b7ro_{OUTN}",
-    "G": "PSRR+ \u2248 gm_{IN}\u00b7ro_{OUTN}",
-    "H": "PSRR+ \u2248 gm_{IN}/ro_{OUTN}",
-    "I": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2",
-    "J": "PSRR+ \u2248 gm_{IN}\u00b7ro_{X2}"
+    "A": "PSRR+ \u2248 gm_{M1}\u00b7((ro_{X3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4}))",
+    "B": "PSRR+ \u2248 gm_{M1}\u00b7((ro_{M3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4}))",
+    "C": "PSRR+ \u2248 (gm_{M1}\u00b7((ro_{M3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4})))/4",
+    "D": "PSRR+ \u2248 gm_{M1}\u00b7((ro_{X2}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4}))",
+    "E": "PSRR+ \u2248 \u221a(gm_{M1}\u00b7((ro_{M3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4})))",
+    "F": "PSRR+ \u2248 gm_{M1}\u00b7((ro_{M3}+ro_{X2}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4}))",
+    "G": "PSRR+ \u2248 gm_{X3}\u00b7((ro_{M3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4}))",
+    "H": "PSRR+ \u2248 gm_{X1}\u00b7((ro_{M3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4}))",
+    "I": "PSRR+ \u2248 gm_{X2}\u00b7((ro_{M3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4}))",
+    "J": "PSRR+ \u2248 (gm_{M1}\u00b7((ro_{M3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4})))/2"
   },
   "track": "analysis",
-  "aspect": "psrr"
+  "aspect": "psrr",
+  "template_role_map": {}
 }

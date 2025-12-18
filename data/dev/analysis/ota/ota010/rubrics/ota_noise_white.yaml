@@ -1,2 +1,2 @@
-relation_target: "i²n,out ≈ (4kTγ)(gm_M1 + gm_M2 + gm_M5 + gm_M6)"
+relation_target: "S_v,od ≈ ((ro_M6+ro_M4+gm_M6·ro_M6·ro_M4) || (ro_M10+ro_M11+gm_M10·ro_M10·ro_M11))²·4kT·(γ_M6·gm_M6+γ_M4·gm_M4+γ_M10·gm_M10+γ_M11·gm_M11) + ((ro_M7+ro_M5+gm_M7·ro_M7·ro_M5) || (ro_M8+ro_M9+gm_M8·ro_M8·ro_M9))²·4kT·(γ_M7·gm_M7+γ_M5·gm_M5+γ_M8·gm_M8+γ_M9·gm_M9)"
 {path:_ota_rubric_template.yaml}

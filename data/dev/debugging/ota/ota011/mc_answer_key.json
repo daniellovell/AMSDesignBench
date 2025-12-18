@@ -15,5 +15,6 @@
     "J": "M7 has incorrect body connection. Fix: tie body to opposite rail."
   },
   "track": "debugging",
-  "aspect": "device_swap"
+  "aspect": "device_swap",
+  "template_role_map": {}
 }

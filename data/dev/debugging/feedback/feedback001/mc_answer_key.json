@@ -15,5 +15,6 @@
     "J": "Op-amp bandwidth is insufficient. Fix: select faster op-amp."
   },
   "track": "debugging",
-  "aspect": "feedback_polarity"
+  "aspect": "feedback_polarity",
+  "template_role_map": {}
 }

@@ -1,19 +1,20 @@
 {
   "question_id": "ota007_noise_white_mc",
-  "correct_answer": "F",
-  "answer_text": "Vn,out\u00b2 \u2248 8kT/(3gm_{IN})",
+  "correct_answer": "C",
+  "answer_text": "S_v,out \u2248 (ro_{M2}||ro_{M1})\u00b2\u00b74kT\u00b7(\u03b3_{M2}\u00b7gm_{M2}+\u03b3_{M1}\u00b7gm_{M1})",
   "choices": {
-    "A": "Vn,out\u00b2 \u2248 4kT/(gm_{IN}\u00b7(ro_{OUTN} || ro_{OUTP}))",
-    "B": "Vn,out\u00b2 \u2248 \u221a(8kT/(3gm_{IN}))",
-    "C": "Vn,out\u00b2 \u2248 8kT/(3gm_{OUTN})",
-    "D": "Vn,out\u00b2 \u2248 8kT/(gm_{IN}\u00b7\u221a3)",
-    "E": "Vn,out\u00b2 \u2248 8kT/(3gm_{IN}\u00b2)",
-    "F": "Vn,out\u00b2 \u2248 8kT/(3gm_{IN})",
-    "G": "Vn,out\u00b2 \u2248 8kT/(3gm_{X1})",
-    "H": "Vn,out\u00b2 \u2248 16kT/(3gm_{IN})",
-    "I": "Vn,out\u00b2 \u2248 8kT\u00b7gm_{IN}",
-    "J": "Vn,out\u00b2 \u2248 8kT/(gm_{IN})"
+    "A": "S_v,out \u2248 (ro_{M2}||ro_{M1})\u00b2\u00b72kT\u00b7(\u03b3_{M2}\u00b7gm_{M2}+\u03b3_{M1}\u00b7gm_{M1})",
+    "B": "S_v,out \u2248 (ro_{M2}||ro_{M1})\u00b3\u00b74kT\u00b7(\u03b3_{M2}\u00b7gm_{M2}+\u03b3_{M1}\u00b7gm_{M1})",
+    "C": "S_v,out \u2248 (ro_{M2}||ro_{M1})\u00b2\u00b74kT\u00b7(\u03b3_{M2}\u00b7gm_{M2}+\u03b3_{M1}\u00b7gm_{M1})",
+    "D": "S_v,out \u2248 (ro_{M2}||ro_{M1})\u00b2\u00b74kT\u00b7(\u03b3_{X2}\u00b7gm_{X2}+\u03b3_{M1}\u00b7gm_{M1})",
+    "E": "S_v,out \u2248 (ro_{M2}||ro_{M1})\u00b2\u00b78kT\u00b7(\u03b3_{M2}\u00b7gm_{M2}+\u03b3_{M1}\u00b7gm_{M1})",
+    "F": "S_v,out \u2248 (ro_{M2}||ro_{M1})\u00b2\u00b74kT\u00b7(\u03b3_{X3}\u00b7gm_{X3}+\u03b3_{M1}\u00b7gm_{M1})",
+    "G": "S_v,out \u2248 (ro_{M2}||ro_{M1})\u00b2\u00b74kT\u00b7(\u03b3_{M2}\u00b7gm_{X1}+\u03b3_{M1}\u00b7gm_{M1})",
+    "H": "S_v,out \u2248 (ro_{M2}||ro_{M1})\u00b2\u00b74kT\u00b7(\u03b3_{M2}\u00b7gm_{M1}+\u03b3_{M1}\u00b7gm_{M1})",
+    "I": "S_v,out \u2248 (ro_{X2}||ro_{M1})\u00b2\u00b74kT\u00b7(\u03b3_{M2}\u00b7gm_{M2}+\u03b3_{M1}\u00b7gm_{M1})",
+    "J": "S_v,out \u2248 (ro_{M2}||ro_{M1})\u00b2\u00b74kT\u00b7(\u03b3_{X3}\u00b7gm_{M2}+\u03b3_{M1}\u00b7gm_{M1})"
   },
   "track": "analysis",
-  "aspect": "noise_white"
+  "aspect": "noise_white",
+  "template_role_map": {}
 }

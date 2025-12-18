@@ -1,2 +1,2 @@
-relation_target: "DC Gain ≈ (gm * ro)² / 2 for NMOS cascode with PMOS cascode load"
+relation_target: "|A0| ≈ gm_M1·((ro_M2+ro_M1+gm_M2·ro_M2·ro_M1)||(ro_M3+ro_M4+gm_M3·ro_M3·ro_M4))"
 {path:_ota_rubric_template.yaml}

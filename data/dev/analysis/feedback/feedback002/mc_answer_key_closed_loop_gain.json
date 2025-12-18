@@ -1,19 +1,20 @@
 {
   "question_id": "feedback002_closed_loop_gain_mc",
-  "correct_answer": "G",
-  "answer_text": "Vout/Iin = -1/(s*C1)",
+  "correct_answer": "E",
+  "answer_text": "Vout/Iin = 1/(s*C1)",
   "choices": {
-    "A": "Vout/Iin = -1/(s*C1) - 1",
-    "B": "Vout/Iin = -1/(s*C1)\u00b2",
-    "C": "Vout/Iin = -1/(s*\u221aC1)",
-    "D": "Vout/Iin = -1/(s*2*C1)",
-    "E": "Vout/Iin = -1/(s*C1) + 1",
-    "F": "Vout/Iin = +1/(s*C1)",
-    "G": "Vout/Iin = -1/(s*C1)",
-    "H": "Vout/Iin = -s*C1",
-    "I": "Vout/Iin = -1/(s*(C1/2))",
-    "J": "Vout/Iin = -1/(C1)"
+    "A": "Vout/Iin = 1/(C1)",
+    "B": "Vout/Iin = +1/(s*C1)",
+    "C": "Vout/Iin = 1/(s*C1) + 1",
+    "D": "Vout/Iin = 1/(s*C1)\u00b2",
+    "E": "Vout/Iin = 1/(s*C1)",
+    "F": "Vout/Iin = s*C1",
+    "G": "Vout/Iin = 1/(s*C1) - 1",
+    "H": "Vout/Iin = 1/(s*\u221aC1)",
+    "I": "Vout/Iin = 1/(s*(C1/2))",
+    "J": "Vout/Iin = 1/(s*2*C1)"
   },
   "track": "analysis",
-  "aspect": "closed_loop_gain"
+  "aspect": "closed_loop_gain",
+  "template_role_map": {}
 }

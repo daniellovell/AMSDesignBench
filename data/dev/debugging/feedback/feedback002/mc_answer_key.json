@@ -15,5 +15,6 @@
     "J": "Resistor values are incorrect. Fix: recalculate R1 based on desired gain."
   },
   "track": "debugging",
-  "aspect": "feedback_polarity"
+  "aspect": "feedback_polarity",
+  "template_role_map": {}
 }

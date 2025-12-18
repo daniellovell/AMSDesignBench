@@ -1,19 +1,20 @@
 {
   "question_id": "feedback001_loop_gain_mc",
-  "correct_answer": "C",
+  "correct_answer": "E",
   "answer_text": "T = A0",
   "choices": {
-    "A": "T = 1/(1+A0)",
-    "B": "T = A0\u00b2",
-    "C": "T = A0",
-    "D": "T = A0/(1+A0\u00b2)",
-    "E": "T = A0/2",
-    "F": "T = 2A0",
-    "G": "T = A0/(2+A0)",
-    "H": "T = \u221a(A0)",
-    "I": "T = A0/(1+2A0)",
-    "J": "T = A0/(1+A0)"
+    "A": "T = A0/(1+2A0)",
+    "B": "T = A0/2",
+    "C": "T = A0/(2+A0)",
+    "D": "T = A0/(1+A0)",
+    "E": "T = A0",
+    "F": "T = A0/(1+A0\u00b2)",
+    "G": "T = 2A0",
+    "H": "T = 1/(1+A0)",
+    "I": "T = A0\u00b2",
+    "J": "T = \u221a(A0)"
   },
   "track": "analysis",
-  "aspect": "loop_gain"
+  "aspect": "loop_gain",
+  "template_role_map": {}
 }

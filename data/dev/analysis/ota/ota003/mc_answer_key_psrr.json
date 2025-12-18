@@ -1,19 +1,20 @@
 {
   "question_id": "ota003_psrr_mc",
-  "correct_answer": "D",
-  "answer_text": "PSRR+ \u2248 gm_{IN}\u00b7ro_{OUTN}",
+  "correct_answer": "B",
+  "answer_text": "PSRR+ \u2248 ((gm_{M1}+gm_{M2})/2)\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7ro_{M6}",
   "choices": {
-    "A": "PSRR+ \u2248 gm_{IN}\u00b7ro_{X2}",
-    "B": "PSRR+ \u2248 gm_{IN}/ro_{OUTN}",
-    "C": "PSRR+ \u2248 gm_{OUTN}\u00b7ro_{OUTN}",
-    "D": "PSRR+ \u2248 gm_{IN}\u00b7ro_{OUTN}",
-    "E": "PSRR+ \u2248 (gm_{IN})\u00b2\u00b7ro_{OUTN}",
-    "F": "PSRR+ \u2248 gm_{X1}\u00b7ro_{OUTN}",
-    "G": "PSRR+ \u2248 gm_{IN}\u00b7ro_{IN}",
-    "H": "PSRR+ \u2248 ro_{OUTN}",
-    "I": "PSRR+ \u2248 2\u00b7gm_{IN}\u00b7ro_{OUTN}",
-    "J": "PSRR+ \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b2"
+    "A": "PSRR+ \u2248 ((gm_{X2}+gm_{M2})/2)\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7ro_{M6}",
+    "B": "PSRR+ \u2248 ((gm_{M1}+gm_{M2})/2)\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7ro_{M6}",
+    "C": "PSRR+ \u2248 ((gm_{M1}+gm_{M2})/2)\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7ro_{X1}",
+    "D": "PSRR+ \u2248 (((gm_{M1}+gm_{M2})/2)\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7ro_{M6})/2",
+    "E": "PSRR+ \u2248 ((gm_{X3}+gm_{M2})/2)\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7ro_{M6}",
+    "F": "PSRR+ \u2248 4\u00b7(((gm_{M1}+gm_{M2})/2)\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7ro_{M6})",
+    "G": "PSRR+ \u2248 (((gm_{M1}+gm_{M2})/2)\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7ro_{M6})/4",
+    "H": "PSRR+ \u2248 ((gm_{M1}+gm_{X1})/2)\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7ro_{M6}",
+    "I": "PSRR+ \u2248 ((gm_{M1}+gm_{X2})/2)\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7ro_{M6}",
+    "J": "PSRR+ \u2248 ((gm_{M1}+gm_{M2})/2)\u00b7[(W/L)_{M6}/(W/L)_{M3} - ((W/L)_{M5}/(W/L)_{M3})\u00b7((W/L)_{M8}/(W/L)_{M7})]\u00b7ro_{X2}"
   },
   "track": "analysis",
-  "aspect": "psrr"
+  "aspect": "psrr",
+  "template_role_map": {}
 }

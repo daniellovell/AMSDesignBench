@@ -1,19 +1,20 @@
 {
   "question_id": "ota001_rout_mc",
-  "correct_answer": "J",
-  "answer_text": "rout \u2248 ro_{OUTN}",
+  "correct_answer": "H",
+  "answer_text": "rout \u2248 ro_{M2} || ro_{Mp1}",
   "choices": {
-    "A": "rout \u2248 (gm_{IN}\u00b7ro_{OUTN})\u00b7ro_{OUTN}",
-    "B": "rout \u2248 ro_{IN}",
-    "C": "rout \u2248 ro_{OUTP}",
-    "D": "rout \u2248 2\u00b7ro_{OUTN}",
-    "E": "rout \u2248 ro_{OUTN} + ro_{OUTP}",
-    "F": "rout \u2248 gm_{IN}\u00b7ro_{OUTN}",
-    "G": "rout \u2248 ro_{OUTN}\u00b7ro_{OUTP}",
-    "H": "rout \u2248 ro_{OUTN}/2",
-    "I": "rout \u2248 ro_{X1}",
-    "J": "rout \u2248 ro_{OUTN}"
+    "A": "rout \u2248 ro_{M2} || ro_{X3}",
+    "B": "rout \u2248 \u221a(ro_{M2} || ro_{Mp1})",
+    "C": "rout \u2248 (ro_{M2} || ro_{Mp1})\u00b2",
+    "D": "rout \u2248 (ro_{M2} || ro_{Mp1})/2",
+    "E": "rout \u2248 ro_{M2} || ro_{X1}",
+    "F": "rout \u2248 ro_{M2} + ro_{Mp1}",
+    "G": "rout \u2248 2\u00b7(ro_{M2} || ro_{Mp1})",
+    "H": "rout \u2248 ro_{M2} || ro_{Mp1}",
+    "I": "rout \u2248 (ro_{M2} || ro_{Mp1})/4",
+    "J": "rout \u2248 ro_{X3} || ro_{Mp1}"
   },
   "track": "analysis",
-  "aspect": "rout"
+  "aspect": "rout",
+  "template_role_map": {}
 }
