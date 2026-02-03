@@ -1,0 +1,16 @@
+You are an expert analog IC designer.
+A user says their OTA is broken, from the {modality} artifact, diagnose the catastrophic structural failure.
+
+**INSTRUCTIONS:** Select the single best answer from the multiple choice options below.
+
+Hard constraints:
+- Assume all required bias sources exist and are correctly driven UNLESS the artifact explicitly shows an unconnected bias port or a bias port tied to an illegal rail (e.g., NMOS gate bias to VDD, PMOS gate bias to GND). Do NOT claim "missing bias" if a motif's bias/gate port is connected to any net typed as "bias".
+
+**MULTIPLE CHOICE OPTIONS:**
+
+{choices}
+
+**ANSWER:** Provide only the letter (A-J) of the correct answer.
+
+Return markdown only. NEVER use LaTeX or MathJax formatting in your response.
+

@@ -1,0 +1,20 @@
+{
+  "question_id": "ota008_noise_white_mc",
+  "correct_answer": "I",
+  "answer_text": "S_v,out \u2248 ((ro_{M2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1})||(ro_{M3}+ro_{M4}+gm_{M3}\u00b7ro_{M3}\u00b7ro_{M4}))\u00b2\u00b74kT\u00b7(\u03b3_{M1}\u00b7gm_{M1}+\u03b3_{M2}\u00b7gm_{M2}+\u03b3_{M3}\u00b7gm_{M3}+\u03b3_{M4}\u00b7gm_{M4})",
+  "choices": {
+    "A": "S_v,out \u2248 ((ro_{M2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1})||(ro_{M3}+ro_{M4}+gm_{M3}\u00b7ro_{M3}\u00b7ro_{M4}))\u00b2\u00b74kT\u00b7(\u03b3_{X1}\u00b7gm_{X1}+\u03b3_{M2}\u00b7gm_{M2}+\u03b3_{M3}\u00b7gm_{M3}+\u03b3_{M4}\u00b7gm_{M4})",
+    "B": "S_v,out \u2248 ((ro_{M2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1})||(ro_{M3}+ro_{M4}+gm_{M3}\u00b7ro_{M3}\u00b7ro_{M4}))\u00b2\u00b74kT\u00b7(\u03b3_{X3}\u00b7gm_{M1}+\u03b3_{M2}\u00b7gm_{M2}+\u03b3_{M3}\u00b7gm_{M3}+\u03b3_{M4}\u00b7gm_{M4})",
+    "C": "S_v,out \u2248 ((ro_{M2}+ro_{M1}+gm_{X1}\u00b7ro_{M2}\u00b7ro_{M1})||(ro_{M3}+ro_{M4}+gm_{M3}\u00b7ro_{M3}\u00b7ro_{M4}))\u00b2\u00b74kT\u00b7(\u03b3_{M1}\u00b7gm_{M1}+\u03b3_{M2}\u00b7gm_{M2}+\u03b3_{M3}\u00b7gm_{M3}+\u03b3_{M4}\u00b7gm_{M4})",
+    "D": "S_v,out \u2248 ((ro_{M2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1})||(ro_{M3}+ro_{M4}+gm_{M3}\u00b7ro_{M3}\u00b7ro_{M4}))\u00b2\u00b74kT\u00b7(\u03b3_{X2}\u00b7gm_{X2}+\u03b3_{M2}\u00b7gm_{M2}+\u03b3_{M3}\u00b7gm_{M3}+\u03b3_{M4}\u00b7gm_{M4})",
+    "E": "S_v,out \u2248 ((ro_{X2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1})||(ro_{M3}+ro_{M4}+gm_{M3}\u00b7ro_{M3}\u00b7ro_{M4}))\u00b2\u00b74kT\u00b7(\u03b3_{M1}\u00b7gm_{M1}+\u03b3_{M2}\u00b7gm_{M2}+\u03b3_{M3}\u00b7gm_{M3}+\u03b3_{M4}\u00b7gm_{M4})",
+    "F": "S_v,out \u2248 ((ro_{M2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1})||(ro_{M3}+ro_{M4}+gm_{M3}\u00b7ro_{M3}\u00b7ro_{M4}))\u00b2\u00b74kT\u00b7(\u03b3_{M1}\u00b7gm_{M2}+\u03b3_{M2}\u00b7gm_{M2}+\u03b3_{M3}\u00b7gm_{M3}+\u03b3_{M4}\u00b7gm_{M4})",
+    "G": "S_v,out \u2248 ((ro_{M2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1})||(ro_{M3}+ro_{M4}+gm_{M3}\u00b7ro_{M3}\u00b7ro_{M4}))\u00b2\u00b74kT\u00b7(\u03b3_{M2}\u00b7gm_{M1}+\u03b3_{M2}\u00b7gm_{M2}+\u03b3_{M3}\u00b7gm_{M3}+\u03b3_{M4}\u00b7gm_{M4})",
+    "H": "S_v,out \u2248 ((ro_{M2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1})||(ro_{M3}+ro_{M4}+gm_{M3}\u00b7ro_{M3}\u00b7ro_{M4}))\u00b3\u00b74kT\u00b7(\u03b3_{M1}\u00b7gm_{M1}+\u03b3_{M2}\u00b7gm_{M2}+\u03b3_{M3}\u00b7gm_{M3}+\u03b3_{M4}\u00b7gm_{M4})",
+    "I": "S_v,out \u2248 ((ro_{M2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1})||(ro_{M3}+ro_{M4}+gm_{M3}\u00b7ro_{M3}\u00b7ro_{M4}))\u00b2\u00b74kT\u00b7(\u03b3_{M1}\u00b7gm_{M1}+\u03b3_{M2}\u00b7gm_{M2}+\u03b3_{M3}\u00b7gm_{M3}+\u03b3_{M4}\u00b7gm_{M4})",
+    "J": "S_v,out \u2248 ((ro_{M2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1})||(ro_{M3}+ro_{M4}+gm_{M3}\u00b7ro_{M3}\u00b7ro_{M4}))\u00b2\u00b72kT\u00b7(\u03b3_{M1}\u00b7gm_{M1}+\u03b3_{M2}\u00b7gm_{M2}+\u03b3_{M3}\u00b7gm_{M3}+\u03b3_{M4}\u00b7gm_{M4})"
+  },
+  "track": "analysis",
+  "aspect": "noise_white",
+  "template_role_map": {}
+}

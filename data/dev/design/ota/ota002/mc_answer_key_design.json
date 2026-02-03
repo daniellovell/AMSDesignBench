@@ -1,0 +1,20 @@
+{
+  "question_id": "ota002_design_verification",
+  "correct_answer": "A",
+  "answer_text": "Design verification MC - requires ngspice simulation to determine actual failing specs",
+  "choices": {
+    "A": "Phase margin is insufficient for stability",
+    "B": "Cutoff frequency is outside the tolerance range",
+    "C": "Unity-gain frequency (GBW) is too low",
+    "D": "Power consumption exceeds the maximum limit",
+    "E": "DC gain is below the minimum requirement",
+    "F": "Passband gain does not meet the target",
+    "G": "Quality factor Q is too low",
+    "H": "The design meets all specifications",
+    "I": "Center frequency deviates from target by >10%",
+    "J": "Stopband attenuation is insufficient"
+  },
+  "track": "design",
+  "family": "ota",
+  "note": "Design MC questions require runtime simulation - correct answer is determined dynamically"
+}

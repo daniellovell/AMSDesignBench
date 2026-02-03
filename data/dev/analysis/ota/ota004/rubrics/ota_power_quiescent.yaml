@@ -1,2 +1,10 @@
-relation_target: "Two-stage: Valid I_M9 + I_M5 (sum of both stages). Individual stage current also valid."
+relation_target: "P_q ≈ VDD·(I_D,M3 + I_D,M4 + I_D,M7)"
+relation_equivalents: |
+  - P_q ≈ VDD·(I_D,M5 + I_D,M7)
+  - P_q ≈ VDD·(I_D,M1 + I_D,M2 + I_D,M7)
+  - P_q ≈ VDD·(I_D,M5 + I_D,M6)
 {path:_ota_rubric_template.yaml}
+relation_equivalents: |
+  - P_q ≈ VDD·(I_D,M5 + I_D,M7)
+  - P_q ≈ VDD·(I_D,M1 + I_D,M2 + I_D,M7)
+  - P_q ≈ VDD·(I_D,M5 + I_D,M6)

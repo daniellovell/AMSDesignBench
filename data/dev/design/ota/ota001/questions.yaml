@@ -9,7 +9,7 @@ questions:
     topology: five_transistor_ota
     bench_version: 0.1.0
     aspect: structure
-- id: ota001_design_with_verification_spice_netlist
+- id: ota001_design_verification
   track: design
   modality: spice_netlist
   prompt_template: design_prompt.txt

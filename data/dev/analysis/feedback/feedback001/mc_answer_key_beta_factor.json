@@ -1,0 +1,20 @@
+{
+  "question_id": "feedback001_beta_factor_mc",
+  "correct_answer": "I",
+  "answer_text": "\u03b2 = 1",
+  "choices": {
+    "A": "\u03b2 = -1",
+    "B": "\u03b2 = 1/10",
+    "C": "\u03b2 = 0",
+    "D": "\u03b2 = -1/2",
+    "E": "\u03b2 = 4",
+    "F": "\u03b2 = -2",
+    "G": "\u03b2 = 1/2",
+    "H": "\u03b2 = 1/4",
+    "I": "\u03b2 = 1",
+    "J": "\u03b2 = 2"
+  },
+  "track": "analysis",
+  "aspect": "beta_factor",
+  "template_role_map": {}
+}

@@ -1,0 +1,13 @@
+You are an expert analog IC designer.
+From the {modality} artifact, answer the question about output-referred white noise for the given circuit.
+
+**INSTRUCTIONS:** Select the single best answer from the multiple choice options below.
+
+**MULTIPLE CHOICE OPTIONS:**
+
+{choices}
+
+**ANSWER:** Provide only the letter (A-J) of the correct answer.
+
+Return markdown only. NEVER use LaTeX or MathJax formatting in your response.
+

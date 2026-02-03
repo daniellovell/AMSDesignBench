@@ -1,0 +1,20 @@
+{
+  "question_id": "ota012_noise_white_mc",
+  "correct_answer": "F",
+  "answer_text": "S_v,out \u2248 (((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}))||((ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9})))\u00b2\u00b74kT\u00b7(\u03b3_{M7}\u00b7gm_{M7}+\u03b3_{M5}\u00b7gm_{M5}+\u03b3_{M8}\u00b7gm_{M8}+\u03b3_{M9}\u00b7gm_{M9})",
+  "choices": {
+    "A": "S_v,out \u2248 (((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}))||((ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9})))\u00b2\u00b74kT\u00b7(\u03b3_{X3}\u00b7gm_{M7}+\u03b3_{M5}\u00b7gm_{M5}+\u03b3_{M8}\u00b7gm_{M8}+\u03b3_{M9}\u00b7gm_{M9})",
+    "B": "S_v,out \u2248 (((ro_{M7}+ro_{M5}+gm_{X1}\u00b7ro_{M7}\u00b7ro_{M5}))||((ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9})))\u00b2\u00b74kT\u00b7(\u03b3_{M7}\u00b7gm_{M7}+\u03b3_{M5}\u00b7gm_{M5}+\u03b3_{M8}\u00b7gm_{M8}+\u03b3_{M9}\u00b7gm_{M9})",
+    "C": "S_v,out \u2248 (((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}))||((ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9})))\u00b3\u00b74kT\u00b7(\u03b3_{M7}\u00b7gm_{M7}+\u03b3_{M5}\u00b7gm_{M5}+\u03b3_{M8}\u00b7gm_{M8}+\u03b3_{M9}\u00b7gm_{M9})",
+    "D": "S_v,out \u2248 (((ro_{X2}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}))||((ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9})))\u00b2\u00b74kT\u00b7(\u03b3_{M7}\u00b7gm_{M7}+\u03b3_{M5}\u00b7gm_{M5}+\u03b3_{M8}\u00b7gm_{M8}+\u03b3_{M9}\u00b7gm_{M9})",
+    "E": "S_v,out \u2248 (((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}))||((ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9})))\u00b2\u00b74kT\u00b7(\u03b3_{X2}\u00b7gm_{X2}+\u03b3_{M5}\u00b7gm_{M5}+\u03b3_{M8}\u00b7gm_{M8}+\u03b3_{M9}\u00b7gm_{M9})",
+    "F": "S_v,out \u2248 (((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}))||((ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9})))\u00b2\u00b74kT\u00b7(\u03b3_{M7}\u00b7gm_{M7}+\u03b3_{M5}\u00b7gm_{M5}+\u03b3_{M8}\u00b7gm_{M8}+\u03b3_{M9}\u00b7gm_{M9})",
+    "G": "S_v,out \u2248 (((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}))||((ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9})))\u00b2\u00b72kT\u00b7(\u03b3_{M7}\u00b7gm_{M7}+\u03b3_{M5}\u00b7gm_{M5}+\u03b3_{M8}\u00b7gm_{M8}+\u03b3_{M9}\u00b7gm_{M9})",
+    "H": "S_v,out \u2248 (((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}))||((ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9})))\u00b2\u00b74kT\u00b7(\u03b3_{X3}\u00b7gm_{X3}+\u03b3_{M5}\u00b7gm_{M5}+\u03b3_{M8}\u00b7gm_{M8}+\u03b3_{M9}\u00b7gm_{M9})",
+    "I": "S_v,out \u2248 (((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}))||((ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9})))\u00b74kT\u00b7(\u03b3_{M7}\u00b7gm_{M7}+\u03b3_{M5}\u00b7gm_{M5}+\u03b3_{M8}\u00b7gm_{M8}+\u03b3_{M9}\u00b7gm_{M9})",
+    "J": "S_v,out \u2248 (((ro_{M7}+ro_{M5}+gm_{M7}\u00b7ro_{M7}\u00b7ro_{M5}))||((ro_{M8}+ro_{M9}+gm_{M8}\u00b7ro_{M8}\u00b7ro_{M9})))\u00b2\u00b74kT\u00b7(\u03b3_{X1}\u00b7gm_{X1}+\u03b3_{M5}\u00b7gm_{M5}+\u03b3_{M8}\u00b7gm_{M8}+\u03b3_{M9}\u00b7gm_{M9})"
+  },
+  "track": "analysis",
+  "aspect": "noise_white",
+  "template_role_map": {}
+}

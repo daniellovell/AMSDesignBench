@@ -1,5 +1,5 @@
 questions:
-- id: feedback004_design_inv
+- id: feedback004_design_verification_inv
   track: design
   modality: auto
   prompt_template: ../prompts/design_feedback.txt

@@ -1,5 +1,5 @@
 questions:
-- id: filter001_design
+- id: filter001_design_verification
   track: design
   modality: spice_netlist
   prompt_template: ../prompts/design_filter.txt

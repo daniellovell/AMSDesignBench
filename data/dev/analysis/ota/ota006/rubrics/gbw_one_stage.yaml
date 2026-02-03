@@ -1,2 +1,2 @@
-relation_target: "GBW ≈ gm/CL under single-pole unity-gain assumptions"
+relation_target: "GBW ≈ (gm_M7+gm_M8)/(4π·C1)"
 {path:_ota_rubric_template.yaml}

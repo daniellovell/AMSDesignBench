@@ -1,0 +1,20 @@
+{
+  "question_id": "ota005_swing_mc",
+  "correct_answer": "G",
+  "answer_text": "Low-side: Vov_{N1} + Vov_{N2} + Vov_{N3}; High-side: VDD - Vov_{P1} - Vov_{P2}",
+  "choices": {
+    "A": "Low-side: VDD - Vov_{P1} - Vov_{P2}; High-side: Vov_{N1} + Vov_{N2} + Vov_{N3}",
+    "B": "Low-side: Vov_{N2} + Vov_{N2}; High-side: VDD - Vov_{P1} - Vov_{P2}",
+    "C": "Low-side: Vov_{N1}\u00b7Vov_{N2}; High-side: VDD - Vov_{P1} - Vov_{P2}",
+    "D": "Low-side: Vov_{N1} - Vov_{N2}; High-side: VDD - Vov_{P1} - Vov_{P2}",
+    "E": "Low-side: Vov_{N1} + Vov_{N2}; High-side: VDD - Vov_{P1} - Vov_{P2}",
+    "F": "Low-side: Vov_{N1} + Vov_{N2} + Vov_{N3}; High-side: VDD - Vov_{P1} - Vov_{P1}",
+    "G": "Low-side: Vov_{N1} + Vov_{N2} + Vov_{N3}; High-side: VDD - Vov_{P1} - Vov_{P2}",
+    "H": "Low-side: Vov_{N1} + Vov_{N2} + Vov_{N3}; High-side: VDD - Vov_{P1}",
+    "I": "Low-side: Vov_{N1} + Vov_{N1}; High-side: VDD - Vov_{P1} - Vov_{P2}",
+    "J": "Low-side: Vov_{N1} + Vov_{N2} + Vov_{N3}; High-side: VDD + Vov_{P1} + Vov_{P2}"
+  },
+  "track": "analysis",
+  "aspect": "swing",
+  "template_role_map": {}
+}

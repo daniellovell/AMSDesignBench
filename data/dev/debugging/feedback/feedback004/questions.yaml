@@ -10,3 +10,16 @@ questions:
     topology: inverting_voltage_amp
     bench_version: 0.1.0
     aspect: feedback_polarity
+    prompt_variant: short_form
+- id: feedback004_debug_polarity_mc
+  track: debugging
+  modality: spice_netlist
+  artifact_path: netlist_bug.sp
+  judge_prompt: ../judge_prompts/debug_feedback_polarity.md
+  judge_id: debug_feedback_polarity
+  prompt_template: ../prompts/debug_feedback_polarity_mc.txt
+  meta:
+    topology: inverting_voltage_amp
+    bench_version: 0.1.0
+    aspect: feedback_polarity
+    prompt_variant: multiple_choice

@@ -1,2 +1,2 @@
-relation_target: "r_out ≈ ro_M_in || ro_load (parallel of NMOS and PMOS output resistances)"
+relation_target: "rout ≈ ro_M2 || ro_M1"
 {path:_ota_rubric_template.yaml}

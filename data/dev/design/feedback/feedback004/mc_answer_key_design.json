@@ -1,0 +1,20 @@
+{
+  "question_id": "feedback004_design_verification",
+  "correct_answer": "A",
+  "answer_text": "Design verification MC - requires ngspice simulation to determine actual failing specs",
+  "choices": {
+    "A": "Passband gain does not meet the target",
+    "B": "Unity-gain frequency (GBW) is too low",
+    "C": "Phase margin is insufficient for stability",
+    "D": "Center frequency deviates from target by >10%",
+    "E": "Power consumption exceeds the maximum limit",
+    "F": "Cutoff frequency is outside the tolerance range",
+    "G": "The design meets all specifications",
+    "H": "Stopband attenuation is insufficient",
+    "I": "Quality factor Q is too low",
+    "J": "DC gain is below the minimum requirement"
+  },
+  "track": "design",
+  "family": "feedback",
+  "note": "Design MC questions require runtime simulation - correct answer is determined dynamically"
+}

@@ -1,0 +1,20 @@
+{
+  "question_id": "ota009_rout_mc",
+  "correct_answer": "H",
+  "answer_text": "rout \u2248 (ro_{M2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1}) || (ro_{M3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4})",
+  "choices": {
+    "A": "rout \u2248 (ro_{M2}+ro_{X2}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1}) || (ro_{M3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4})",
+    "B": "rout \u2248 (ro_{M2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1}) + (ro_{M3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4})",
+    "C": "rout \u2248 (ro_{X2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1}) || (ro_{M3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4})",
+    "D": "rout \u2248 (ro_{M2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1}) || (ro_{M3}+ro_{M4}+gm_{X1}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4})",
+    "E": "rout \u2248 (ro_{M2}+ro_{X1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1}) || (ro_{M3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4})",
+    "F": "rout \u2248 (ro_{X1}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1}) || (ro_{M3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4})",
+    "G": "rout \u2248 4\u00b7((ro_{M2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1}) || (ro_{M3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4}))",
+    "H": "rout \u2248 (ro_{M2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1}) || (ro_{M3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4})",
+    "I": "rout \u2248 (ro_{M2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1}) || (ro_{M3}+ro_{M4}+gm_{X2}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4})",
+    "J": "rout \u2248 2\u00b7((ro_{M2}+ro_{M1}+gm_{M2}\u00b7ro_{M2}\u00b7ro_{M1}) || (ro_{M3}+ro_{M4}+gm_{M3}\u00b7(1+gm_{M7}\u00b7(ro_{M7}||ro_{M6}))\u00b7ro_{M3}\u00b7ro_{M4}))"
+  },
+  "track": "analysis",
+  "aspect": "rout",
+  "template_role_map": {}
+}

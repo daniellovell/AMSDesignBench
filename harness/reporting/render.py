@@ -51,10 +51,12 @@ def aggregates(recs: List[Dict[str, Any]]):
         "judge_n": 0,
         "objective_sum": 0.0,
         "objective_n": 0,
+        "mc_sum": 0.0,
+        "mc_n": 0,
     })
     # Nested dicts keyed by [group][model]
     def _mk():
-        return {"n": 0, "judge_sum": 0.0, "judge_n": 0, "objective_sum": 0.0, "objective_n": 0}
+        return {"n": 0, "judge_sum": 0.0, "judge_n": 0, "objective_sum": 0.0, "objective_n": 0, "mc_sum": 0.0, "mc_n": 0}
     per_family = defaultdict(lambda: defaultdict(_mk))
     per_modality = defaultdict(lambda: defaultdict(_mk))
 
@@ -63,6 +65,12 @@ def aggregates(recs: List[Dict[str, Any]]):
         fam = r.get("topic") or r.get("family", "?")
         mod = r.get("modality", "?")
         per_model[m]["n"] += 1
+        
+        # MC score (highest priority)
+        mc = r.get("mc_score")
+        if isinstance(mc, dict) and "score" in mc:
+            per_model[m]["mc_sum"] += float(mc["score"])
+            per_model[m]["mc_n"] += 1
         
         # Judge score
         j = r.get("judge")
@@ -77,6 +85,9 @@ def aggregates(recs: List[Dict[str, Any]]):
             per_model[m]["objective_n"] += 1
 
         per_family[fam][m]["n"] += 1
+        if isinstance(mc, dict) and "score" in mc:
+            per_family[fam][m]["mc_sum"] += float(mc["score"])
+            per_family[fam][m]["mc_n"] += 1
         if isinstance(j, dict) and isinstance(j.get("overall"), (int, float)):
             per_family[fam][m]["judge_sum"] += float(j["overall"])
             per_family[fam][m]["judge_n"] += 1
@@ -85,6 +96,9 @@ def aggregates(recs: List[Dict[str, Any]]):
             per_family[fam][m]["objective_n"] += 1
             
         per_modality[mod][m]["n"] += 1
+        if isinstance(mc, dict) and "score" in mc:
+            per_modality[mod][m]["mc_sum"] += float(mc["score"])
+            per_modality[mod][m]["mc_n"] += 1
         if isinstance(j, dict) and isinstance(j.get("overall"), (int, float)):
             per_modality[mod][m]["judge_sum"] += float(j["overall"])
             per_modality[mod][m]["judge_n"] += 1
@@ -143,21 +157,28 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
             r = recs_by_model.get(m)
             judge_overall = None
             objective_score = None
+            mc_score = None
             score_type = "judge"
             
             if r:
-                j = r.get("judge") or {}
-                if isinstance(j.get("overall"), (int, float)):
+                # Check for MC score first (highest priority for MC questions)
+                mc = r.get("mc_score")
+                if isinstance(mc, dict) and "score" in mc:
+                    mc_score = float(mc["score"])
+                    score_type = "MC"
+                # Check for judge score
+                elif (j := r.get("judge")) and isinstance(j.get("overall"), (int, float)):
                     judge_overall = float(j["overall"])
-                # Check for objective score if no judge score
-                if judge_overall is None and "objective_score" in r:
+                    score_type = "judge"
+                # Check for objective score (design verification)
+                elif "objective_score" in r:
                     obj = r.get("objective_score")
                     if isinstance(obj, (int, float)):
                         objective_score = float(obj)
                         score_type = "objective"
             
-            # Use whichever score is available
-            display_score = judge_overall if judge_overall is not None else objective_score
+            # Use whichever score is available (MC > judge > objective)
+            display_score = mc_score if mc_score is not None else (judge_overall if judge_overall is not None else objective_score)
             color = color_for_score(display_score)
             score_str = f"{display_score:.2f}" if display_score is not None else "-"
             cells.append(f"<td style=\"background:{color}\"><span title=\"{score_type}\">{esc(score_str)}</span></td>")
@@ -181,17 +202,23 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
     a:hover { text-decoration: underline; }
     """
 
-    # Leaderboard (judge + objective rendering)
+    # Leaderboard (judge + objective + MC rendering)
     leader_rows = []
     for m in models:
         a = per_model[m]
         judge_avg = a["judge_sum"] / a["judge_n"] if a["judge_n"] else None
         objective_avg = a["objective_sum"] / a["objective_n"] if a["objective_n"] else None
+        mc_avg = a["mc_sum"] / a["mc_n"] if a["mc_n"] else None
         row = f"<tr><td>{esc(m)}</td><td>{a['n']}</td>"
         row += _render_judge_cell(judge_avg)
         # Add objective score column
         if objective_avg is not None:
             row += f"<td>{objective_avg:.3f}</td>"
+        else:
+            row += "<td>-</td>"
+        # Add MC score column
+        if mc_avg is not None:
+            row += f"<td>{mc_avg:.3f}</td>"
         else:
             row += "<td>-</td>"
         leader_rows.append(row + "</tr>")
@@ -267,7 +294,7 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
     <div class="box">
       <b>Models</b>
       <table class="small">
-        <tr><th>Model</th><th>n</th><th>Judge</th><th>Objective</th></tr>
+        <tr><th>Model</th><th>n</th><th>Judge</th><th>Objective</th><th>MC</th></tr>
         {''.join(leader_rows)}
       </table>
     </div>
@@ -360,6 +387,27 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
                     "<div class=small><b>Payload</b></div><div class=mono>" + esc(payload_pretty) + "</div>"
                     "</details>"
                 )
+            # MC Score Display
+            mc_html = ""
+            mc_score = r.get("mc_score")
+            if isinstance(mc_score, dict):
+                is_correct = mc_score.get("correct", False)
+                score_val = mc_score.get("score", 0)
+                model_ans = mc_score.get("model_answer", "?")
+                correct_ans = mc_score.get("correct_answer", "?")
+                answer_text = mc_score.get("answer_text", "")
+                
+                result_color = "#0a0" if is_correct else "#b00"
+                result_icon = "✅" if is_correct else "❌"
+                score_color = color_for_score(score_val)
+                
+                mc_html = f"<div style='margin-top:8px;'><b style='color:{result_color}'>Multiple Choice: {result_icon}</b></div>"
+                mc_html += f"<div style='margin-top:4px;'><b>Score:</b> <span style='background:{score_color};padding:2px 6px;border-radius:3px;'>{score_val:.2f}</span></div>"
+                mc_html += f"<div style='margin-top:4px;'><b>Model Answer:</b> {esc(model_ans)}</div>"
+                mc_html += f"<div style='margin-top:4px;'><b>Correct Answer:</b> {esc(correct_ans)}</div>"
+                if answer_text:
+                    mc_html += f"<div style='margin-top:4px;font-size:11px;color:#666;'><b>Correct Answer Text:</b> {esc(answer_text[:200])}</div>"
+            
             # Judge breakdown
             judge_rows = []
             if isinstance(judge, dict) and isinstance(judge.get("scores"), dict):
@@ -493,7 +541,7 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
             answer = r.get("answer", "")
             answer_html = f"<details><summary>View answer</summary><div class=mono>{esc(answer)}</div></details>"
             blocks.append(
-                f"<tr><td>{esc(m)}</td><td>{judge_html}{verification_html}</td><td>{answer_html}</td></tr>"
+                f"<tr><td>{esc(m)}</td><td>{mc_html}{judge_html}{verification_html}</td><td>{answer_html}</td></tr>"
             )
 
         html_out = f"""

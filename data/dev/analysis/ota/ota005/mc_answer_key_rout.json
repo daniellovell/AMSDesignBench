@@ -1,0 +1,20 @@
+{
+  "question_id": "ota005_rout_mc",
+  "correct_answer": "A",
+  "answer_text": "rout \u2248 (ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}) || (ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6})",
+  "choices": {
+    "A": "rout \u2248 (ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}) || (ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6})",
+    "B": "rout \u2248 (ro_{M1}+ro_{X3}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}) || (ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6})",
+    "C": "rout \u2248 ((ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}) || (ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))/4",
+    "D": "rout \u2248 (ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}) || (ro_{M10}+ro_{M6}+gm_{X1}\u00b7ro_{M10}\u00b7ro_{M6})",
+    "E": "rout \u2248 \u221a((ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}) || (ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))",
+    "F": "rout \u2248 (ro_{M1}+ro_{M2}+gm_{X3}\u00b7ro_{M1}\u00b7ro_{M2}) || (ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6})",
+    "G": "rout \u2248 ((ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}) || (ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))\u00b2",
+    "H": "rout \u2248 (ro_{M1}+ro_{X2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}) || (ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6})",
+    "I": "rout \u2248 ((ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}) || (ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))/2",
+    "J": "rout \u2248 (ro_{M1}+ro_{M2}+gm_{M1}\u00b7ro_{M1}\u00b7ro_{M2}) || (ro_{M10}+ro_{M6}+gm_{X2}\u00b7ro_{M10}\u00b7ro_{M6})"
+  },
+  "track": "analysis",
+  "aspect": "rout",
+  "template_role_map": {}
+}

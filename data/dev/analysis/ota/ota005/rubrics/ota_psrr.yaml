@@ -1,2 +1,2 @@
-relation_target: "PSRR ≈ gm*ro (single-ended telescopic, first order)"
+relation_target: "PSRR+ ≈ ((gm_M2+gm_M3)/2)·((ro_M10+ro_M6+gm_M10·ro_M10·ro_M6))"
 {path:_ota_rubric_template.yaml}

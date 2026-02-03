@@ -9,7 +9,7 @@ questions:
     topology: one_stage_ota
     bench_version: 0.1.0
     aspect: structure
-- id: ota003_design_with_verification_spice_netlist
+- id: ota003_design_verification
   track: design
   modality: spice_netlist
   prompt_template: design_prompt.txt

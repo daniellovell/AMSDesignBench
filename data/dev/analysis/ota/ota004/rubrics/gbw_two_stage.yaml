@@ -1,2 +1,2 @@
-relation_target: "For two-stage without Miller comp, the dominant dynamics before compensation can show GBW ∝ gm(first)*gm(second)*(ro_load_first)/CL when β≈1 and second stage is voltage-controlled current source."
+relation_target: "GBW ≈ ((gm_M1+gm_M2)/2)·(ro_M2||ro_M4)·gm_M6/(2π·Cload)"
 {path:_ota_rubric_template.yaml}

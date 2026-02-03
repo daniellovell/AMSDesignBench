@@ -10,10 +10,14 @@ Required sections (use these exact headers):
 
 Guidance:
 - In Topology: explicitly name the topology and justify in 1 sentence using observed elements. Identify single-ended vs differential OTA.
-- In Key relation: provide symbolic expressions for output swing limits using Vov notation (overdrive voltage, where Vov = Vgs - Vth). Express as "High-side: VDD - [overdrive terms]" and "Low-side: [overdrive terms]". DO NOT use "VDS(sat)" or numeric estimates.
+- In Key relation: provide symbolic expressions for output swing limits using Vov notation (overdrive voltage, where Vov = Vgs - Vth).
+  - For folded cascodes and single-ended cascodes: Low-side ≈ Vov_N1 + Vov_N2 (the two NMOS devices stacked from output to ground); High-side ≈ VDD - Vov_P1 - Vov_P2 (the two PMOS devices stacked from output to VDD).
+  - For telescopic cascodes: Low-side ≈ Vov_N1 + Vov_N2 + Vov_N3 (three NMOS stacked from output to ground); High-side ≈ VDD - Vov_P1 - Vov_P2.
+  - For non-cascoded single-stage outputs: use the shortest stack you observe (typically one NMOS and one PMOS).
+  - IMPORTANT: the subscripts must correspond to the actual device IDs in the netlist (e.g., Vov_M7), and they must be the devices on the output-to-rail stack for that output node.
 - In Device identification: EXPLICITLY identify which specific devices (by their IDs like M1, M2, etc.) limit the swing at each rail and explain why each device constrains the swing.
 - In Grounded evidence: cite specific device IDs and node names from the artifact.
-- In Answer: provide the final swing limit expressions using SPECIFIC device IDs and their overdrives (e.g., "High-side: VDD - Vov_M3 - Vov_M5" where M3 and M5 are actual device IDs). Include saturation conditions for key devices.
+- In Answer: provide the final swing limit expressions using SPECIFIC device IDs and their overdrives (e.g., "High-side: VDD - Vov_M3 - Vov_M5"). Avoid numeric estimates.
 - Use device role names in your explanation (input, load, cascode, tail) but use ACTUAL device IDs in final expressions.
 - Avoid generic statements without conditions.
 

@@ -1,0 +1,20 @@
+{
+  "question_id": "ota001_noise_white_mc",
+  "correct_answer": "A",
+  "answer_text": "S_v,out \u2248 (ro_{M2} || ro_{Mp1})\u00b2\u00b74kT\u00b7[\u03b3_{M2}\u00b7gm_{M2} + \u03b3_{Mp1}\u00b7gm_{Mp1} + (((W/L)_{Mp1}/(W/L)_{Mp2})\u00b2\u00b7\u03b3_{Mp2}\u00b7gm_{Mp2}) + ((gm_{M2}/(gm_{M1}+gm_{M2}))\u00b2\u00b7\u03b3_{Mtail}\u00b7gm_{Mtail})]",
+  "choices": {
+    "A": "S_v,out \u2248 (ro_{M2} || ro_{Mp1})\u00b2\u00b74kT\u00b7[\u03b3_{M2}\u00b7gm_{M2} + \u03b3_{Mp1}\u00b7gm_{Mp1} + (((W/L)_{Mp1}/(W/L)_{Mp2})\u00b2\u00b7\u03b3_{Mp2}\u00b7gm_{Mp2}) + ((gm_{M2}/(gm_{M1}+gm_{M2}))\u00b2\u00b7\u03b3_{Mtail}\u00b7gm_{Mtail})]",
+    "B": "S_v,out \u2248 (ro_{M2} || ro_{Mp1})\u00b2\u00b74kT\u00b7[\u03b3_{Mp1}\u00b7gm_{M2} + \u03b3_{Mp1}\u00b7gm_{Mp1} + (((W/L)_{Mp1}/(W/L)_{Mp2})\u00b2\u00b7\u03b3_{Mp2}\u00b7gm_{Mp2}) + ((gm_{M2}/(gm_{M1}+gm_{M2}))\u00b2\u00b7\u03b3_{Mtail}\u00b7gm_{Mtail})]",
+    "C": "S_v,out \u2248 (ro_{M2} || ro_{Mp1})\u00b3\u00b74kT\u00b7[\u03b3_{M2}\u00b7gm_{M2} + \u03b3_{Mp1}\u00b7gm_{Mp1} + (((W/L)_{Mp1}/(W/L)_{Mp2})\u00b2\u00b7\u03b3_{Mp2}\u00b7gm_{Mp2}) + ((gm_{M2}/(gm_{M1}+gm_{M2}))\u00b2\u00b7\u03b3_{Mtail}\u00b7gm_{Mtail})]",
+    "D": "S_v,out \u2248 (ro_{M2} || ro_{Mp1})\u00b2\u00b74kT\u00b7[\u03b3_{X3}\u00b7gm_{M2} + \u03b3_{Mp1}\u00b7gm_{Mp1} + (((W/L)_{Mp1}/(W/L)_{Mp2})\u00b2\u00b7\u03b3_{Mp2}\u00b7gm_{Mp2}) + ((gm_{M2}/(gm_{M1}+gm_{M2}))\u00b2\u00b7\u03b3_{Mtail}\u00b7gm_{Mtail})]",
+    "E": "S_v,out \u2248 (ro_{M2} || ro_{Mp1})\u00b2\u00b78kT\u00b7[\u03b3_{M2}\u00b7gm_{M2} + \u03b3_{Mp1}\u00b7gm_{Mp1} + (((W/L)_{Mp1}/(W/L)_{Mp2})\u00b2\u00b7\u03b3_{Mp2}\u00b7gm_{Mp2}) + ((gm_{M2}/(gm_{M1}+gm_{M2}))\u00b2\u00b7\u03b3_{Mtail}\u00b7gm_{Mtail})]",
+    "F": "S_v,out \u2248 (ro_{M2} || ro_{Mp1})\u00b2\u00b74kT\u00b7(1/2)\u00b7[\u03b3_{M2}\u00b7gm_{M2} + \u03b3_{Mp1}\u00b7gm_{Mp1} + (((W/L)_{Mp1}/(W/L)_{Mp2})\u00b2\u00b7\u03b3_{Mp2}\u00b7gm_{Mp2}) + ((gm_{M2}/(gm_{M1}+gm_{M2}))\u00b2\u00b7\u03b3_{Mtail}\u00b7gm_{Mtail})]",
+    "G": "S_v,out \u2248 (ro_{M2} || ro_{Mp1})\u00b74kT\u00b7[\u03b3_{M2}\u00b7gm_{M2} + \u03b3_{Mp1}\u00b7gm_{Mp1} + (((W/L)_{Mp1}/(W/L)_{Mp2})\u00b2\u00b7\u03b3_{Mp2}\u00b7gm_{Mp2}) + ((gm_{M2}/(gm_{M1}+gm_{M2}))\u00b2\u00b7\u03b3_{Mtail}\u00b7gm_{Mtail})]",
+    "H": "S_v,out \u2248 (ro_{X2} || ro_{Mp1})\u00b2\u00b74kT\u00b7[\u03b3_{M2}\u00b7gm_{M2} + \u03b3_{Mp1}\u00b7gm_{Mp1} + (((W/L)_{Mp1}/(W/L)_{Mp2})\u00b2\u00b7\u03b3_{Mp2}\u00b7gm_{Mp2}) + ((gm_{M2}/(gm_{M1}+gm_{M2}))\u00b2\u00b7\u03b3_{Mtail}\u00b7gm_{Mtail})]",
+    "I": "S_v,out \u2248 (ro_{M2} + ro_{Mp1})\u00b2\u00b74kT\u00b7[\u03b3_{M2}\u00b7gm_{M2} + \u03b3_{Mp1}\u00b7gm_{Mp1} + (((W/L)_{Mp1}/(W/L)_{Mp2})\u00b2\u00b7\u03b3_{Mp2}\u00b7gm_{Mp2}) + ((gm_{M2}/(gm_{M1}+gm_{M2}))\u00b2\u00b7\u03b3_{Mtail}\u00b7gm_{Mtail})]",
+    "J": "S_v,out \u2248 (ro_{M2} || ro_{Mp1})\u00b2\u00b72kT\u00b7[\u03b3_{M2}\u00b7gm_{M2} + \u03b3_{Mp1}\u00b7gm_{Mp1} + (((W/L)_{Mp1}/(W/L)_{Mp2})\u00b2\u00b7\u03b3_{Mp2}\u00b7gm_{Mp2}) + ((gm_{M2}/(gm_{M1}+gm_{M2}))\u00b2\u00b7\u03b3_{Mtail}\u00b7gm_{Mtail})]"
+  },
+  "track": "analysis",
+  "aspect": "noise_white",
+  "template_role_map": {}
+}

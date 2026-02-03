@@ -1,2 +1,8 @@
-relation_target: "Differential pair: Valid I_M5 (tail) OR (I_M1 + I_M2). NOT individual I_M1 or I_M2."
+relation_target: "P_q ≈ VDD·(I_D,Mp1 + I_D,Mp2)"
+relation_equivalents: |
+  - P_q ≈ VDD·I_D,Mtail
+  - P_q ≈ VDD·(I_D,M1 + I_D,M2)
 {path:_ota_rubric_template.yaml}
+relation_equivalents: |
+  - P_q ≈ VDD·I_D,Mtail
+  - P_q ≈ VDD·(I_D,M1 + I_D,M2)

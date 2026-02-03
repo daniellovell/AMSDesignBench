@@ -1,0 +1,20 @@
+{
+  "question_id": "ota004_gain_dc_mc",
+  "correct_answer": "A",
+  "answer_text": "|A0| \u2248 ((gm_{M1}+gm_{M2})/2)\u00b7(ro_{M2}||ro_{M4})\u00b7gm_{M6}\u00b7(ro_{M6}||ro_{M7})",
+  "choices": {
+    "A": "|A0| \u2248 ((gm_{M1}+gm_{M2})/2)\u00b7(ro_{M2}||ro_{M4})\u00b7gm_{M6}\u00b7(ro_{M6}||ro_{M7})",
+    "B": "|A0| \u2248 ((gm_{M1}+gm_{M2}))\u00b7(ro_{M2}||ro_{M4})\u00b7gm_{M6}\u00b7(ro_{M6}||ro_{M7})",
+    "C": "|A0| \u2248 ((gm_{M1}+gm_{M2})/2)\u00b7(ro_{M4}||ro_{M4})\u00b7gm_{M6}\u00b7(ro_{M6}||ro_{M7})",
+    "D": "|A0| \u2248 (((gm_{M1}+gm_{M2})/2)\u00b7(ro_{M2}||ro_{M4})\u00b7gm_{M6}\u00b7(ro_{M6}||ro_{M7}))/4",
+    "E": "|A0| \u2248 4\u00b7(((gm_{M1}+gm_{M2})/2)\u00b7(ro_{M2}||ro_{M4})\u00b7gm_{M6}\u00b7(ro_{M6}||ro_{M7}))",
+    "F": "|A0| \u2248 (((gm_{M1}+gm_{M2})/2)\u00b7(ro_{M2}||ro_{M4})\u00b7gm_{M6}\u00b7(ro_{M6}||ro_{M7}))/2",
+    "G": "|A0| \u2248 ((gm_{X1}+gm_{M2})/2)\u00b7(ro_{M2}||ro_{M4})\u00b7gm_{M6}\u00b7(ro_{M6}||ro_{M7})",
+    "H": "|A0| \u2248 ((gm_{X2}+gm_{M2})/2)\u00b7(ro_{M2}||ro_{M4})\u00b7gm_{M6}\u00b7(ro_{M6}||ro_{M7})",
+    "I": "|A0| \u2248 2\u00b7(((gm_{M1}+gm_{M2})/2)\u00b7(ro_{M2}||ro_{M4})\u00b7gm_{M6}\u00b7(ro_{M6}||ro_{M7}))",
+    "J": "|A0| \u2248 ((gm_{M1}+gm_{M2})/2)\u00b7(ro_{M2}+ro_{M4})\u00b7gm_{M6}\u00b7(ro_{M6}+ro_{M7})"
+  },
+  "track": "analysis",
+  "aspect": "gain_dc",
+  "template_role_map": {}
+}

@@ -1,2 +1,2 @@
-relation_target: "GBW ≈ gm/CL for one-stage OTA and conditions for validity"
+relation_target: "GBW ≈ gm_M1/(2π·Cload)"
 {path:_ota_rubric_template.yaml}

@@ -1,0 +1,3 @@
+Vin vin 0 AC 1
+C705235212 vin vout BLANK
+R354226075 vout 0 BLANK
