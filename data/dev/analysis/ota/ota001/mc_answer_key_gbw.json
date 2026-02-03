@@ -1,0 +1,20 @@
+{
+  "question_id": "ota001_gbw_mc",
+  "correct_answer": "E",
+  "answer_text": "GBW \u2248 (gm_{M1} + gm_{M2})/(4\u03c0\u00b7Cload)",
+  "choices": {
+    "A": "GBW \u2248 (gm_{M1} + gm_{M2})/(8\u03c0\u00b7Cload)",
+    "B": "GBW \u2248 (gm_{M1} + gm_{M2})/(4\u03c0\u00b72\u00b7Cload)",
+    "C": "GBW \u2248 ((gm_{M1} + gm_{M2})/(4\u03c0\u00b7Cload))\u00b2",
+    "D": "GBW \u2248 (gm_{X2} + gm_{M2})/(4\u03c0\u00b7Cload)",
+    "E": "GBW \u2248 (gm_{M1} + gm_{M2})/(4\u03c0\u00b7Cload)",
+    "F": "GBW \u2248 (gm_{M1} + gm_{M2})/(4\u03c0\u00b7(Cload/2))",
+    "G": "GBW \u2248 (gm_{X1} + gm_{M2})/(4\u03c0\u00b7Cload)",
+    "H": "GBW \u2248 (gm_{INP} + gm_{M2})/(4\u03c0\u00b7Cload)",
+    "I": "GBW \u2248 (gm_{X3} + gm_{M2})/(4\u03c0\u00b7Cload)",
+    "J": "GBW \u2248 (gm_{OUTN} + gm_{M2})/(4\u03c0\u00b7Cload)"
+  },
+  "track": "analysis",
+  "aspect": "gbw",
+  "template_role_map": {}
+}

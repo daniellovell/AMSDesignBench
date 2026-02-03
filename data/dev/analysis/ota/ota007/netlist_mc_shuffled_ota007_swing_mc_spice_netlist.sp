@@ -1,0 +1,5 @@
+
+M148013101 vout vin 0 0 NMOS l=0.18u w=2u
+M339269397 VDD vb1 vout VDD PMOS l=0.18u w=4u
+VDD VDD 0 1.8
+C224176625 vout 0 1p

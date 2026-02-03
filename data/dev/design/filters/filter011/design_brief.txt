@@ -1,0 +1,3 @@
+Design a band-pass filter with center frequency f0 = 10 kHz, quality factor Q = 5, and |gain| = 2.
+
+Use the provided template netlist topology (series RLC band-pass core + non-inverting op-amp gain stage using the ideal OPAMP subcircuit).

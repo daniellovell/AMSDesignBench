@@ -226,3 +226,57 @@ Design brief:
 - Each design item must include a plain-text `design_brief.txt` in the item directory (e.g., `data/dev/design/ota/ota001/design_brief.txt`).
 - The brief is injected at the top of the prompt and tells the model exactly what topology to design.
 - If `design_brief.txt` is missing, the harness errors out to keep datasets explicit and avoid implicit assumptions.
+
+## Design Verification with SPICE
+
+The benchmark includes automated SPICE-based verification for evaluating LLM-generated analog circuit designs. The pipeline extracts netlists from model responses, simulates them with ngspice, and scores performance against specifications using weighted rubrics and an LLM judge.
+
+### Workflow
+
+```
+LLM Response -> Netlist Parser -> SPICE Simulation -> Spec Checker + LLM Judge -> Score
+```
+
+Each design task provides transistor characterization data (gm/ID lookup tables) and requires the model to generate a SPICE netlist meeting specifications such as DC gain, GBW, phase margin, power, output swing, and ICMR.
+
+### Usage
+
+```bash
+# Install ngspice
+brew install ngspice  # macOS
+sudo apt-get install ngspice  # Linux
+
+# Run design evaluation
+python harness/run_design_eval.py --model openai:gpt-4o-mini --designs ota001
+
+# View results
+cat outputs/design_run_*/gpt-4o-mini_design_report.txt
+```
+
+Example output:
+```
+[1/1] Evaluating ota001...
+  → Requesting design from LLM...
+  → Running SPICE simulation...
+  → Evaluating against specifications...
+  Score: 82.5/100 - PASS
+
+Specifications:
+  dc_gain: 45.2 dB (min: 40 dB) ✓
+  gbw: 52 MHz (min: 10 MHz) ✓
+  phase_margin: 62.3° (min: 55°) ✓
+  power: 235 µW (max: 500 µW) ✓
+```
+
+### Directory Structure
+
+| Path | Contents |
+|------|----------|
+| `harness/design_verification/` | Netlist parsing, SPICE runner, judge |
+| `harness/run_design_eval.py` | Evaluation entry point |
+| `pdk/skywater130/` | PDK models and gm/ID tables |
+| `data/dev/design/ota/*/verification/` | Design specs and testbenches |
+| `scripts/design_smoke_test.py` | Smoke test (no API keys) |
+| `scripts/verify_design_setup.py` | Environment validation |
+
+

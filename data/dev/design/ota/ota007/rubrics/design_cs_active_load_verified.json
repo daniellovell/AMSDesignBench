@@ -1,0 +1,82 @@
+{
+  "rubric_id": "design_cs_active_load_verified",
+  "version": "1.0.0",
+  "description": "CS Active Load with SPICE verification",
+  "max_score": 100.0,
+  "weights": {
+    "completeness": 1.0,
+    "verification": 1.0
+  },
+  "scoring": {
+    "hallucination_penalty": 0.0,
+    "case_sensitive": false,
+    "min_pass": 0.7
+  },
+  "criteria": [
+    {
+      "id": "netlist_completeness",
+      "desc": "Complete netlist",
+      "patterns_any": [
+        ".param VDD=1\\.8",
+        ".param CL=\\d+p",
+        "L2=\\d",
+        "L1=\\d",
+        "W2=\\d",
+        "W1=\\d",
+        "Vin.*DC.*AC",
+        "Vbias.*DC"
+      ],
+      "min_any": 6,
+      "anti_patterns": [
+        "BLANK"
+      ],
+      "weight": 15.0
+    },
+    {
+      "id": "transistor_models",
+      "desc": "SKY130 models",
+      "patterns_any": [
+        "sky130_fd_pr__nfet_01v8",
+        "sky130_fd_pr__pfet_01v8"
+      ],
+      "min_any": 2,
+      "weight": 10.0
+    },
+    {
+      "id": "verification_dc_gain",
+      "desc": "DC gain \u2265 20 dB",
+      "verification": true,
+      "metric": "dc_gain_db",
+      "threshold": 20.0,
+      "comparison": ">=",
+      "weight": 25.0
+    },
+    {
+      "id": "verification_gbw",
+      "desc": "GBW \u2265 10 MHz",
+      "verification": true,
+      "metric": "unity_gain_freq_hz",
+      "threshold": 10000000.0,
+      "comparison": ">=",
+      "weight": 20.0
+    },
+    {
+      "id": "verification_phase_margin",
+      "desc": "PM \u2265 60\u00b0",
+      "verification": true,
+      "metric": "phase_margin_deg",
+      "threshold": 60.0,
+      "comparison": ">=",
+      "weight": 15.0
+    },
+    {
+      "id": "verification_power",
+      "desc": "Power \u2264 0.5 mW",
+      "verification": true,
+      "metric": "power_w",
+      "threshold": 0.0005,
+      "comparison": "<=",
+      "weight": 15.0
+    }
+  ]
+}

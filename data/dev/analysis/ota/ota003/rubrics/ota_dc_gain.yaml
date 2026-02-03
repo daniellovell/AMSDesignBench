@@ -1,2 +1,2 @@
-relation_target: "DC Gain ≈ gm * ro for high-swing one-stage OTA"
+relation_target: "|A0| ≈ (ro_M6 || ro_M8)·[(W/L)_M6/(W/L)_M3 - ((W/L)_M5/(W/L)_M3)·((W/L)_M8/(W/L)_M7)]·((gm_M1+gm_M2)/2)"
 {path:_ota_rubric_template.yaml}

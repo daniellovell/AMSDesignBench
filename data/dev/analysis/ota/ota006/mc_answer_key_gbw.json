@@ -1,0 +1,20 @@
+{
+  "question_id": "ota006_gbw_mc",
+  "correct_answer": "C",
+  "answer_text": "GBW \u2248 (gm_{M7}+gm_{M8})/(4\u03c0\u00b7C1)",
+  "choices": {
+    "A": "GBW \u2248 (gm_{M7}+gm_{X1})/(4\u03c0\u00b7C1)",
+    "B": "GBW \u2248 \u221a((gm_{M7}+gm_{M8})/(4\u03c0\u00b7C1))",
+    "C": "GBW \u2248 (gm_{M7}+gm_{M8})/(4\u03c0\u00b7C1)",
+    "D": "GBW \u2248 (gm_{M7}+gm_{M8})/(8\u03c0\u00b7C1)",
+    "E": "GBW \u2248 2\u00b7((gm_{M7}+gm_{M8})/(4\u03c0\u00b7C1))",
+    "F": "GBW \u2248 (gm_{M7}+gm_{X2})/(4\u03c0\u00b7C1)",
+    "G": "GBW \u2248 ((gm_{M7}+gm_{M8})/(4\u03c0\u00b7C1))/\u03c0",
+    "H": "GBW \u2248 ((gm_{M7}+gm_{M8})/(4\u03c0\u00b7C1))/2",
+    "I": "GBW \u2248 (gm_{M7}+gm_{M8})/(4\u03c0\u00b7(C1/2))",
+    "J": "GBW \u2248 (gm_{M7}\u00b7gm_{M8})/(4\u03c0\u00b7C1)"
+  },
+  "track": "analysis",
+  "aspect": "gbw",
+  "template_role_map": {}
+}

@@ -1,3 +1,12 @@
-Design a single-ended transimpedance amplifier (TIA) with a feedback capacitor.
-Use an opamp with capacitive negative feedback to convert current input to voltage output.
+Design a single-ended transimpedance amplifier (TIA) with a feedback capacitor (integrator-style).
+
+Assumptions for verification (idealized op-amp):
+- Single-pole op-amp with parameters: Aol = 100k V/V, GBW = 10 MHz
+- AC verification uses a 1 A AC current injected into the summing node; transimpedance is measured as |Vout| (Ohms)
+
+Target specs to meet (measured by ngspice):
+- Transimpedance magnitude at 10 kHz: 159 kΩ ±15%  (this corresponds to Cf ≈ 100 pF via |Z| = 1/(2π f C))
+- -3 dB bandwidth (relative to 10 kHz magnitude): ≥ 2 MHz
+
+Provide a SPICE-like netlist that instantiates an `opamp` subcircuit and connects the feedback capacitor correctly.
 

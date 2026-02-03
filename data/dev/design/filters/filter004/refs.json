@@ -1,0 +1,5 @@
+{
+  "filter_type": "RLC band-pass",
+  "order": 2,
+  "frequency": "50.3 kHz"
+}

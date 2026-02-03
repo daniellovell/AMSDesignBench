@@ -1,0 +1,20 @@
+{
+  "question_id": "feedback004_closed_loop_gain_mc",
+  "correct_answer": "C",
+  "answer_text": "Vout/Vin = R1/R2",
+  "choices": {
+    "A": "Vout/Vin = 1 + R2/R1",
+    "B": "Vout/Vin = R2/R1",
+    "C": "Vout/Vin = R1/R2",
+    "D": "Vout/Vin = (R1+R2)/R2",
+    "E": "Vout/Vin = R1/(R1+R2)",
+    "F": "Vout/Vin = 1 + R1/R2",
+    "G": "Vout/Vin = R1\u00b7R2",
+    "H": "Vout/Vin = R2/(R1+R2)",
+    "I": "Vout/Vin = R2/R2",
+    "J": "Vout/Vin = (R1+R2)/R1"
+  },
+  "track": "analysis",
+  "aspect": "closed_loop_gain",
+  "template_role_map": {}
+}

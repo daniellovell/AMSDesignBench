@@ -1,0 +1,70 @@
+{
+  "rubric_id": "design_folded_single_end_high_swing_pmos_in_verified",
+  "version": "1.0.0",
+  "description": "Evaluation rubric for folded_single_end_high_swing_pmos_in OTA design with SPICE verification",
+  "max_score": 100.0,
+  "weights": {
+    "completeness": 1.0,
+    "methodology": 1.0,
+    "verification": 1.0
+  },
+  "scoring": {
+    "hallucination_penalty": 0.0,
+    "case_sensitive": false
+  },
+  "criteria": [
+    {
+      "id": "netlist_presence",
+      "desc": "Response contains a valid SPICE netlist",
+      "patterns_any": [
+        "sky130_fd_pr__nfet_01v8",
+        "sky130_fd_pr__pfet_01v8",
+        "XM\\d+"
+      ],
+      "min_any": 2,
+      "weight": 15.0
+    },
+    {
+      "id": "voltage_sources",
+      "desc": "Includes necessary voltage sources (inputs, biases, supplies)",
+      "patterns_any": [
+        "Vin",
+        "Vb",
+        "VDD",
+        "DC"
+      ],
+      "min_any": 2,
+      "weight": 10.0
+    },
+    {
+      "id": "verification_dc_gain",
+      "desc": "Simulated DC gain meets specification (\u2265 60 dB)",
+      "section": "Performance - Verified",
+      "verification": true,
+      "metric": "dc_gain_db",
+      "threshold": 60.0,
+      "comparison": ">=",
+      "weight": 25.0
+    },
+    {
+      "id": "verification_ugf",
+      "desc": "Simulated unity gain frequency meets specification (\u2265 35 MHz)",
+      "section": "Performance - Verified",
+      "verification": true,
+      "metric": "unity_gain_freq_hz",
+      "threshold": 35000000.0,
+      "comparison": ">=",
+      "weight": 25.0
+    },
+    {
+      "id": "verification_phase_margin",
+      "desc": "Simulated phase margin meets specification (\u2265 45 degrees)",
+      "section": "Performance - Verified",
+      "verification": true,
+      "metric": "phase_margin_deg",
+      "threshold": 45.0,
+      "comparison": ">=",
+      "weight": 10.0
+    }
+  ]
+}

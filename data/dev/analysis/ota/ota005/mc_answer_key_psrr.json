@@ -1,0 +1,20 @@
+{
+  "question_id": "ota005_psrr_mc",
+  "correct_answer": "E",
+  "answer_text": "PSRR+ \u2248 ((gm_{M2}+gm_{M3})/2)\u00b7((ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))",
+  "choices": {
+    "A": "PSRR+ \u2248 ((gm_{X1}+gm_{M3})/2)\u00b7((ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))",
+    "B": "PSRR+ \u2248 (((gm_{M2}+gm_{M3})/2)\u00b7((ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6})))/2",
+    "C": "PSRR+ \u2248 ((gm_{M2}+gm_{M3})/2)\u00b7((ro_{X1}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))",
+    "D": "PSRR+ \u2248 ((gm_{M2}+gm_{M3})/2)\u00b7((ro_{M10}+ro_{X1}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))",
+    "E": "PSRR+ \u2248 ((gm_{M2}+gm_{M3})/2)\u00b7((ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))",
+    "F": "PSRR+ \u2248 ((gm_{X2}+gm_{M3})/2)\u00b7((ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))",
+    "G": "PSRR+ \u2248 ((gm_{M2}+gm_{M3})/2)\u00b7((ro_{X2}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))",
+    "H": "PSRR+ \u2248 (((gm_{M2}+gm_{M3})/2)\u00b7((ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6})))/4",
+    "I": "PSRR+ \u2248 ((gm_{M2}+gm_{X1})/2)\u00b7((ro_{M10}+ro_{M6}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))",
+    "J": "PSRR+ \u2248 ((gm_{M2}+gm_{M3})/2)\u00b7((ro_{M10}+ro_{X2}+gm_{M10}\u00b7ro_{M10}\u00b7ro_{M6}))"
+  },
+  "track": "analysis",
+  "aspect": "psrr",
+  "template_role_map": {}
+}

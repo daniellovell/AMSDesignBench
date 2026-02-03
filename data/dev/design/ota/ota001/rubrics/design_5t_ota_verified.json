@@ -1,0 +1,122 @@
+{
+  "rubric_id": "design_5t_ota_verified",
+  "version": "1.0.0",
+  "description": "Evaluation rubric for five-transistor OTA design with SPICE verification",
+  "max_score": 100.0,
+  "weights": {
+    "completeness": 1.0,
+    "methodology": 1.0,
+    "verification": 1.0
+  },
+  "scoring": {
+    "hallucination_penalty": 0.0,
+    "case_sensitive": false
+  },
+  "criteria": [
+    {
+      "id": "netlist_completeness",
+      "desc": "Netlist contains all required components and no BLANK parameters",
+      "patterns_any": [
+        ".param VDD=1\\.8",
+        ".param CL=\\d+p",
+        "L1=\\d",
+        "L2=\\d",
+        "Lp1=\\d",
+        "Lp2=\\d",
+        "Ltail=\\d",
+        "W1=\\d",
+        "W2=\\d",
+        "Wp1=\\d",
+        "Wp2=\\d",
+        "Wtail=\\d",
+        "Vinp.*DC.*AC",
+        "Vbias.*DC",
+        "Vinn.*DC.*AC"
+      ],
+      "min_any": 12,
+      "anti_patterns": [
+        "BLANK"
+      ],
+      "weight": 15.0
+    },
+    {
+      "id": "transistor_models",
+      "desc": "Uses correct SKY130 transistor models",
+      "patterns_any": [
+        "sky130_fd_pr__nfet_01v8",
+        "sky130_fd_pr__pfet_01v8"
+      ],
+      "min_any": 2,
+      "weight": 5.0
+    },
+    {
+      "id": "bias_voltages",
+      "desc": "Provides appropriate DC bias voltages for inputs and tail current source",
+      "patterns_any": [
+        "Vinp.*DC",
+        "Vinn.*DC",
+        "Vbias_n.*DC"
+      ],
+      "min_any": 3,
+      "weight": 10.0
+    },
+    {
+      "id": "reasonable_dimensions",
+      "desc": "Transistor dimensions are within reasonable bounds (L >= min, W > 0)",
+      "patterns_any": [
+        "L1=\\d",
+        "W1=\\d",
+        "L2=\\d",
+        "W2=\\d",
+        "Lp1=\\d",
+        "Wp1=\\d",
+        "Lp2=\\d",
+        "Wp2=\\d",
+        "Ltail=\\d",
+        "Wtail=\\d"
+      ],
+      "min_any": 10,
+      "weight": 10.0
+    },
+    {
+      "id": "vcm_design",
+      "desc": "LLM designs input common-mode voltage (provides Vinp/Vinn voltage sources)",
+      "patterns_any": [
+        "Vinp.*vinp.*0.*DC",
+        "Vinn.*vinn.*0.*DC"
+      ],
+      "min_any": 2,
+      "weight": 5.0
+    },
+    {
+      "id": "verification_dc_gain",
+      "desc": "Simulated DC gain meets specification (\u2265 40 dB)",
+      "section": "Performance - Verified",
+      "verification": true,
+      "metric": "dc_gain_db",
+      "threshold": 40.0,
+      "comparison": ">=",
+      "weight": 15.0
+    },
+    {
+      "id": "verification_ugf",
+      "desc": "Simulated unity gain frequency meets specification (\u2265 10 MHz)",
+      "section": "Performance - Verified",
+      "verification": true,
+      "metric": "unity_gain_freq_hz",
+      "threshold": 10000000.0,
+      "comparison": ">=",
+      "weight": 15.0
+    },
+    {
+      "id": "verification_phase_margin",
+      "desc": "Simulated phase margin meets specification (\u2265 60 degrees)",
+      "section": "Performance - Verified",
+      "verification": true,
+      "metric": "phase_margin_deg",
+      "threshold": 60.0,
+      "comparison": ">=",
+      "weight": 10.0
+    }
+  ]
+}

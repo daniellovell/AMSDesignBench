@@ -1,2 +1,2 @@
-relation_target: "DC Gain ≈ (gm * ro)² for high-swing telescopic cascode OTA"
+relation_target: "|A0| ≈ ((gm_M7+gm_M8)/2)·((ro_M6+ro_M7+gm_M6·ro_M6·ro_M7) || (ro_M1+ro_M2+gm_M1·ro_M1·ro_M2))"
 {path:_ota_rubric_template.yaml}

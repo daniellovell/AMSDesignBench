@@ -49,10 +49,14 @@ def aggregates(recs: List[Dict[str, Any]]):
         "n": 0,
         "judge_sum": 0.0,
         "judge_n": 0,
+        "objective_sum": 0.0,
+        "objective_n": 0,
+        "mc_sum": 0.0,
+        "mc_n": 0,
     })
     # Nested dicts keyed by [group][model]
     def _mk():
-        return {"n": 0, "judge_sum": 0.0, "judge_n": 0}
+        return {"n": 0, "judge_sum": 0.0, "judge_n": 0, "objective_sum": 0.0, "objective_n": 0, "mc_sum": 0.0, "mc_n": 0}
     per_family = defaultdict(lambda: defaultdict(_mk))
     per_modality = defaultdict(lambda: defaultdict(_mk))
 
@@ -61,20 +65,46 @@ def aggregates(recs: List[Dict[str, Any]]):
         fam = r.get("topic") or r.get("family", "?")
         mod = r.get("modality", "?")
         per_model[m]["n"] += 1
+        
+        # MC score (highest priority)
+        mc = r.get("mc_score")
+        if isinstance(mc, dict) and "score" in mc:
+            per_model[m]["mc_sum"] += float(mc["score"])
+            per_model[m]["mc_n"] += 1
+        
+        # Judge score
         j = r.get("judge")
         if isinstance(j, dict) and isinstance(j.get("overall"), (int, float)):
             per_model[m]["judge_sum"] += float(j["overall"])
             per_model[m]["judge_n"] += 1
-        # blended score removed in judge-only pipeline
+        
+        # Objective score
+        obj = r.get("objective_score")
+        if isinstance(obj, (int, float)):
+            per_model[m]["objective_sum"] += float(obj)
+            per_model[m]["objective_n"] += 1
 
         per_family[fam][m]["n"] += 1
+        if isinstance(mc, dict) and "score" in mc:
+            per_family[fam][m]["mc_sum"] += float(mc["score"])
+            per_family[fam][m]["mc_n"] += 1
         if isinstance(j, dict) and isinstance(j.get("overall"), (int, float)):
             per_family[fam][m]["judge_sum"] += float(j["overall"])
             per_family[fam][m]["judge_n"] += 1
+        if isinstance(obj, (int, float)):
+            per_family[fam][m]["objective_sum"] += float(obj)
+            per_family[fam][m]["objective_n"] += 1
+            
         per_modality[mod][m]["n"] += 1
+        if isinstance(mc, dict) and "score" in mc:
+            per_modality[mod][m]["mc_sum"] += float(mc["score"])
+            per_modality[mod][m]["mc_n"] += 1
         if isinstance(j, dict) and isinstance(j.get("overall"), (int, float)):
             per_modality[mod][m]["judge_sum"] += float(j["overall"])
             per_modality[mod][m]["judge_n"] += 1
+        if isinstance(obj, (int, float)):
+            per_modality[mod][m]["objective_sum"] += float(obj)
+            per_modality[mod][m]["objective_n"] += 1
 
     return per_model, per_family, per_modality
 
@@ -126,13 +156,32 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
         for m in models:
             r = recs_by_model.get(m)
             judge_overall = None
+            objective_score = None
+            mc_score = None
+            score_type = "judge"
+            
             if r:
-                j = r.get("judge") or {}
-                if isinstance(j.get("overall"), (int, float)):
+                # Check for MC score first (highest priority for MC questions)
+                mc = r.get("mc_score")
+                if isinstance(mc, dict) and "score" in mc:
+                    mc_score = float(mc["score"])
+                    score_type = "MC"
+                # Check for judge score
+                elif (j := r.get("judge")) and isinstance(j.get("overall"), (int, float)):
                     judge_overall = float(j["overall"])
-            color = color_for_score(judge_overall)
-            judge_str = f"{judge_overall:.2f}" if judge_overall is not None else "-"
-            cells.append(f"<td style=\"background:{color}\"><span title=\"judged\">{esc(judge_str)}</span></td>")
+                    score_type = "judge"
+                # Check for objective score (design verification)
+                elif "objective_score" in r:
+                    obj = r.get("objective_score")
+                    if isinstance(obj, (int, float)):
+                        objective_score = float(obj)
+                        score_type = "objective"
+            
+            # Use whichever score is available (MC > judge > objective)
+            display_score = mc_score if mc_score is not None else (judge_overall if judge_overall is not None else objective_score)
+            color = color_for_score(display_score)
+            score_str = f"{display_score:.2f}" if display_score is not None else "-"
+            cells.append(f"<td style=\"background:{color}\"><span title=\"{score_type}\">{esc(score_str)}</span></td>")
         return "".join(cells)
 
     # HTML
@@ -153,13 +202,25 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
     a:hover { text-decoration: underline; }
     """
 
-    # Leaderboard (judge-only rendering)
+    # Leaderboard (judge + objective + MC rendering)
     leader_rows = []
     for m in models:
         a = per_model[m]
         judge_avg = a["judge_sum"] / a["judge_n"] if a["judge_n"] else None
+        objective_avg = a["objective_sum"] / a["objective_n"] if a["objective_n"] else None
+        mc_avg = a["mc_sum"] / a["mc_n"] if a["mc_n"] else None
         row = f"<tr><td>{esc(m)}</td><td>{a['n']}</td>"
         row += _render_judge_cell(judge_avg)
+        # Add objective score column
+        if objective_avg is not None:
+            row += f"<td>{objective_avg:.3f}</td>"
+        else:
+            row += "<td>-</td>"
+        # Add MC score column
+        if mc_avg is not None:
+            row += f"<td>{mc_avg:.3f}</td>"
+        else:
+            row += "<td>-</td>"
         leader_rows.append(row + "</tr>")
 
     # Families table (judge-only)
@@ -233,7 +294,7 @@ def render_index(path: Path, recs: List[Dict[str, Any]]):
     <div class="box">
       <b>Models</b>
       <table class="small">
-        <tr><th>Model</th><th>n</th><th>Judge</th></tr>
+        <tr><th>Model</th><th>n</th><th>Judge</th><th>Objective</th><th>MC</th></tr>
         {''.join(leader_rows)}
       </table>
     </div>
@@ -326,6 +387,27 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
                     "<div class=small><b>Payload</b></div><div class=mono>" + esc(payload_pretty) + "</div>"
                     "</details>"
                 )
+            # MC Score Display
+            mc_html = ""
+            mc_score = r.get("mc_score")
+            if isinstance(mc_score, dict):
+                is_correct = mc_score.get("correct", False)
+                score_val = mc_score.get("score", 0)
+                model_ans = mc_score.get("model_answer", "?")
+                correct_ans = mc_score.get("correct_answer", "?")
+                answer_text = mc_score.get("answer_text", "")
+                
+                result_color = "#0a0" if is_correct else "#b00"
+                result_icon = "✅" if is_correct else "❌"
+                score_color = color_for_score(score_val)
+                
+                mc_html = f"<div style='margin-top:8px;'><b style='color:{result_color}'>Multiple Choice: {result_icon}</b></div>"
+                mc_html += f"<div style='margin-top:4px;'><b>Score:</b> <span style='background:{score_color};padding:2px 6px;border-radius:3px;'>{score_val:.2f}</span></div>"
+                mc_html += f"<div style='margin-top:4px;'><b>Model Answer:</b> {esc(model_ans)}</div>"
+                mc_html += f"<div style='margin-top:4px;'><b>Correct Answer:</b> {esc(correct_ans)}</div>"
+                if answer_text:
+                    mc_html += f"<div style='margin-top:4px;font-size:11px;color:#666;'><b>Correct Answer Text:</b> {esc(answer_text[:200])}</div>"
+            
             # Judge breakdown
             judge_rows = []
             if isinstance(judge, dict) and isinstance(judge.get("scores"), dict):
@@ -347,10 +429,119 @@ def render_item_pages(report_dir: Path, recs: List[Dict[str, Any]]):
             err = r.get("error")
             if err:
                 judge_html += ("<div class=small style='color:#b00'>Error: " + esc(str(err)) + "</div>")
+            
+            # SPICE Verification Details
+            verification_html = ""
+            verification = r.get("verification_details")
+            if verification:
+                sim_passed = verification.get("simulation_passed", False)
+                metrics = verification.get("metrics", {})
+                ver_err = verification.get("error")
+                obj_score = verification.get("objective_score")  # Get objective score
+                
+                status_color = "#0a0" if sim_passed else "#b00"
+                status_text = "✅ PASSED" if sim_passed else "❌ FAILED"
+                verification_html = f"<div style='margin-top:8px;'><b style='color:{status_color}'>SPICE Verification: {status_text}</b></div>"
+                
+                # Display objective score prominently
+                if obj_score is not None and isinstance(obj_score, (int, float)):
+                    score_color = color_for_score(obj_score)
+                    verification_html += f"<div style='margin-top:4px;'><b>Objective Score:</b> <span style='background:{score_color};padding:2px 6px;border-radius:3px;'>{obj_score:.4f}</span></div>"
+                
+                if metrics is not None:
+                    # Extract and display measurement frequencies if available
+                    meas_freqs = metrics.get('_measurement_frequencies', {})
+                    if meas_freqs:
+                        verification_html += "<div style='margin-top:4px;font-size:11px;color:#666;'>"
+                        verification_html += f"<b>Measurement Frequencies:</b> "
+                        verification_html += f"passband @ {meas_freqs.get('passband_freq', 'N/A')} Hz, "
+                        verification_html += f"stopband @ {meas_freqs.get('stopband_freq', 'N/A')} Hz"
+                        verification_html += "</div>"
+                    
+                    # Get expected metrics from design spec if available
+                    design_spec = verification.get('design_spec', {})
+                    expected_metrics = set()
+                    if design_spec and 'specifications' in design_spec:
+                        # Map spec names to metric names
+                        spec_to_metric = {
+                            'cutoff_frequency': 'fc_low',
+                            'center_frequency': 'center_frequency',
+                            'quality_factor': 'quality_factor',
+                            'notch_frequency': 'notch_freq',
+                            'notch_depth': 'notch_depth_db',
+                            'characteristic_frequency': 'fc_low',
+                            'phase_shift_at_f0': 'phase_at_peak',
+                            'gain': 'gain_vv',
+                            'dc_gain': 'dc_gain_db',
+                            'unity_gain_frequency': 'unity_gain_freq_hz',
+                            'gbw': 'unity_gain_freq_hz',
+                            'phase_margin': 'phase_margin_deg',
+                            'power': 'power_w',
+                            'passband_gain': 'passband_gain',
+                            'stopband_attenuation': 'stopband_gain',
+                        }
+                        for spec_name in design_spec['specifications'].keys():
+                            metric_name = spec_to_metric.get(spec_name, spec_name)
+                            expected_metrics.add(metric_name)
+                    
+                    # Collect all metrics to display (measured + expected but missing)
+                    all_metric_names = set(k for k in metrics.keys() if not k.startswith('_'))
+                    all_metric_names.update(expected_metrics)
+                    
+                    verification_html += "<table class=small style='margin-top:4px;'><tr><th>Metric</th><th>Value</th></tr>"
+                    for metric_name in sorted(all_metric_names):
+                        value = metrics.get(metric_name)
+                        
+                        # Format value with appropriate units and precision
+                        if value is None:
+                            # Show unmeasured metrics clearly with warning icon
+                            if metric_name in ['quality_factor', 'bandpass_bandwidth']:
+                                value_str = "<span style='color:#c80;font-weight:bold;'>⚠ N/A</span> <span style='color:#999;font-style:italic;'>(not measured - bandwidth invalid)</span>"
+                            else:
+                                value_str = "<span style='color:#999;font-style:italic;'>N/A (not measured)</span>"
+                        elif isinstance(value, (int, float)):
+                            if metric_name == 'power_w':
+                                # Display power in milliwatts for readability
+                                value_str = f"{value * 1000:.2f} mW"
+                            elif metric_name.endswith('_hz') or 'freq' in metric_name or 'frequency' in metric_name:
+                                # Display frequency in MHz if > 1MHz, otherwise Hz
+                                if abs(value) >= 1e6:
+                                    value_str = f"{value / 1e6:.2f} MHz"
+                                elif abs(value) >= 1e3:
+                                    value_str = f"{value / 1e3:.2f} kHz"
+                                else:
+                                    value_str = f"{value:.2f} Hz"
+                            elif metric_name == 'gain_vv':
+                                # Linear voltage gain (V/V), not dB!
+                                value_str = f"{value:.2f} V/V"
+                            elif metric_name.endswith('_db') or 'gain' in metric_name:
+                                value_str = f"{value:.2f} dB"
+                            elif metric_name.endswith('_deg') or 'phase' in metric_name:
+                                value_str = f"{value:.2f}°"
+                            elif metric_name in ['quality_factor', 'bandpass_bandwidth']:
+                                # Dimensionless ratios or Hz (already handled)
+                                if 'bandwidth' in metric_name:
+                                    if abs(value) >= 1e3:
+                                        value_str = f"{value / 1e3:.2f} kHz"
+                                    else:
+                                        value_str = f"{value:.2f} Hz"
+                                else:
+                                    value_str = f"{value:.2f}"
+                            else:
+                                value_str = f"{value:.2f}"
+                        else:
+                            value_str = str(value)
+                        
+                        verification_html += f"<tr><td>{esc(metric_name)}</td><td>{value_str}</td></tr>"
+                    verification_html += "</table>"
+                
+                if ver_err:
+                    verification_html += f"<div class=small style='color:#b00;margin-top:4px;'>Error: {esc(str(ver_err))}</div>"
+            
             answer = r.get("answer", "")
             answer_html = f"<details><summary>View answer</summary><div class=mono>{esc(answer)}</div></details>"
             blocks.append(
-                f"<tr><td>{esc(m)}</td><td>{judge_html}</td><td>{answer_html}</td></tr>"
+                f"<tr><td>{esc(m)}</td><td>{mc_html}{judge_html}{verification_html}</td><td>{answer_html}</td></tr>"
             )
 
         html_out = f"""

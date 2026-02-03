@@ -1,10 +1,11 @@
 questions:
-- id: feedback002_design_tia_cap
+- id: feedback002_design_verification_tia_cap
   track: design
   modality: auto
-  judge_prompt: ../judge_prompts/design_tia_capacitor.md
-  judge_id: design_tia_capacitor
   prompt_template: ../prompts/design_feedback.txt
+  verification:
+    enabled: true
+    spec_file: verification/design_spec.json
   meta:
     topology: tia_feedback_capacitor
     bench_version: 0.1.0

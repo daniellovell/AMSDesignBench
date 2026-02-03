@@ -1,0 +1,20 @@
+{
+  "question_id": "ota004_debug_swap_mc",
+  "correct_answer": "A",
+  "answer_text": "M4 is incorrectly typed as NMOS when it should be PMOS. Fix: change M4's model to the correct type and update body connection appropriately.",
+  "choices": {
+    "A": "M4 is incorrectly typed as NMOS when it should be PMOS. Fix: change M4's model to the correct type and update body connection appropriately.",
+    "B": "M1 is incorrectly typed as NMOS. Fix: change to PMOS.",
+    "C": "Differential pair devices are swapped. Fix: exchange drain connections.",
+    "D": "M5 is incorrectly typed as NMOS. Fix: change to PMOS.",
+    "E": "Current mirror is missing a device. Fix: add cascode MOSFET.",
+    "F": "M4 width/length ratio is incorrect. Fix: adjust W/L to match current requirement.",
+    "G": "M4 has incorrect body connection. Fix: tie body to opposite rail.",
+    "H": "M3 is incorrectly typed as NMOS. Fix: change to PMOS.",
+    "I": "M6 is incorrectly typed as NMOS. Fix: change to PMOS.",
+    "J": "M2 is incorrectly typed as NMOS. Fix: change to PMOS."
+  },
+  "track": "debugging",
+  "aspect": "device_swap",
+  "template_role_map": {}
+}

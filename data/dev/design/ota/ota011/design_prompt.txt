@@ -1,0 +1,29 @@
+**TASK:** Fill in ALL BLANK parameters in the provided SPICE netlist template.
+
+**SPECIFICATIONS (use these EXACT values):**
+- VDD = 1.8 V
+- CL = 10p 
+- Target: DC Gain ≥ 60 dB, GBW ≥ 35 MHz, Phase Margin ≥ 60°
+- Power < 0.9 mW
+- Technology: SKY130 (NFET min L=0.15µm, PFET min L=0.35µm)
+
+**TOPOLOGY: Folded Cascode SE High-Swing PMOS (single-ended)**
+
+**INSTRUCTIONS:**
+
+1. **Fill in specifications**: VDD=1.8, CL=10p
+
+2. **Design transistor sizes** using Gm/ID tables (Gm/ID ≈ 10-20 S/A)
+   - **CRITICAL**: Write `L1=0.5` NOT `L1=0.5u` (no 'u' suffix)
+
+3. **Choose input common-mode voltage** and fill in Vinp/Vinn (or Vin) sources
+
+4. **Design all bias voltages** for proper operation
+
+**CRITICAL RULES:**
+- ✅ Use exact spec values
+- ✅ NO 'u' suffix on L/W
+- ❌ Do NOT add .lib, .option, .control, .end, Vdd, Vss, CL lines
+- ❌ Do NOT leave any BLANK
+
+**OUTPUT:** Provide ONLY the filled-in SPICE netlist in a code block.

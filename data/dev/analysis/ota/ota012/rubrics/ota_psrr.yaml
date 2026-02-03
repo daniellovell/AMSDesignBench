@@ -1,2 +1,2 @@
-relation_target: "PSRR ≈ (gm*ro)² (folded cascode structure)"
+relation_target: "PSRR+ ≈ ((gm_M1+gm_M2)/2)·((ro_M7+ro_M5+gm_M7·ro_M7·ro_M5))"
 {path:_ota_rubric_template.yaml}

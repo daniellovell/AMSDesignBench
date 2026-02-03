@@ -14,6 +14,7 @@ Guidance:
 - In Device identification: EXPLICITLY identify which specific devices (by their IDs like M1, M2, etc.) contribute to the gain calculation.
 - In Grounded evidence: cite specific device IDs from the artifact.
 - In Answer: provide the final DC gain expression using SPECIFIC device IDs.
+- IMPORTANT: Report DC gain as a positive magnitude (|A0| for single-ended, |A0,od| for fully differential) in V/V.
 - Avoid generic statements without conditions.
 
 Return markdown only. NEVER use LaTeX or MathJax formatting in your response.

@@ -1,2 +1,2 @@
-relation_target: "(gm*ro²)_p || (gm*ro²)_n ≈ (gm*ro²)/2"
+relation_target: "rout ≈ (ro_M2+ro_M1+gm_M2·ro_M2·ro_M1) || (ro_M3+ro_M4+gm_M3·ro_M3·ro_M4)"
 {path:_ota_rubric_template.yaml}

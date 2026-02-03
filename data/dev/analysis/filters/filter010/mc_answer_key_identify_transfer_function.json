@@ -1,0 +1,20 @@
+{
+  "question_id": "filter010_identify_mc",
+  "correct_answer": "E",
+  "answer_text": "Transfer function: H(s) = C1*R1*s/(C1*R1*s + 1)",
+  "choices": {
+    "A": "Transfer function: H(s) = C1*R2*s/(C1*R2*s + 1)",
+    "B": "Transfer function: H(s) = 1/(1 + s*R1*C1)",
+    "C": "Transfer function: H(s) = (s*R1*C1)/(1 + s*R1*C1)",
+    "D": "Transfer function: H(s) = C1*Rload*s/(C1*Rload*s + 1)",
+    "E": "Transfer function: H(s) = C1*R1*s/(C1*R1*s + 1)",
+    "F": "Transfer function: H(s) = C2*R1*s/(C2*R1*s + 1)",
+    "G": "Transfer function: H(s) = 1/(s^2*R1*R2*C1*C2 + s*(R1*C1 + R2*C2) + 1)",
+    "H": "Transfer function: H(s) = (s^2*R1*R2*C1*C2 + 1)/(s^2*R1*R2*C1*C2 + s*(R1*C1 + R2*C2) + 1)",
+    "I": "Transfer function: H(s) = (s^2*R1*R2*C1*C2)/(s^2*R1*R2*C1*C2 + s*(R1*C1 + R2*C2) + 1)",
+    "J": "Transfer function: H(s) = (s*R2*C1)/(s^2*R2*Rload*C1*C2 + s*(R2*C1 + Rload*C2) + 1)"
+  },
+  "track": "analysis",
+  "aspect": "identify_transfer_function",
+  "template_role_map": {}
+}

@@ -1,0 +1,20 @@
+{
+  "question_id": "ota001_psrr_mc",
+  "correct_answer": "B",
+  "answer_text": "PSRR+ \u2248 ((gm_{M1} + gm_{M2})/2)\u00b7ro_{Mp1}",
+  "choices": {
+    "A": "PSRR+ \u2248 ((gm_{X3} + gm_{M2})/2)\u00b7ro_{Mp1}",
+    "B": "PSRR+ \u2248 ((gm_{M1} + gm_{M2})/2)\u00b7ro_{Mp1}",
+    "C": "PSRR+ \u2248 (((gm_{M1} + gm_{M2})/2)\u00b7ro_{Mp1})/2",
+    "D": "PSRR+ \u2248 ((gm_{X2} + gm_{M2})/2)\u00b7ro_{Mp1}",
+    "E": "PSRR+ \u2248 (((gm_{M1} + gm_{M2})/2)\u00b7ro_{Mp1})/4",
+    "F": "PSRR+ \u2248 2\u00b7(((gm_{M1} + gm_{M2})/2)\u00b7ro_{Mp1})",
+    "G": "PSRR+ \u2248 ((gm_{X1} + gm_{M2})/2)\u00b7ro_{Mp1}",
+    "H": "PSRR+ \u2248 ((gm_{M1} + gm_{X1})/2)\u00b7ro_{Mp1}",
+    "I": "PSRR+ \u2248 ((gm_{M1} + gm_{M2})/2)\u00b7ro_{X3}",
+    "J": "PSRR+ \u2248 \u221a(((gm_{M1} + gm_{M2})/2)\u00b7ro_{Mp1})"
+  },
+  "track": "analysis",
+  "aspect": "psrr",
+  "template_role_map": {}
+}

@@ -42,11 +42,14 @@ class Question(BaseModel):
     modality: str
     artifact_path: str
     prompt_template: str
-    judge_prompt: str
-    judge_id: str
+    judge_prompt: Optional[str] = None
+    judge_id: Optional[str] = None
     require_sections: List[str]
     answer_format: str
     meta: Dict[str, Any] = Field(default_factory=dict)
+    verification: Optional[Dict[str, Any]] = None  # For SPICE verification
+    attachments: List[Dict[str, str]] = Field(default_factory=list)  # For Gm/ID tables, templates
+    prompt_path: Optional[str] = None  # Alternative to prompt_template
 
 
 class EvalItem(BaseModel):

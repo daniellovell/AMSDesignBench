@@ -1,0 +1,20 @@
+{
+  "question_id": "filter005_identify_mc",
+  "correct_answer": "E",
+  "answer_text": "Transfer function: H(s) = 0",
+  "choices": {
+    "A": "Transfer function: H(s) = (s^2*R1A*R2A*C1A*C2A - s*(R1A*C1A + R2A*C2A) + 1)/(s^2*R1A*R2A*C1A*C2A + s*(R1A*C1A + R2A*C2A) + 1)",
+    "B": "Transfer function: H(s) = (s^2*R1A*R2A*C1A*C2A)/(s^2*R1A*R2A*C1A*C2A + s*(R1A*C1A + R2A*C2A) + 1)",
+    "C": "Transfer function: H(s) = 1/(s^2*R1A*R2A*C1A*C2A + s*(R1A*C1A + R2A*C2A) + 1)",
+    "D": "Transfer function: H(s) = 1/(1 + s^2*R1A*R1A*C1A*C1A)",
+    "E": "Transfer function: H(s) = 0",
+    "F": "Transfer function: H(s) = (s^2*R1A*R2A*C1A*C2A + 1)/(s^2*R1A*R2A*C1A*C2A + s*(R1A*C1A + R2A*C2A) + 1)",
+    "G": "Transfer function: H(s) = (s*R2A*C1A)/(s^2*R2A*RG1*C1A*C2A + s*(R2A*C1A + RG1*C2A) + 1)",
+    "H": "Transfer function: H(s) = 1/(1 + (s*R1A*C1A)^2)",
+    "I": "Transfer function: H(s) = 1/(1 + s*R1A*C1A)",
+    "J": "Transfer function: H(s) = (s*R1A*C1A)/(1 + s*R1A*C1A)"
+  },
+  "track": "analysis",
+  "aspect": "identify_transfer_function",
+  "template_role_map": {}
+}

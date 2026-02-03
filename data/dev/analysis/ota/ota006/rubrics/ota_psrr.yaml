@@ -1,2 +1,2 @@
-relation_target: "PSRR ≈ gm*ro"
+relation_target: "PSRR+ ≈ ((gm_M7+gm_M8)/2)·((ro_M1+ro_M2+gm_M1·ro_M1·ro_M2))"
 {path:_ota_rubric_template.yaml}

@@ -1,0 +1,13 @@
+You are an expert analog IC designer.
+From the {modality} artifact, identify the transfer function H(s) for the given filter circuit.
+
+**INSTRUCTIONS:** Select the single best answer from the multiple choice options below.
+
+**MULTIPLE CHOICE OPTIONS:**
+
+{choices}
+
+**ANSWER:** Provide only the letter (A-J) of the correct answer.
+
+Return markdown only. NEVER use LaTeX or MathJax formatting in your response.
+

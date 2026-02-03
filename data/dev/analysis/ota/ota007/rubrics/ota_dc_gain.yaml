@@ -1,2 +1,2 @@
-relation_target: "A0 ≈ gm_M_in * (ro_M_in || ro_load) ≈ gm_M_in * ro / 2"
+relation_target: "|A0| ≈ gm_M2·(ro_M2||ro_M1)"
 {path:_ota_rubric_template.yaml}

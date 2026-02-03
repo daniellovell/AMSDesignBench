@@ -1,0 +1,3 @@
+Vin vin 0 AC 1
+L145188157 vin vout BLANK
+R971396768 vout 0 BLANK

@@ -1,0 +1,17 @@
+You are an expert analog IC designer.
+From the {modality} artifact, answer the question about the feedback network.
+
+IMPORTANT:
+- Report gains as positive magnitudes (no leading negative sign).
+- If reporting a bandwidth/GBW-like frequency, report it in Hz (not rad/s).
+
+**INSTRUCTIONS:** Select the single best answer from the multiple choice options below.
+
+**MULTIPLE CHOICE OPTIONS:**
+
+{choices}
+
+**ANSWER:** Provide only the letter (A-J) of the correct answer.
+
+Return markdown only. NEVER use LaTeX or MathJax formatting in your response.
+

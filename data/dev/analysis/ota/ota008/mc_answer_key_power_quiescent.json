@@ -1,0 +1,20 @@
+{
+  "question_id": "ota008_power_quiescent_mc",
+  "correct_answer": "A",
+  "answer_text": "P_q \u2248 VDD\u00b7I_D,{M4}",
+  "choices": {
+    "A": "P_q \u2248 VDD\u00b7I_D,{M4}",
+    "B": "P_q \u2248 VDD\u00b7(I_D,{X3})",
+    "C": "P_q \u2248 (VDD/2)\u00b7(I_D,{M4})",
+    "D": "P_q \u2248 VDD\u00b7(I_D,{X1})",
+    "E": "P_q \u2248 VDD\u00b7(I_D,{M4})/2",
+    "F": "P_q \u2248 VDD\u00b7(I_D,{M4})/4",
+    "G": "P_q \u2248 VDD\u00b7(I_D,{X2})",
+    "H": "P_q \u2248 VDD\u00b7((I_D,{M4}) + I_D,{X1})",
+    "I": "P_q \u2248 4\u00b7VDD\u00b7(I_D,{M4})",
+    "J": "P_q \u2248 2\u00b7VDD\u00b7(I_D,{M4})"
+  },
+  "track": "analysis",
+  "aspect": "power_quiescent",
+  "template_role_map": {}
+}

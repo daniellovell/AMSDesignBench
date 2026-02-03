@@ -1,0 +1,20 @@
+{
+  "question_id": "feedback001_signal_modality_mc",
+  "correct_answer": "D",
+  "answer_text": "Vout/Iin",
+  "choices": {
+    "A": "Vout/Vin",
+    "B": "Iout/Idiff",
+    "C": "Iout/Iin",
+    "D": "Vout/Iin",
+    "E": "Iout/Vdiff",
+    "F": "Vout/Vdiff",
+    "G": "Iout/Vcm",
+    "H": "Iout/Vin",
+    "I": "Vout/Idiff",
+    "J": "Vout/Vcm"
+  },
+  "track": "analysis",
+  "aspect": "signal_modality",
+  "template_role_map": {}
+}

@@ -1,0 +1,9 @@
+* ngspice initialization file
+* Optimizations for SKY130 PDK (per official recommendations)
+
+set ngbehavior=hsa
+set ng_nomodcheck
+
+* Additional performance optimizations
+set sparse_matrix_order=1
+

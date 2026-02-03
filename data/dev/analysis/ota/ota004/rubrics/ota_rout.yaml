@@ -1,2 +1,2 @@
-relation_target: "r_out at vout is the parallel combination of output NMOS and PMOS drain resistances. e.g. Mathematically equivalent to (ro_nmos || ro_pmos)"
+relation_target: "rout ≈ ro_M6 || ro_M7"
 {path:_ota_rubric_template.yaml}

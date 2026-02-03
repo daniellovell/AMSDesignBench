@@ -1,0 +1,47 @@
+**TASK:** Fill in ALL BLANK parameters in the provided SPICE netlist template.
+
+**SPECIFICATIONS (use these EXACT values):**
+- VDD = 1.8 V
+- CL = 10 pF (per output, differential)
+- Target: DC Gain ≥ 60 dB, GBW ≥ 50 MHz, Phase Margin ≥ 55°
+- Power < 1 mW
+- Technology: SKY130 (NFET min L=0.15µm, PFET min L=0.35µm)
+
+**TOPOLOGY: Telescopic Cascode (Fully Differential)**
+- 9 transistors: input pair (M3,M4), NMOS cascodes (M1,M2), tail (M5), PMOS cascodes (M6,M7), PMOS mirrors (M8,M9)
+
+**INSTRUCTIONS:**
+
+1. **Copy the netlist template provided below**
+
+2. **Replace `.param VDD=BLANK` with `.param VDD=1.8`** (exact value from spec)
+
+3. **Replace `.param CL=BLANK` with `.param CL=10p`** (10 pF per output)
+
+4. **Design transistor sizes** (L and W for all 9 transistors):
+   - You have access to Gm/ID lookup tables for SKY130 NFETs and PFETs
+   - **CRITICAL**: Write `L_in=0.5` NOT `L_in=0.5u` (no 'u' suffix)
+
+5. **Choose input common-mode voltage**:
+   - Replace `Vinp vinp 0 DC BLANK AC 0.5` with your chosen DC value
+   - Replace `Vinn vinn 0 DC BLANK AC -0.5` with same DC value
+
+6. **Design all four bias voltages** (vb1, vb2, vb3, vtail):
+   - These are critical for proper cascode operation
+
+7. **Output the complete netlist** with:
+   - NO BLANK keywords remaining
+   - ALL parameters filled with numbers
+   - ALL bias voltages specified
+   - Device lines (XM1-XM9) EXACTLY as in template
+
+**CRITICAL RULES:**
+- ✅ Fill in VDD=1.8 and CL=10p exactly as specified
+- ✅ Provide FOUR bias voltages (vb1, vb2, vb3, vtail)
+- ✅ Use NO 'u' suffix on L/W in .param lines
+- ✅ Keep all XM device lines exactly as shown in template
+- ❌ Do NOT add .lib, .option, .control, .end, Vdd, Vss, or CL device lines
+- ❌ Do NOT leave any BLANK
+
+**OUTPUT:** Provide ONLY the filled-in SPICE netlist in a code block.
+

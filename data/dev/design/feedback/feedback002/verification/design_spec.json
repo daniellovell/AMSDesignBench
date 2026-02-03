@@ -1,0 +1,12 @@
+{
+  "design_id": "feedback002",
+  "topology": "tia_feedback_capacitor",
+  "description": "Single-ended transimpedance amplifier (TIA) with capacitive feedback (ideal single-pole op-amp).",
+  "preprocess": { "strip_subckts": ["opamp"] },
+  "specifications": {
+    "transimpedance_ohm": { "value": 159154, "tolerance": 0.15, "unit": "ohm", "weight": 0.6 },
+    "bandwidth_hz": { "min": 2000000, "unit": "Hz", "weight": 0.4 }
+  }
+}
+
+

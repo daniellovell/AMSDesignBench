@@ -1,0 +1,30 @@
+{
+  "design_id": "filter002",
+  "topology": "CR",
+  "filter_type": "high_pass",
+  "order": 1,
+  "specifications": {
+    "cutoff_frequency": {
+      "value": 15900,
+      "unit": "Hz",
+      "tolerance": 0.15
+    },
+    "passband_gain": {
+      "min": -3,
+      "unit": "dB"
+    },
+    "stopband_attenuation": {
+      "min": -20,
+      "unit": "dB"
+    }
+  },
+  "test_conditions": {
+    "temperature": 27,
+    "input_amplitude": 1.0
+  },
+  "verification_metrics": [
+    "cutoff_frequency",
+    "passband_gain",
+    "stopband_attenuation"
+  ]
+}

@@ -1,0 +1,122 @@
+* Testbench for Filter Design Verification
+
+.title Filter Design Verification Testbench
+
+* Ideal op-amp subcircuit (for active filters)
+.subckt OPAMP vout vin_neg vin_pos
+E1 vout 0 vin_pos vin_neg 1e6
+Rout vout 0 1
+.ends
+
+* ===== DUT (Design Under Test) =====
+* DUT provides input source and filter topology
+{dut_netlist}
+* ===== End of DUT =====
+
+.control
+* AC analysis from 1 Hz to 1 MHz
+ac dec 100 1 1Meg
+set units=degrees
+
+* Determine output node (try common names)
+if length(v(vout)) > 0
+  let output_node = v(vout)
+else
+  if length(v(out)) > 0
+    let output_node = v(out)
+  else
+    let output_node = v(n2)
+  end
+end
+
+* Calculate magnitude and phase
+let vout_mag = abs(output_node)
+let vout_db = db(vout_mag)
+let vout_phase = phase(output_node)
+
+* Find peak (for band-pass and band-stop filters)
+meas ac peak_gain_db max vout_db
+meas ac peak_freq when vout_db=peak_gain_db
+
+* Find -3dB points
+let target_3db = peak_gain_db - 3
+
+* Strategy: For bandpass, we want the two crossings closest to peak_freq
+* cross=1 gives first crossing (should be lower freq)
+* cross=2 gives second crossing (should be upper freq for bandpass)
+meas ac fc_low when vout_db=target_3db cross=1
+meas ac fc_mid when vout_db=target_3db cross=2
+* cross=last gives the very last crossing
+meas ac fc_last when vout_db=target_3db cross=last
+
+* Determine which crossings to use based on peak frequency
+* If fc_mid is closer to peak than fc_last, use fc_low and fc_mid
+* Otherwise use fc_low and fc_last
+let dist_mid = abs(fc_mid - peak_freq)
+let dist_last = abs(fc_last - peak_freq)
+
+if dist_mid < dist_last
+  * fc_mid is closer to peak, so passband is between fc_low and fc_mid
+  let fc_high = fc_mid
+else
+  * fc_last is closer, use fc_low and fc_last
+  let fc_high = fc_last
+end
+
+* Calculate bandpass_bandwidth and quality factor
+let bandpass_bandwidth = fc_high - fc_low
+* For band-pass filters, derive center from the -3dB points (more robust than peak_freq equality)
+let center_frequency = sqrt(fc_low * fc_high)
+
+* Only calculate quality factor if bandwidth is reasonable
+* If bandwidth is too small (< 1 Hz) or fc_low = fc_high, Q is invalid
+if bandpass_bandwidth > 1
+  let quality_factor = center_frequency / bandpass_bandwidth
+else
+  * Set to a sentinel value that will be filtered out
+  let quality_factor = -1
+end
+
+* Measure gain at center/peak frequency (in V/V, not dB)
+let gain_linear = 10^(peak_gain_db/20)
+let gain_vv = gain_linear
+
+* Dynamic frequency measurement points based on filter specifications
+* These are calculated relative to the filter's characteristic frequency
+* passband_gain: gain well within the passband (fc/10 for LP, fc*10 for HP)
+* stopband_gain: gain well within the stopband (fc*10 for LP, fc/10 for HP)
+meas ac passband_gain find vout_db at={passband_freq}
+meas ac stopband_gain find vout_db at={stopband_freq}
+
+* Phase at peak frequency
+meas ac phase_at_peak find vout_phase when vout_db=peak_gain_db
+
+* For notch filters, find minimum
+meas ac notch_depth_db min vout_db
+meas ac notch_freq when vout_db=notch_depth_db
+
+echo ""
+echo "=== FILTER VERIFICATION RESULTS ==="
+echo "Measurement frequencies: passband={passband_freq}Hz, stopband={stopband_freq}Hz"
+print peak_gain_db
+print peak_freq
+print fc_low
+print fc_high
+print bandpass_bandwidth
+print center_frequency
+print quality_factor
+print gain_vv
+print passband_gain
+print stopband_gain
+print phase_at_peak
+print notch_depth_db
+print notch_freq
+echo ""
+
+* Write results to file
+print peak_gain_db peak_freq fc_low fc_high bandpass_bandwidth center_frequency quality_factor gain_vv passband_gain stopband_gain phase_at_peak notch_depth_db notch_freq > {output_file}
+
+quit
+.endc
+
+.end

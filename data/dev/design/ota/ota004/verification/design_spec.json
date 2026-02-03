@@ -1,0 +1,63 @@
+{
+  "design_id": "ota004",
+  "topology": "two_stage_miller",
+  "description": "Two-Stage Miller OTA with high gain",
+  "pdk": {
+    "technology": "sky130",
+    "supply_voltage": 1.8,
+    "temperature": 27
+  },
+  "specifications": {
+    "dc_gain": {
+      "min": 70,
+      "target": 80,
+      "unit": "dB",
+      "weight": 0.28
+    },
+    "gbw": {
+      "min": 20000000.0,
+      "target": 50000000.0,
+      "unit": "Hz",
+      "weight": 0.22
+    },
+    "phase_margin": {
+      "min": 50,
+      "target": 60,
+      "unit": "deg",
+      "weight": 0.22,
+      "note": "Requires proper Miller compensation"
+    },
+    "power": {
+      "max": 0.001,
+      "target": 0.0004,
+      "unit": "W",
+      "weight": 0.17
+    },
+    "slew_rate": {
+      "min": 5000000.0,
+      "unit": "V/s",
+      "weight": 0.11
+    }
+  },
+  "test_conditions": {
+    "load_capacitance": "20p",
+    "feedback_factor": 1.0,
+    "input_common_mode": 0.9,
+    "analyses": [
+      "dc",
+      "ac",
+      "tran"
+    ]
+  },
+  "constraints": {
+    "min_transistor_length": 1.5e-07,
+    "min_transistor_width": 3e-07,
+    "max_transistor_width": 0.0001,
+    "min_current": 5e-06,
+    "max_current": 0.002,
+    "compensation_cap_range": [
+      1e-12,
+      1e-11
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "question_id": "ota010_power_quiescent_mc",
+  "correct_answer": "I",
+  "answer_text": "P_q \u2248 VDD\u00b7(I_D,{M3} + I_D,{M4} + I_D,{M5})",
+  "choices": {
+    "A": "P_q \u2248 VDD\u00b7(I_D,{X2} + I_D,{M4} + I_D,{M5})",
+    "B": "P_q \u2248 4\u00b7VDD\u00b7(I_D,{M3} + I_D,{M4} + I_D,{M5})",
+    "C": "P_q \u2248 VDD\u00b7(I_D,{M3} + I_D,{X1} + I_D,{M5})",
+    "D": "P_q \u2248 VDD\u00b7(I_D,{M3} + I_D,{X3} + I_D,{M5})",
+    "E": "P_q \u2248 VDD\u00b7(I_D,{M3} + I_D,{M4} + I_D,{M5})/2",
+    "F": "P_q \u2248 VDD\u00b7((I_D,{M3} + I_D,{M4} + I_D,{M5}) + I_D,{X1})",
+    "G": "P_q \u2248 VDD\u00b7(I_D,{M3} + I_D,{M4})",
+    "H": "P_q \u2248 2\u00b7VDD\u00b7(I_D,{M3} + I_D,{M4} + I_D,{M5})",
+    "I": "P_q \u2248 VDD\u00b7(I_D,{M3} + I_D,{M4} + I_D,{M5})",
+    "J": "P_q \u2248 VDD\u00b7(I_D,{X1} + I_D,{M4} + I_D,{M5})"
+  },
+  "track": "analysis",
+  "aspect": "power_quiescent",
+  "template_role_map": {}
+}

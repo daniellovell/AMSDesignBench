@@ -1,12 +1,11 @@
-M3 N004 vip N006 0 nch W=2u L=0.18u
-M4 N005 vin N006 0 nch W=2u L=0.18u
-M1 vop vb2 N005 0 nch W=1u L=0.18u
-M2 N001 vb2 N004 0 nch W=1u L=0.18u
-M5 N006 vtail 0 0 nch W=1u L=0.5u
-M6 vop vb1 N003 VDD pch W=2u L=0.18u
-M7 N001 vb1 N002 VDD pch W=2u L=0.18u
-M8 N003 N001 VDD VDD pch W=4u L=0.18u
-M9 N002 N001 VDD VDD pch W=4u L=0.18u
 C1 vop 0 1p
+M1 N003 vb2 vop VDD PMOS l=0.18u w=4u
+M2 VDD N001 N003 VDD PMOS l=0.18u w=4u
+M3 VDD N001 N002 VDD PMOS l=0.18u w=4u
+M4 N002 vb2 N001 VDD PMOS l=0.18u w=4u
+M5 N001 vb3 N004 0 NMOS l=0.18u w=2u
+M6 vop vb3 N005 0 NMOS l=0.18u w=2u
+M7 N005 vin N006 0 NMOS l=0.18u w=2u
+M8 N004 vip N006 0 NMOS l=0.18u w=2u
+M9 N006 vtail 0 0 NMOS l=0.18u w=2u
 VDD VDD 0 1.8
-

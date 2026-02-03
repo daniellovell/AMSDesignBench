@@ -1,2 +1,2 @@
-relation_target: "r_out ≈ gm*ro² (folded cascode with diode connections)"
+relation_target: "rout ≈ ((ro_M7+ro_M5+gm_M7·ro_M7·ro_M5)) || ((ro_M8+ro_M9+gm_M8·ro_M8·ro_M9))"
 {path:_ota_rubric_template.yaml}

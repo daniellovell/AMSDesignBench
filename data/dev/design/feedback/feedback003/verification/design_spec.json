@@ -1,0 +1,12 @@
+{
+  "design_id": "feedback003",
+  "topology": "noninverting_voltage_amp",
+  "description": "Non-inverting voltage amplifier with resistive divider feedback (ideal single-pole op-amp).",
+  "preprocess": { "strip_subckts": ["opamp"] },
+  "specifications": {
+    "gain_vv": { "value": 10, "tolerance": 0.05, "unit": "V/V", "weight": 0.6 },
+    "bandwidth_hz": { "min": 1000000, "unit": "Hz", "weight": 0.4 }
+  }
+}
+
+

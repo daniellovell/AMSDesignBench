@@ -1,2 +1,2 @@
-relation_target: "High-side: VDD - Vov_load; Low-side: Vov_M_in"
+relation_target: "Low-side: Vov_M2; High-side: VDD - Vov_M1"
 {path:_ota_rubric_template.yaml}

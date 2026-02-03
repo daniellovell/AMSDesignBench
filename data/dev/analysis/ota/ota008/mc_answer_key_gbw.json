@@ -1,0 +1,20 @@
+{
+  "question_id": "ota008_gbw_mc",
+  "correct_answer": "H",
+  "answer_text": "GBW \u2248 gm_{M1}/(2\u03c0\u00b7Cload)",
+  "choices": {
+    "A": "GBW \u2248 gm_{X3}/(2\u03c0\u00b7Cload)",
+    "B": "GBW \u2248 4\u00b7(gm_{M1}/(2\u03c0\u00b7Cload))",
+    "C": "GBW \u2248 \u221a(gm_{M1}/(2\u03c0\u00b7Cload))",
+    "D": "GBW \u2248 gm_{INP}/(2\u03c0\u00b7Cload)",
+    "E": "GBW \u2248 gm_{X2}/(2\u03c0\u00b7Cload)",
+    "F": "GBW \u2248 2\u00b7(gm_{M1}/(2\u03c0\u00b7Cload))",
+    "G": "GBW \u2248 (gm_{M1}/(2\u03c0\u00b7Cload))/2",
+    "H": "GBW \u2248 gm_{M1}/(2\u03c0\u00b7Cload)",
+    "I": "GBW \u2248 gm_{X1}/(2\u03c0\u00b7Cload)",
+    "J": "GBW \u2248 gm_{M1}/(2\u03c0\u00b7(Cload/2))"
+  },
+  "track": "analysis",
+  "aspect": "gbw",
+  "template_role_map": {}
+}

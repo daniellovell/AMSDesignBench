@@ -1,0 +1,3 @@
+Design a band-pass filter with center frequency f0 = 10 kHz and quality factor Q = 2.
+
+Use the provided template netlist topology (series RLC band-pass core + ideal OPAMP buffer).
